@@ -11,9 +11,20 @@
       </aside>
 
       <!-- Main content -->
-      <main class="flex-1 p-6 flex items-center justify-center bg-gray-100">
-        <slot /> <!-- Page content renders here -->
-      </main>
+      <!-- Main: header + page view -->
+      <div class="flex flex-col flex-1 gap-4">
+        <!-- Header -->
+        <header class=" p-4 flex justify-end">
+          <div class="bg-gray-200 rounded-full p-2 flex items-center justify-center">
+            <Icon name="mdi-light:settings" class="text-xl" />
+          </div>
+        </header>
+
+        <!-- Page view -->
+        <main class="flex-1 p-6 flex items-center justify-center">
+          <slot /> <!-- Page content renders here -->
+        </main>
+      </div>
     </div>
   </div>
 </template>
