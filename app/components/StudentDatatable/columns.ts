@@ -1,6 +1,6 @@
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h } from "vue";
-import DropdownAction from "@/components/InstructorDatatable/data-table-dropdown.vue";
+import DropdownAction from "@/components/StudentDatatable/data-table-dropdown.vue";
 import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 
@@ -91,7 +91,7 @@ export const columns: ColumnDef<Student>[] = [
       h("div", { class: "text-center font-normal text-black" }, "Status"),
     cell: ({ row }) => {
       const status = row.getValue("status") as Student["status"];
-      const isActive = status === "Registered";
+      const isActive = status === "registered";
 
       return h(
         "span",
@@ -108,12 +108,12 @@ export const columns: ColumnDef<Student>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const instructor = row.original;
+      const student = row.original;
 
       return h(
         "div",
         { class: "relative flex justify-center" },
-        h(DropdownAction, { instructor })
+        h(DropdownAction, { student })
       );
     },
   },
@@ -126,6 +126,6 @@ export interface Student {
   school: string;
   msyear: number;
   classroom: number;
-  status: "Registered" | "Unregistered";
+  status: "registered" | "unregistered";
   // action column still needed
 }
