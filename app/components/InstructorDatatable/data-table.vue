@@ -76,50 +76,94 @@ const table = useVueTable({
   },
 });
 </script>
-
 <template>
-  <div>
-    <div class="flex items-center py-4">
-      <Input
-        class="max-w-sm"
-        placeholder="Filter emails..."
-        :model-value="table.getColumn('email')?.getFilterValue() as string"
-        @update:model-value="table.getColumn('email')?.setFilterValue($event)"
-      />
-      <DropdownMenu>
-        <DropdownMenuTrigger as-child>
-          <Button variant="outline" class="ml-auto">
-            Columns
-            <ChevronDown class="w-4 h-4 ml-2" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuCheckboxItem
-            v-for="column in table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())"
-            :key="column.id"
-            class="capitalize"
-            :modelValue="column.getIsVisible()"
-            @update:modelValue="
-              (value) => {
-                column.toggleVisibility(!!value);
-              }
-            "
+  <div class="bg-white p-6 rounded-md shadow-md">
+    <!-- Top bar: label left, search & column menu right -->
+    <div class="flex items-center justify-between py-4">
+      <!-- Left: label -->
+      <div class="text-md font-light text-black">All Instructors List</div>
+
+      <!-- Right: search input + dropdowns -->
+      <div class="flex items-center space-x-4">
+        <div
+          class="flex items-center justify-center w-8 h-8 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
+        >
+          <Icon name="lets-icons:filter" />
+        </div>
+        <Input
+          class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
+          placeholder="Search by Email"
+          :model-value="table.getColumn('email')?.getFilterValue() as string"
+          @update:model-value="table.getColumn('email')?.setFilterValue($event)"
+        />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button
+              class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
+            >
+              All Classes
+              <ChevronDown class="w-4 h-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            class="bg-white rounded-md shadow-md flex flex-col"
           >
-            {{ column.id }}
-          </DropdownMenuCheckboxItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuItem
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+            >
+              Example Class 0
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+            >
+              Example Class 1
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+            >
+              Example Class 2
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button class="bg-gray-100 text-gray-500 hover:bg-gray-200">
+              Columns
+              <ChevronDown class="w-4 h-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuCheckboxItem
+              v-for="column in table
+                .getAllColumns()
+                .filter((c) => c.getCanHide())"
+              :key="column.id"
+              class="capitalize"
+              :modelValue="column.getIsVisible()"
+              @update:modelValue="(value) => column.toggleVisibility(!!value)"
+            >
+              {{ column.id }}
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
+
+    <!-- Table -->
     <div class="border rounded-md">
-      <Table>
-        <TableHeader>
+      <Table class="w-full text-center font-normal text-gray-500">
+        <TableHeader class="bg-blue-50">
           <TableRow
             v-for="headerGroup in table.getHeaderGroups()"
             :key="headerGroup.id"
           >
-            <TableHead v-for="header in headerGroup.headers" :key="header.id">
+            <TableHead
+              v-for="header in headerGroup.headers"
+              :key="header.id"
+              class="text-center font-semibold py-2 px-10"
+            >
               <FlexRender
                 v-if="!header.isPlaceholder"
                 :render="header.column.columnDef.header"
@@ -128,14 +172,20 @@ const table = useVueTable({
             </TableHead>
           </TableRow>
         </TableHeader>
+
         <TableBody>
           <template v-if="table.getRowModel().rows?.length">
             <TableRow
-              v-for="row in table.getRowModel().rows"
+              v-for="(row, idx) in table.getRowModel().rows"
               :key="row.id"
               :data-state="row.getIsSelected() ? 'selected' : undefined"
+              :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
             >
-              <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
+              <TableCell
+                v-for="cell in row.getVisibleCells()"
+                :key="cell.id"
+                class="text-center"
+              >
                 <FlexRender
                   :render="cell.column.columnDef.cell"
                   :props="cell.getContext()"
@@ -143,6 +193,7 @@ const table = useVueTable({
               </TableCell>
             </TableRow>
           </template>
+
           <template v-else>
             <TableRow>
               <TableCell :colspan="columns.length" class="h-24 text-center">
@@ -153,6 +204,8 @@ const table = useVueTable({
         </TableBody>
       </Table>
     </div>
+
+    <!-- Pagination -->
     <div class="flex items-center justify-end py-4 space-x-2">
       <Button
         variant="outline"
