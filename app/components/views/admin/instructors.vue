@@ -1,3 +1,9 @@
+<template>
+  <div class="container py-2 mx-auto">
+    <DataTable :columns="columns" :data="data" />
+  </div>
+</template>
+
 <script setup lang="ts">
 import type { Instructor } from "../../InstructorDatatable/columns";
 import { onMounted, ref } from "vue";
@@ -417,9 +423,4 @@ onMounted(async () => {
 });
 </script>
 
-<template>
-  <h1>Instructors</h1>
-  <div class="container py-10 mx-auto">
-    <DataTable :columns="columns" :data="data" />
-  </div>
-</template>
+
