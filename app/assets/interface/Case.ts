@@ -40,7 +40,7 @@ export const cases: Case[] = [
     classroom: 2, 
     completionDate: "N/A", 
     status: "in progress" 
-  }
+  },
   { 
     id: 4, 
     name: "Case 4", 
