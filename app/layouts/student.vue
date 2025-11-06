@@ -3,7 +3,7 @@
     <!-- Main area: sidebar + content -->
     <div class="flex flex-1 gap-3">
       <!-- Sidebar -->
-      <aside class="w-64 bg-[#AF67F0] text-white flex flex-col border-2 rounded-xl shadow-md">
+      <aside class="w-64 bg-[#AF67F0] text-white flex flex-col rounded-xl">
         <div class="flex items-center gap-4 p-4">
           <Icon name="healthicons:autoimmune-disease-outline" class="text-4xl" />
           <span class="text-2xl font-bold text-center">
