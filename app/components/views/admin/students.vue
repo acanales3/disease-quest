@@ -9,7 +9,7 @@ import type { Student } from "../../StudentDatatable/columns";
 import { onMounted, ref } from "vue";
 import { columns } from "../../StudentDatatable/columns";
 import DataTable from "../../StudentDatatable/data-table.vue";
-import { student } from "~/assets/interface/Student.ts";
+import { student } from "~/assets/interface/Student";
 
 const data = ref<Student[]>([]);
 
