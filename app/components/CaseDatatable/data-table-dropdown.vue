@@ -11,6 +11,10 @@ import {
 } from "~/components/ui/dropdown-menu";
 </script>
 
+<!-- eventually want to make this dynmaic where the actions shown are based on the role of the user -->
+<!-- for now, we will just show the same actions for all users (Play, Edit, Delete) -->
+<!-- we will also need to make the actions do something by emitting events -->
+
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>

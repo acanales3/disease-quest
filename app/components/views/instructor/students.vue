@@ -15,7 +15,7 @@ const data = ref<Student[]>([]);
 
 async function getData(): Promise<Student[]> {
     // Fetch data from the API here.
-    // For now, we will use the student data from the interface.
+    // For now, we will use the mock student data from the interface.
     return student;
 }
 

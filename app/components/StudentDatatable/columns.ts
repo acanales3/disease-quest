@@ -29,16 +29,8 @@ export const columns: ColumnDef<Student>[] = [
   },
   {
     accessorKey: "email",
-    header: ({ column }) =>
-      h(
-        "button",
-        {
-          class:
-            "flex justify-center items-center gap-1 font-normal text-black w-full px-3 py-1 rounded-md transition-colors hover:bg-gray-200",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-        },
-        ["Email", h(ArrowUpDown, { class: "h-4 w-4" })]
-      ),
+    header: () =>
+      h("div", { class: "text-center font-normal text-black" }, "Email"),
     cell: ({ row }) =>
       h(
         "div",
