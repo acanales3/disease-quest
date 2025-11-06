@@ -4,7 +4,7 @@ import DropdownAction from "@/components/CaseDatatable/data-table-dropdown.vue";
 import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 
-xport const columns: ColumnDef<Case>[] = [
+export const columns: ColumnDef<Case>[] = [
   {
     accessorKey: "id",
     header: () =>
@@ -29,22 +29,12 @@ xport const columns: ColumnDef<Case>[] = [
   },
   {
     accessorKey: "description",
-    header: ({ column }) =>
-      h(
-        "button",
-        {
-          class:
-            "flex justify-center items-center gap-1 font-normal text-black w-full px-3 py-1 rounded-md transition-colors hover:bg-gray-200",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-        },
-        ["Email", h(ArrowUpDown, { class: "h-4 w-4" })]
-      ),
-    cell: ({ row }) =>
-      h(
-        "div",
-        { class: "lowercase text-center font-normal text-gray-600" },
-        row.getValue("email")
-      ),
+    header: () =>
+      h("div", { class: "text-center font-normal text-black" }, "Description"),
+    cell: ({ row }) => {
+      const description = row.getValue("description") as string;
+      return h("div", { class: "text-center font-normal text-gray-600" }, description);
+    },
   },
   {
     accessorKey: "classroom",
@@ -104,12 +94,12 @@ xport const columns: ColumnDef<Case>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const case = row.original;
+      const caseData = row.original;
 
       return h(
         "div",
         { class: "relative flex justify-center" },
-        h(DropdownAction, { case })
+        h(DropdownAction, { caseData })
       );
     },
   },
