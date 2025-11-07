@@ -18,6 +18,8 @@ import { onMounted, ref } from "vue";
 import { columns } from "../../StudentDatatable/columns";
 import DataTable from "../../StudentDatatable/data-table.vue";
 import { student } from "~/assets/interface/Student";
+import TotalCount from "@/components/ui/TotalCount.vue";
+
 
 const data = ref<Student[]>([]);
 
