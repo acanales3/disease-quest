@@ -1,6 +1,14 @@
 <template>
-  <div class="container py-2 mx-auto">
-    <DataTable :columns="columns" :data="data"/>
+  <div>
+    <!-- Student Count & Student Invite -->
+    <div class="flex justify-center gap-4">
+      <TotalCount icon="ic:baseline-people" :count="153" label="Total Students" />
+    </div>
+
+    <!-- Student Table -->
+    <div class="container py-2 mx-auto">
+      <DataTable :columns="columns" :data="data"/>
+    </div>
   </div>
 </template>
 
