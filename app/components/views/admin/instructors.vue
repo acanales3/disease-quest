@@ -2,7 +2,7 @@
   <div>
     <!-- Instructor Count & Instructor Invite -->
     <div class="flex justify-center gap-4">
-      <TotalCount icon="mdi:teach" :count=count label="Total Instructors" />
+      <TotalCount icon="hugeicons:teacher" :count=count label="Total Instructors" />
       <InviteInstructorDialog />
     </div>
     
