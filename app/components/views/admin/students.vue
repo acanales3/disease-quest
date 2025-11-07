@@ -20,6 +20,7 @@ import { columns } from "../../StudentDatatable/columns";
 import DataTable from "../../StudentDatatable/data-table.vue";
 import { student } from "~/assets/interface/Student";
 import TotalCount from "@/components/ui/TotalCount.vue";
+import InviteStudentDialog from "@/components/InviteStudentDialog/InviteStudentDialog.vue";
 
 const data = ref<Student[]>([]);
 const count = ref<number>(0);
