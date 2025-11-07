@@ -1,15 +1,7 @@
 <script setup lang="ts">
 import LineChart from '@/components/ui/chart-line/LineChart.vue'
-import type { CaseScore } from './types'
+import type { GraphProps } from './types'
 
-// Props
-interface GraphProps {
-  data: CaseScore[]
-  index: keyof CaseScore
-  categories: (keyof CaseScore)[]
-  colors?: string[]
-  title?: string
-}
 
 const props = defineProps<GraphProps>()
 
@@ -27,11 +19,11 @@ const title = props.title ?? 'Assessment Category Score'
     :categories="props.categories"
     :colors="colors"
     showTooltip
-    showLegend
+    :showLegend="false"
     showGridLine
     showXAxis
     showYAxis
-    :xFormatter="(tick, i) => `Case ${i + 1}`"
+    :xFormatter="(tick) => `Case ${tick}`"
     :yFormatter="(tick) => `${tick}%`"
     :margin="{ top: 20, right: 20, bottom: 50, left: 50 }"
     />
