@@ -87,7 +87,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bg-white p-3 rounded-md shadow-md">
+  <div class="bg-white p-6 rounded-md shadow-md">
     <!-- Top bar: label left, search & column menu right -->
     <div class="flex items-center justify-between py-4">
       <!-- Left: label -->
