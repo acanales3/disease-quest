@@ -2,7 +2,7 @@
   <div>
     <!-- Student Count & Student Invite -->
     <div class="flex justify-center gap-4">
-      <TotalCount icon="hugeicons:studentsnp" :count=count label="Total Students" />
+      <TotalCount icon="hugeicons:students" :count=count label="Total Students" />
       <InviteStudentDialog />
     </div>
     
