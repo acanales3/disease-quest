@@ -22,6 +22,7 @@ import { student } from "~/assets/interface/Student";
 import TotalCount from "@/components/ui/TotalCount.vue";
 
 const data = ref<Student[]>([]);
+const count = ref<number>(0);
 
 async function getData(): Promise<Student[]> {
     // Fetch data from the API here.
@@ -29,7 +30,12 @@ async function getData(): Promise<Student[]> {
     return student;
 }
 
+async function getStudentCount(): Promise<number> {
+  return 153;
+}
+
 onMounted(async () => {
     data.value = await getData();
+    count.value = await getStudentCount();
 });
 </script>

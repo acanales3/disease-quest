@@ -2,7 +2,7 @@
   <div>
     <!-- Student Count & Student Invite -->
     <div class="flex justify-center gap-4">
-      <TotalCount icon="ic:baseline-people" :count="153" label="Total Students" />
+      <TotalCount icon="ic:baseline-people" :count=count label="Total Students" />
       <InviteStudentDialog />
     </div>
 
@@ -21,8 +21,8 @@ import DataTable from "../../StudentDatatable/data-table.vue";
 import { student } from "~/assets/interface/Student";
 import TotalCount from "@/components/ui/TotalCount.vue";
 
-
 const data = ref<Student[]>([]);
+const count = ref<number>(0);
 
 async function getData(): Promise<Student[]> {
     // Fetch data from the API here.
@@ -30,7 +30,12 @@ async function getData(): Promise<Student[]> {
     return student;
 }
 
+async function getStudentCount(): Promise<number> {
+  return 153;
+}
+
 onMounted(async () => {
     data.value = await getData();
+    count.value = await getStudentCount();
 });
 </script>
