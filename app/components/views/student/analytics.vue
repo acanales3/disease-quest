@@ -1,9 +1,9 @@
 <template>
-  <div>
-    <h1>Analytics</h1>
-  </div>
+    <div class="w-full">
+        <ClassroomScores />
+    </div>
 </template>
 
-<script setup>
-
+<script setup lang="ts">
+import ClassroomScores from '../../graph/ScoresByCategoryGraph.vue'
 </script>

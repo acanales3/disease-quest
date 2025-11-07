@@ -24,7 +24,7 @@
         </header>
 
         <!-- Page view -->
-        <main class="flex-1 p-6 flex items-center justify-center">
+        <main class="flex-1 p-6 flex justify-center">
           <slot /> <!-- Page content renders here -->
         </main>
       </div>
