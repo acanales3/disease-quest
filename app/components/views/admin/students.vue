@@ -3,7 +3,7 @@
     <!-- Student Count & Student Invite -->
     <div class="flex justify-center gap-4">
       <TotalCount icon="hugeicons:students" :count=count label="Total Students" />
-      <InviteStudentDialog />
+      <InviteDialog dialog-type="student" />
     </div>
     
     <!-- Student Table -->
@@ -20,7 +20,7 @@ import { columns } from "../../StudentDatatable/columns";
 import DataTable from "../../StudentDatatable/data-table.vue";
 import { student } from "~/assets/interface/Student";
 import TotalCount from "@/components/ui/TotalCount.vue";
-import InviteStudentDialog from "@/components/InviteStudentDialog/InviteStudentDialog.vue";
+import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 
 const data = ref<Student[]>([]);
 const count = ref<number>(0);

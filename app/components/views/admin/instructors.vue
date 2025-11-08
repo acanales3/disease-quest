@@ -3,7 +3,7 @@
     <!-- Instructor Count & Instructor Invite -->
     <div class="flex justify-center gap-4">
       <TotalCount icon="hugeicons:teacher" :count=count label="Total Instructors" />
-      <InviteInstructorDialog />
+      <InviteDialog dialog-type="instructor" />
     </div>
     
     <!-- Instructor Table -->
@@ -20,7 +20,7 @@ import { columns } from "../../InstructorDatatable/columns";
 import DataTable from "../../InstructorDatatable/data-table.vue";
 import { instructors } from "../../../assets/interface/Instructor";
 import TotalCount from "@/components/ui/TotalCount.vue";
-import InviteInstructorDialog from "@/components/InviteInstructorDialog/InviteInstructorDialog.vue";
+import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 
 const data = ref<Instructor[]>([]);
 const count = ref<number>(0);
