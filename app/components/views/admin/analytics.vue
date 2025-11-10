@@ -21,6 +21,11 @@ const mockData: CaseScore[] = [
   { case: 'Case 6', score: 75 },
   { case: 'Case 7', score: 95 },
   { case: 'Case 8', score: 80 },
+  { case: 'Case 9', score: 95 },
+  { case: 'Case 10', score: 80 },
+  { case: 'Case 11', score: 75 },
+  { case: 'Case 12', score: 95 },
+  { case: 'Case 13', score: 80 },
 ]
 
 const index: keyof CaseScore = 'case'
