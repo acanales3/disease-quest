@@ -62,7 +62,7 @@ const table = useVueTable({
   getPaginationRowModel: getPaginationRowModel(),
   initialState: {
     pagination: {
-      pageSize: props.rowLength, // <--- set page size here
+      pageSize: props.rowLength,
       pageIndex: 0,
     },
   },
