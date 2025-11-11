@@ -1,13 +1,13 @@
 <template>
-    <div class="container py-2 mx-auto">
-        <div class="container py-4 mx-auto">
-            <TotalCount
-                :count="data.length"
-                label="Total Classrooms"
-                icon="ic:baseline-people"
-            />
+    <div>
+        <div class="flex justify-center">
+                <TotalCount
+                    :count="data.length"
+                    label="Total Classrooms"
+                    icon="simple-icons:googleclassroom"
+                />
         </div>
-        <div>
+        <div class="container py-2 mx-auto">
             <DataTable :columns="visibleColumns" :data="data" />
         </div>
     </div>
