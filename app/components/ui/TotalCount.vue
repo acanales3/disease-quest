@@ -3,7 +3,7 @@
     <!-- Top Row -->
     <div class="flex w-full mb-2 gap-2">
       <div class="flex flex-col justify-center">
-        <Icon :name="icon" size="20" class="text-purple-500" />
+        <Icon :name="icon" size="20" class="text-[#AF67F0]" />
       </div>
       <p class="text-lg font-bold">{{ count }}</p>
     </div>

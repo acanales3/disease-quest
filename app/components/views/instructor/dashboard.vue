@@ -10,16 +10,20 @@
 
     <!-- Stats Row -->
     <div class="flex w-full justify-between items-center gap-4 my-6">
-      <TotalCount icon="ic:baseline-people" :count="26" label="Students" />
+      <TotalCount 
+        icon="hugeicons:students" 
+        :count="26" 
+        label="Students" 
+      />
 
       <TotalCount
-        icon="mingcute:pencil-ruler-line"
+        icon="simple-icons:googleclassroom"
         :count="245"
         label="Classrooms"
       />
 
       <TotalCount
-        icon="material-symbols:menu-book-outline"
+        icon="si:book-line"
         :count="4"
         label="Cases"
       />
