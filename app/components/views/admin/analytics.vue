@@ -1,14 +1,16 @@
 <template>
-  <div class="w-full">
-    <AssessmentCategoryScoreGraph
-      :data="mockData"
-      :index="index"
-      :categories="categories"
-    />
-  </div>
+    <div class="w-full">
+        <ClassroomScores class="mb-8"/>
+        <AssessmentCategoryScoreGraph
+        :data="mockData"
+        :index="index"
+        :categories="categories"
+        /> 
+    </div>
 </template>
 
 <script setup lang="ts">
+import ClassroomScores from '../../graph/ScoresByCategoryGraph.vue'
 import AssessmentCategoryScoreGraph from '@/components/AssessmentCategoryScoreGraph/graph.vue'
 import type { CaseScore } from '@/components/AssessmentCategoryScoreGraph/types'
 
@@ -31,5 +33,3 @@ const mockData: CaseScore[] = [
 const index: keyof CaseScore = 'case'
 const categories: (keyof CaseScore)[] = ['score']
 </script>
-
-
