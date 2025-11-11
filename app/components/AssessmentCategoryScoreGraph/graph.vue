@@ -6,16 +6,16 @@
 
       <!-- Right-aligned dropdowns -->
       <div class="flex gap-3">
-        <!-- Case selector -->
+        <!-- Category selector -->
         <ui-dropdown-menu>
           <ui-dropdown-menu-trigger as-child>
             <button class="px-3 py-2 bg-gray-100 rounded text-sm">
-              {{ selectedCase?.name || 'Case' }} ▾
+              {{ selectedCategory?.name || 'Category' }} ▾
             </button>
           </ui-dropdown-menu-trigger>
           <ui-dropdown-menu-content class="w-44">
-            <template v-for="c in cases" :key="c.id">
-              <ui-dropdown-menu-item @click="selectedCase = c">
+            <template v-for="c in category" :key="c.id">
+              <ui-dropdown-menu-item @click="selectedCategory = c">
                 {{ c.name }}
               </ui-dropdown-menu-item>
             </template>
@@ -52,8 +52,8 @@
         showGridLine
         showXAxis
         showYAxis
-        :xFormatter="(tick) => `Case ${tick}`"
-        :yFormatter="(tick) => `${tick}%`"
+        xLabel="Cases"
+        yLabel="Scores"
         :margin="{ top: 20, right: 20, bottom: 50, left: 50 }"
       />
     </div>
@@ -71,10 +71,14 @@ const colors = props.colors ?? ['#AF67F0']
 const title = props.title ?? 'Assessment Category Score'
 
 // Example reactive state for dropdowns
-const cases = [
-  { id: 1, name: 'Case 1' },
-  { id: 2, name: 'Case 2' },
-  { id: 3, name: 'Case 3' }
+const category = [
+  { id: 1, name: 'History Taking and Synthesis' },
+  { id: 2, name: 'Physical Exam Interpretation' },
+  { id: 3, name: 'Differential Diagnosis Formulation' },
+  { id: 4, name: 'Diagnostic Tests' },
+  { id: 5, name: 'Management Reasoning' },
+  { id: 6, name: 'Communication and Empathy' },
+  { id: 7, name: 'Reflection and Metacognition' },
 ]
 
 const classroomsList = [
@@ -83,6 +87,6 @@ const classroomsList = [
   { id: 3, name: 'Classroom 3' }
 ]
 
-const selectedCase = ref<any>(null)
+const selectedCategory = ref<any>(null)
 const selectedClassroom = ref<any>(null)
 </script>
