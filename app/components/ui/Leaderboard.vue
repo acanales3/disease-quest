@@ -6,7 +6,7 @@
       <div class="flex flex-col items-center">
         <div class="bg-white rounded-xl shadow-md px-4 py-2 w-40 text-center -mb-6">
           <p class="text-sm text-purple-500 font-semibold">2nd</p>
-          <p class="font-medium">{{ top3[1].studentName }}</p>
+          <p class="font-medium">{{ displayName(top3[1]) }}</p>
         </div>
       </div>
 
@@ -14,7 +14,7 @@
       <div class="flex flex-col items-center">
         <div class="bg-white rounded-xl shadow-md px-6 py-3 w-48 text-center">
           <p class="text-md text-purple-500 font-bold">1st</p>
-          <p class="font-semibold text-lg">{{ top3[0].studentName }}</p>
+          <p class="font-semibold text-lg">{{ displayName(top3[0]) }}</p>
         </div>
       </div>
 
@@ -22,7 +22,7 @@
       <div class="flex flex-col items-center">
         <div class="bg-white rounded-xl shadow-md px-4 py-2 w-40 text-center -mb-6">
           <p class="text-sm text-purple-500 font-semibold">3rd</p>
-          <p class="font-medium">{{ top3[2].studentName }}</p>
+          <p class="font-medium">{{ displayName(top3[2]) }}</p>
         </div>
       </div>
     </div>
@@ -94,6 +94,14 @@ function handleClassroomSelected(classroomId: number) {
   const positions = getPositions(filtered);
   data.value = positions;
   top3.value = positions.slice(0, 3);
+}
+
+function displayName(entry: LeaderboardEntry) {
+  if (props.role === 'admin') {
+    return entry.studentName;
+  } else {
+    return entry.nickname;
+  }
 }
 
 async function getData(): Promise<LeaderboardEntry[]> {
