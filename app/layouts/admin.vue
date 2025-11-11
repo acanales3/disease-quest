@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col min-h-screen p-4 bg-gray-100">
+  <div class="flex flex-col min-h-screen p-4 bg-gray-50">
     <div class="flex flex-1 gap-4">
       
       <!-- Sidebar -->
@@ -15,16 +15,16 @@
       </aside>
 
       <!-- Main: header + page view -->
-      <div class="flex flex-col flex-1 gap-4">
+      <div class="flex flex-col flex-1 gap-2">
         <!-- Header -->
-        <header class=" p-4 flex justify-end">
+        <header class="p-3 flex justify-end">
           <div class="bg-gray-200 rounded-full p-2 flex items-center justify-center">
             <Icon name="mdi-light:settings" class="text-xl" />
           </div>
         </header>
 
         <!-- Page view -->
-        <main class="flex-1 p-6 flex justify-center">
+        <main class="flex-1 px-6 pt-2 pb-6 flex justify-center">
           <slot /> <!-- Page content renders here -->
         </main>
       </div>

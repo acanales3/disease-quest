@@ -1,13 +1,13 @@
 <template>
-    <div class="container rounded-lg bg-white p-6">
-        <div class="flex items-start justify-between mb-6">
-            <h3 class="text-xl font-medium">Assessment Score by Category</h3>
+    <div class="rounded-lg bg-white p-5 shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-semibold text-gray-800">Assessment Score by Category</h2>
 
-            <div class="flex gap-3">
+            <div class="flex gap-2">
                 <!-- Case selector -->
                 <ui-dropdown-menu>
                     <ui-dropdown-menu-trigger as-child>
-                        <button class="px-3 py-2 bg-gray-100 rounded text-sm">
+                        <button class="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
                             {{ selectedCase?.name || 'Case' }} ▾
                         </button>
                     </ui-dropdown-menu-trigger>
@@ -23,7 +23,7 @@
                 <!-- Classroom selector -->
                 <ui-dropdown-menu>
                     <ui-dropdown-menu-trigger as-child>
-                        <button class="px-3 py-2 bg-gray-100 rounded text-sm">
+                        <button class="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
                             {{ selectedClassroom?.name || 'Classroom' }} ▾
                         </button>
                     </ui-dropdown-menu-trigger>
@@ -39,21 +39,21 @@
             </div>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-3">
             <template v-for="(cat, i) in categories" :key="i">
                 <div class="flex items-center gap-4">
                     <div class="flex-1">
                         <div
-                            class="w-full bg-gray-100 rounded-full h-9 relative overflow-visible"
+                            class="w-full bg-gray-50 rounded-md h-8 relative overflow-visible"
                         >
                             <div
-                                class="bg-indigo-200 h-9 rounded-full"
+                                class="bg-indigo-200 h-8 rounded-md transition-all duration-500 ease-out"
                                 :style="{ width: cat.score + '%' }"
                             ></div>
 
                             <!-- percentage pill anchored to the end of the filled area -->
                             <div
-                                class="absolute top-1/2 z-10 px-2 py-0.5 bg-white border rounded-full text-xs text-gray-700 shadow-sm"
+                                class="absolute top-1/2 z-10 px-2.5 py-0.5 bg-white border border-gray-200 rounded text-xs font-medium text-gray-700 shadow-sm"
                                 :style="{
                                     left: pillLeft(cat.score),
                                     transform: 'translate(-50%, -50%)',
@@ -64,7 +64,7 @@
                         </div>
                     </div>
 
-                    <div class="w-56 text-right text-sm text-gray-700">
+                    <div class="w-56 text-right text-xs font-medium text-gray-600">
                         {{ cat.label }}
                     </div>
                 </div>
