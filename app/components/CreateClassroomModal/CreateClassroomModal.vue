@@ -1,20 +1,24 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-definePageMeta({
-  layout: "instructor",
-});
+const props = defineProps<{
+  open: boolean;
+}>();
+
+const emit = defineEmits<{
+  'update:open': [value: boolean];
+  'created': [classroom: typeof form.value];
+}>();
 
 const STEPS = {
   FORM: "form",
@@ -23,7 +27,6 @@ const STEPS = {
 
 type Step = typeof STEPS[keyof typeof STEPS];
 
-const router = useRouter();
 const step = ref<Step>(STEPS.FORM);
 
 const form = ref({
@@ -44,7 +47,7 @@ const fields: Array<{ id: FormField; label: string; placeholder: string }> = [
   { id: "term", label: "Term", placeholder: "Fall 2025" },
 ];
 
-const cardDescription = computed(() =>
+const dialogDescription = computed(() =>
   step.value === STEPS.FORM
     ? "Enter the details of the classroom you would like to create."
     : "Review the classroom information before creating it."
@@ -66,26 +69,41 @@ function backToEdit() {
 async function createClassroom() {
   try {
     console.log("Creating classroom with data:", form.value);
-    router.push("/instructor/classrooms");
+    emit('created', form.value);
+    resetForm();
+    emit('update:open', false);
   } catch (error) {
     console.error("Failed to create classroom:", error);
   }
 }
 
 function onCancel() {
-  router.push("/instructor/classrooms");
+  resetForm();
+  emit('update:open', false);
+}
+
+function resetForm() {
+  form.value = {
+    title: "",
+    code: "",
+    section: "",
+    term: "",
+    startDate: "",
+    endDate: "",
+  };
+  step.value = STEPS.FORM;
 }
 </script>
 
 <template>
-  <div class="container mx-auto py-8 max-w-3xl">
-    <Card>
-      <CardHeader>
-        <CardTitle>Create Classroom</CardTitle>
-        <CardDescription>{{ cardDescription }}</CardDescription>
-      </CardHeader>
+  <Dialog :open="open" @update:open="(value) => emit('update:open', value)">
+    <DialogContent class="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Create Classroom</DialogTitle>
+        <DialogDescription>{{ dialogDescription }}</DialogDescription>
+      </DialogHeader>
 
-      <CardContent>
+      <div class="mt-4">
         <Transition name="fade" mode="out-in">
           <div v-if="step === STEPS.FORM" key="form" class="grid gap-6 py-4">
             <div
@@ -147,7 +165,7 @@ function onCancel() {
             <Button type="button" @click="onContinue"> Continue </Button>
           </template>
 
-          <!-- read only summary -->
+          <!-- Read only summary -->
           <template v-else>
             <Button variant="outline" type="button" @click="backToEdit">
               Back to Edit
@@ -157,9 +175,9 @@ function onCancel() {
             </Button>
           </template>
         </div>
-      </CardContent>
-    </Card>
-  </div>
+      </div>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <style scoped>
@@ -172,3 +190,4 @@ function onCancel() {
   opacity: 0;
 }
 </style>
+
