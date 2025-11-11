@@ -60,8 +60,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
     <VisXYContainer
       :margin="{ left: 20, right: 20 }"
       :data="data"
-      :style="{ width: `${Math.min($el?.parentElement?.clientWidth || 1200, Math.max(600, data.length * 50))}px`,
-         height: isMounted ? '100%' : 'auto' }"
+      :style="{ height: isMounted ? '100%' : 'auto' }"
     >
       <ChartCrosshair v-if="showTooltip" :colors="colors" :items="legendItems" :index="index" :custom-tooltip="customTooltip" />
 

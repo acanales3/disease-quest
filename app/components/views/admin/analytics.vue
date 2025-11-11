@@ -1,5 +1,5 @@
 <template>
-  <div class="p-2">
+  <div class="w-full">
     <AssessmentCategoryScoreGraph
       :data="mockData"
       :index="index"
