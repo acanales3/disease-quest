@@ -5,7 +5,7 @@
       <TotalCount
         :count="data.length"
         label="Total Classrooms"
-        icon="ic:baseline-people"
+        icon="simple-icons:googleclassroom"
       />
       
       <Button

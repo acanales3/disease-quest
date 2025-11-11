@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Num Cases & Create Case Button -->
-    <div class="flex justify-center gap-4 mb-4">
+    <div class="flex justify-center gap-4">
       <CreateCaseDialog />
     </div>
     

@@ -8,10 +8,10 @@
 
     <!-- Data Cards -->
     <div class="flex justify-between gap-4">
-      <TotalCount icon="ic:baseline-people" count="153" label="Students" />
-      <TotalCount icon="material-symbols:clinical-notes-sharp" count="10" label="Instructors" />
-      <TotalCount icon="mingcute:pencil-ruler-line" count="5" label="Classrooms" />
-      <TotalCount icon="material-symbols:menu-book-outline" count="22" label="Cases" />
+      <TotalCount icon="hugeicons:students" count="153" label="Students" />
+      <TotalCount icon="hugeicons:teacher" count="10" label="Instructors" />
+      <TotalCount icon="simple-icons:googleclassroom" count="5" label="Classrooms" />
+      <TotalCount icon="si:book-line" count="22" label="Cases" />
     </div>
   </div>
 </template>
