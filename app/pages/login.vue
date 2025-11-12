@@ -1,10 +1,11 @@
 <template>
-    <div>
-        Login Page
-    </div>
+    <views-login />
 </template>
 
 <script setup>
+definePageMeta({
+    layout: 'none'
+})
 
 </script>
 
