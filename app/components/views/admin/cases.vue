@@ -24,6 +24,7 @@ import { columns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { cases} from "~/assets/interface/Case"
 import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue";
+import TotalCount from "../../../components/ui/TotalCount.vue";
 
 const data = ref<Case[]>([]);
 

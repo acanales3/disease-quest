@@ -2,7 +2,7 @@
   <div>
     <!-- Student Count & Student Invite -->
     <div class="flex justify-center gap-4">
-      <TotalCount icon="hugeicons:students" :count=count label="Total Students" />
+      <TotalCount icon="hugeicons:students" :count="data.length" label="Total Students" />
       <InviteDialog dialog-type="student" />
     </div>
     
@@ -31,12 +31,7 @@ async function getData(): Promise<Student[]> {
     return student;
 }
 
-async function getStudentCount(): Promise<number> {
-  return 153;
-}
-
 onMounted(async () => {
     data.value = await getData();
-    count.value = await getStudentCount();
 });
 </script>
