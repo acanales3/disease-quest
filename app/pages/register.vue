@@ -1,11 +1,11 @@
 <template>
-    <div>
-        Registration Page
-
-    </div>
+    <views-register />
 </template>
 
 <script setup>
+definePageMeta({
+    layout: 'none'
+})
 
 </script>
 
