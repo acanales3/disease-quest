@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col items-center justify-center min-h-[200px] -mt-20 w-full">
+  <div class="flex flex-col items-center justify-center -mt-20 w-[90%]">
     <!-- Top 3 Podium -->
     <div v-if="top3.length > 0" class="flex items-end justify-center gap-8">
       <!-- 2nd Place -->

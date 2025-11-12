@@ -35,7 +35,7 @@ export const adminColumns: ColumnDef<LeaderboardEntry>[] = [
   {
     accessorKey: "studentName",
     header: () => h("div", { class: "text-center font-normal text-black" }, "Student Name"),
-    cell: ({ row }) => h("div", { class: "text-center text-gray-600" }, row.getValue("studentName")),
+    cell: ({ row }) => h("div", { class: "text-center font-normal text-gray-600" }, row.getValue("studentName")),
   },
   ...baseColumns.slice(1),
 ];

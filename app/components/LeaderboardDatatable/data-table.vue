@@ -81,6 +81,14 @@ const table = useVueTable({
   },
 });
 
+onMounted(() => {
+  props.columns.forEach((col) => {
+    const key = (col.id ?? col.accessorKey) as string;
+    if (col.meta?.hidden) {
+      table.getColumn(key)?.toggleVisibility(false);
+    }
+  });
+});
 </script>
 <template>
   <div class="bg-white p-6 rounded-md shadow-md">
@@ -127,7 +135,7 @@ const table = useVueTable({
             <TableHead
               v-for="header in headerGroup.headers"
               :key="header.id"
-              class="text-center font-semibold py-2 px-10"
+              class="text-center font-semibold py-1 px-4"
             >
               <FlexRender
                 v-if="!header.isPlaceholder"
@@ -146,10 +154,11 @@ const table = useVueTable({
               :data-state="row.getIsSelected() ? 'selected' : undefined"
               :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
             >
+              <!-- Table cell styling adjusted to match the design of other tables (Might need to change later)-->
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
-                class="text-center"
+                class="text-center py-[0.75rem] leading-[1.5rem] align-middle"
               >
                 <FlexRender
                   :render="cell.column.columnDef.cell"
