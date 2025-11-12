@@ -1,0 +1,259 @@
+interface LeaderboardEntry {
+  id: number;
+  studentId: number;
+  classroomId: number;
+  nickname: string;
+  score: number;
+  position?: number;
+  studentName?: string;
+}
+
+export const leaderboard: LeaderboardEntry[] = [
+  {
+    id: 0,
+    studentId: 0,
+    classroomId: 1,
+    nickname: "Place 1",
+    score: 100,
+    position: 1,
+    studentName: "Alex Johnson"
+  },
+  {
+    id: 1,
+    studentId: 1,
+    classroomId: 1,
+    nickname: "Place 2",
+    score: 90,
+    position: 2,
+    studentName: "Jamie Smith"
+  },
+  {
+    id: 2,
+    studentId: 2,
+    classroomId: 1,
+    nickname: "Place 3",
+    score: 80,
+    position: 3,
+    studentName: "Taylor Wilson"
+  },
+  {
+    id: 3,
+    studentId: 3,
+    classroomId: 1,
+    nickname: "Place 4",
+    score: 70,
+    position: 4,
+    studentName: "Casey Brown"
+  },
+  {
+    id: 4,
+    studentId: 4,
+    classroomId: 2,
+    nickname: "Place 5",
+    score: 60,
+    position: 5,
+    studentName: "Jordan Taylor"
+  },
+  {
+    id: 5,
+    studentId: 5,
+    classroomId: 2,
+    nickname: "Place 6",
+    score: 50,
+    position: 6,
+    studentName: "Morgan Martinez"
+  },
+  {
+    id: 6,
+    studentId: 6,
+    classroomId: 2,
+    nickname: "Place 7",
+    score: 40,
+    position: 7,
+    studentName: "Riley Anderson"
+  },
+  {
+    id: 7,
+    studentId: 7,
+    classroomId: 2,
+    nickname: "Place 8",
+    score: 30,
+    position: 8,
+    studentName: "Avery Thomas"
+  },
+  {
+    id: 8,
+    studentId: 8,
+    classroomId: 2,
+    nickname: "Place 9",
+    score: 20,
+    position: 9,
+    studentName: "Quinn Hernandez"
+  },
+  {
+    id: 9,
+    studentId: 9,
+    classroomId: 2,
+    nickname: "Place 10",
+    score: 10,
+    position: 10,
+    studentName: "Peyton Moore"
+  },
+  {
+    id: 10,
+    studentId: 10,
+    classroomId: 2,
+    nickname: "Place 11",
+    score: 0,
+    position: 11,
+    studentName: "Skyler Martin"
+  },
+  {
+    id: 11,
+    studentId: 11,
+    classroomId: 2,
+    nickname: "Place 12",
+    score: 0,
+    position: 11,
+    studentName: "Dakota Jackson"
+  },
+  {
+    id: 12,
+    studentId: 12,
+    classroomId: 2,
+    nickname: "Place 13",
+    score: 0,
+    position: 11,
+    studentName: "Cameron Thompson"
+  },
+  {
+    id: 13,
+    studentId: 13,
+    classroomId: 2,
+    nickname: "Place 14",
+    score: 0,
+    position: 11,
+    studentName: "Blake White"
+  },
+  {
+    id: 14,
+    studentId: 14,
+    classroomId: 1,
+    nickname: "Place 15",
+    score: 0,
+    position: 11,
+    studentName: "Hayden Lopez"
+  },
+  {
+    id: 15,
+    studentId: 15,
+    classroomId: 2,
+    nickname: "Place 16",
+    score: 0,
+    position: 11,
+    studentName: "Reese Lee"
+  },
+  {
+    id: 16,
+    studentId: 16,
+    classroomId: 2,
+    nickname: "Place 17",
+    score: 0,
+    position: 11,
+    studentName: "Spencer Gonzalez"
+  },
+  {
+    id: 17,
+    studentId: 17,
+    classroomId: 1,
+    nickname: "Place 18",
+    score: 0,
+    position: 11,
+    studentName: "Sage Harris"
+  },
+  {
+    id: 18,
+    studentId: 18,
+    classroomId: 3,
+    nickname: "Place 19",
+    score: 15,
+    position: 11,
+    studentName: "Finley Clark"
+  },  
+  {
+    id: 19,
+    studentId: 19,
+    classroomId: 3,
+    nickname: "Place 20",
+    score: 24,
+    position: 11,
+    studentName: "Rowan Lewis"
+  },        
+  {
+    id: 20,
+    studentId: 20,
+    classroomId: 3,
+    nickname: "Place 21",
+    score: 11,
+    position: 11,
+    studentName: "Elliot Robinson"
+  },  
+  {
+    id: 21,
+    studentId: 21,
+    classroomId: 3,
+    nickname: "Place 22",
+    score: 87,
+    position: 11,
+    studentName: "Charlie Walker"
+  },    
+  {
+    id: 22,
+    studentId: 22,
+    classroomId: 3,
+    nickname: "Place 23",
+    score: 40,
+    position: 11,
+    studentName: "Emerson Perez"
+  },
+  {
+    id: 23,
+    studentId: 23,
+    classroomId: 3,
+    nickname: "Place 24",
+    score: 0,
+    position: 11,
+    studentName: "Sawyer Hall"
+  }
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
