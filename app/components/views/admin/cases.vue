@@ -1,12 +1,12 @@
 <template>
-  <div>
+  <div class="flex flex-col w-full gap-6">
     <!-- Num Cases & Create Case Button -->
     <div class="flex justify-center gap-4">
       <CreateCaseDialog />
     </div>
     
     <!-- Cases Table -->
-    <div class="container py-2 mx-auto">
+    <div class="w-full py-2">
       <DataTable :columns="visibleColumns" :data="data" />
     </div>
   </div>
