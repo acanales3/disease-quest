@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full gap-6">
+  <div class="flex flex-col w-full">
     <!-- Num Cases & Create Case Button -->
     <div class="flex justify-center gap-4">
       <TotalCount
