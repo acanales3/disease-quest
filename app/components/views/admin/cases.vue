@@ -5,7 +5,7 @@
       <TotalCount
         :count="data.length"
         label="Total Cases"
-        icon="healthicons:health-worker-form"
+        icon="si:book-line"
       />
       <CreateCaseDialog />
     </div>
