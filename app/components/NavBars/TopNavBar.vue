@@ -1,11 +1,15 @@
 <template>
     <header class=" p-4 flex justify-end gap-4">
-        <div class="bg-gray-200 rounded-full p-2 flex items-center justify-center hover:bg-gray-300">
-            <Icon name="mdi-light:settings" class="text-xl" />
-        </div>
-        <div class="bg-gray-200 rounded-full p-2 flex items-center justify-center hover:bg-gray-300">
-            <Icon name="mdi:logout" class="text-xl" />
-        </div>
+        <NuxtLink to="/settings">
+            <div class="bg-gray-200 rounded-full p-2 flex items-center justify-center hover:bg-gray-300">
+                <Icon name="mdi-light:settings" class="text-xl" />
+            </div>
+        </NuxtLink>
+        <NuxtLink to="/login">
+            <div class="bg-gray-200 rounded-full p-2 flex items-center justify-center hover:bg-gray-300">
+                <Icon name="mdi:logout" class="text-xl" />
+            </div>
+        </NuxtLink>
     </header>
 
 </template>
