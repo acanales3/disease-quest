@@ -1,4 +1,4 @@
-interface LeaderboardEntry {
+export interface LeaderboardEntry {
   id: number;
   studentId: number;
   classroomId: number;
@@ -16,7 +16,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 1",
     score: 100,
     position: 1,
-    studentName: "Alex Johnson"
+    studentName: "Alex Johnson",
   },
   {
     id: 1,
@@ -25,7 +25,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 2",
     score: 90,
     position: 2,
-    studentName: "Jamie Smith"
+    studentName: "Jamie Smith",
   },
   {
     id: 2,
@@ -34,7 +34,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 3",
     score: 80,
     position: 3,
-    studentName: "Taylor Wilson"
+    studentName: "Taylor Wilson",
   },
   {
     id: 3,
@@ -43,7 +43,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 4",
     score: 70,
     position: 4,
-    studentName: "Casey Brown"
+    studentName: "Casey Brown",
   },
   {
     id: 4,
@@ -52,7 +52,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 5",
     score: 60,
     position: 5,
-    studentName: "Jordan Taylor"
+    studentName: "Jordan Taylor",
   },
   {
     id: 5,
@@ -61,7 +61,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 6",
     score: 50,
     position: 6,
-    studentName: "Morgan Martinez"
+    studentName: "Morgan Martinez",
   },
   {
     id: 6,
@@ -70,7 +70,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 7",
     score: 40,
     position: 7,
-    studentName: "Riley Anderson"
+    studentName: "Riley Anderson",
   },
   {
     id: 7,
@@ -79,7 +79,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 8",
     score: 30,
     position: 8,
-    studentName: "Avery Thomas"
+    studentName: "Avery Thomas",
   },
   {
     id: 8,
@@ -88,7 +88,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 9",
     score: 20,
     position: 9,
-    studentName: "Quinn Hernandez"
+    studentName: "Quinn Hernandez",
   },
   {
     id: 9,
@@ -97,7 +97,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 10",
     score: 10,
     position: 10,
-    studentName: "Peyton Moore"
+    studentName: "Peyton Moore",
   },
   {
     id: 10,
@@ -106,7 +106,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 11",
     score: 0,
     position: 11,
-    studentName: "Skyler Martin"
+    studentName: "Skyler Martin",
   },
   {
     id: 11,
@@ -115,7 +115,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 12",
     score: 0,
     position: 11,
-    studentName: "Dakota Jackson"
+    studentName: "Dakota Jackson",
   },
   {
     id: 12,
@@ -124,7 +124,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 13",
     score: 0,
     position: 11,
-    studentName: "Cameron Thompson"
+    studentName: "Cameron Thompson",
   },
   {
     id: 13,
@@ -133,7 +133,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 14",
     score: 0,
     position: 11,
-    studentName: "Blake White"
+    studentName: "Blake White",
   },
   {
     id: 14,
@@ -142,7 +142,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 15",
     score: 0,
     position: 11,
-    studentName: "Hayden Lopez"
+    studentName: "Hayden Lopez",
   },
   {
     id: 15,
@@ -151,7 +151,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 16",
     score: 0,
     position: 11,
-    studentName: "Reese Lee"
+    studentName: "Reese Lee",
   },
   {
     id: 16,
@@ -160,7 +160,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 17",
     score: 0,
     position: 11,
-    studentName: "Spencer Gonzalez"
+    studentName: "Spencer Gonzalez",
   },
   {
     id: 17,
@@ -169,7 +169,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 18",
     score: 0,
     position: 11,
-    studentName: "Sage Harris"
+    studentName: "Sage Harris",
   },
   {
     id: 18,
@@ -178,8 +178,8 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 19",
     score: 15,
     position: 11,
-    studentName: "Finley Clark"
-  },  
+    studentName: "Finley Clark",
+  },
   {
     id: 19,
     studentId: 19,
@@ -187,8 +187,8 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 20",
     score: 24,
     position: 11,
-    studentName: "Rowan Lewis"
-  },        
+    studentName: "Rowan Lewis",
+  },
   {
     id: 20,
     studentId: 20,
@@ -196,8 +196,8 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 21",
     score: 11,
     position: 11,
-    studentName: "Elliot Robinson"
-  },  
+    studentName: "Elliot Robinson",
+  },
   {
     id: 21,
     studentId: 21,
@@ -205,8 +205,8 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 22",
     score: 87,
     position: 11,
-    studentName: "Charlie Walker"
-  },    
+    studentName: "Charlie Walker",
+  },
   {
     id: 22,
     studentId: 22,
@@ -214,7 +214,7 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 23",
     score: 40,
     position: 11,
-    studentName: "Emerson Perez"
+    studentName: "Emerson Perez",
   },
   {
     id: 23,
@@ -223,37 +223,6 @@ export const leaderboard: LeaderboardEntry[] = [
     nickname: "Place 24",
     score: 0,
     position: 11,
-    studentName: "Sawyer Hall"
-  }
-]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    studentName: "Sawyer Hall",
+  },
+];

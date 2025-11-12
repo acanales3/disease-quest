@@ -113,12 +113,12 @@ onMounted(() => {
           >
             <DropdownMenuItem
               v-for="classroom in classrooms"
-              :key="classroom.id" 
+              :key="classroom.id"
               class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-              @click="emit('classroom-selected', classroom.id)" 
+              @click="emit('classroom-selected', classroom.id)"
             >
-              {{ classroom.name }}              
-            </DropdownMenuItem> 
+              {{ classroom.name }}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -158,7 +158,7 @@ onMounted(() => {
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
-                class="text-center py-[0.75rem] leading-[1.5rem] align-middle"
+                class="text-center py-3 leading-6 align-middle"
               >
                 <FlexRender
                   :render="cell.column.columnDef.cell"
