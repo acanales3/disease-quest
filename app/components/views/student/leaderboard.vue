@@ -1,9 +1,7 @@
 <template>
-  <div>
-    <h1>Leaderboard</h1>
-  </div>
+  <Leaderboard role="student" />
 </template>
 
 <script setup>
-
+import Leaderboard from '@/components/ui/Leaderboard.vue';
 </script>
