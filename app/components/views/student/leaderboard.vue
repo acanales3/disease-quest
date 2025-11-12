@@ -1,5 +1,7 @@
 <template>
-  <div class="flex flex-col items-center justify-center -mt-20 w-[90%]">
+  <div
+    class="flex flex-col items-center justify-center w-[90%] mx-auto space-y-8"
+  >
     <!-- Top 3 Podium -->
     <div v-if="top3.length > 0" class="flex items-end justify-center gap-8">
       <!-- 2nd Place -->
@@ -45,55 +47,40 @@
 
 <script setup lang="ts">
 import type { LeaderboardEntry } from "@/components/LeaderboardDatatable/columns";
-import { onMounted, ref } from "vue";
-import {
-  baseColumns,
-  adminColumns,
-} from "@/components/LeaderboardDatatable/columns";
+import { onMounted, ref, computed } from "vue";
+import { baseColumns } from "@/components/LeaderboardDatatable/columns";
 import DataTable from "@/components/LeaderboardDatatable/data-table.vue";
 import { leaderboard } from "~/assets/interface/Leaderboard";
 
 const props = defineProps<{ role: "admin" | "student" | "instructor" }>();
 
-const allData = ref<LeaderboardEntry[]>([]); // all data retrieved from api
-const data = ref<LeaderboardEntry[]>([]); // current displayed data
+const allData = ref<LeaderboardEntry[]>([]);
+const data = ref<LeaderboardEntry[]>([]);
 const top3 = ref<LeaderboardEntry[]>([]);
 
-const columns = computed(() => {
-  if (props.role === "admin") {
-    return adminColumns;
-  } else {
-    return baseColumns;
-  }
-});
-
-/*
-If Admin - show all classrooms
-If Student or Instructor - show classrooms user is in
-*/
 const classrooms = ref([
   { id: 1, name: "Classroom 1" },
   { id: 2, name: "Classroom 2" },
   { id: 3, name: "Classroom 3" },
 ]);
 
+const columns = computed(() => baseColumns);
+
 function getPositions(entries: LeaderboardEntry[]): LeaderboardEntry[] {
-  // sort by score descending
-  const sortedEntries = [...entries].sort((a, b) => b.score - a.score);
-
+  const sorted = [...entries].sort((a, b) => b.score - a.score);
   let rank = 1;
-  let previousScore = sortedEntries[0]?.score ?? 0;
+  let previousScore = sorted[0]?.score ?? 0;
 
-  return sortedEntries.map((entry, index) => {
+  return sorted.map((entry, index) => {
     if (index === 0) {
       entry.position = rank;
     } else {
       if (entry.score === previousScore) {
-        entry.position = rank; // same rank as previous entry
+        entry.position = rank;
       } else {
         rank = index + 1;
         entry.position = rank;
-        previousScore = entry.score; // update previous score for next comparison
+        previousScore = entry.score;
       }
     }
     return entry;
@@ -103,23 +90,17 @@ function getPositions(entries: LeaderboardEntry[]): LeaderboardEntry[] {
 function handleClassroomSelected(classroomId: number) {
   const filtered = allData.value.filter(
     (entry) => entry.classroomId === classroomId
-  ); // filter by classrooms so we can separate leaderboard entries and sort them
+  );
   const positions = getPositions(filtered);
   data.value = positions;
   top3.value = positions.slice(0, 3);
 }
 
 function displayName(entry: LeaderboardEntry) {
-  if (props.role === "admin") {
-    return entry.studentName;
-  } else {
-    return entry.nickname;
-  }
+  return entry.nickname;
 }
 
 async function getData(): Promise<LeaderboardEntry[]> {
-  // Fetch data from the API here.
-  // For now, we will use the mock leaderboard data from the interface.
   return leaderboard;
 }
 
