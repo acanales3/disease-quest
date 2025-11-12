@@ -1,4 +1,3 @@
-<!-- pages/index.vue -->
 <template>
   <views-student-analytics />
 </template>
