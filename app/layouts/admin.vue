@@ -1,3 +1,8 @@
+<script setup lang="ts">
+import TopNavBar from '~/components/NavBars/TopNavBar.vue';
+
+</script>
+
 <template>
   <div class="flex flex-col min-h-screen p-4 bg-gray-100">
     <div class="flex flex-1 gap-4">
@@ -17,11 +22,7 @@
       <!-- Main: header + page view -->
       <div class="flex flex-col flex-1 gap-4">
         <!-- Header -->
-        <header class=" p-4 flex justify-end">
-          <div class="bg-gray-200 rounded-full p-2 flex items-center justify-center">
-            <Icon name="mdi-light:settings" class="text-xl" />
-          </div>
-        </header>
+        <TopNavBar />
 
         <!-- Page view -->
         <main class="flex-1 p-6 flex justify-center">
