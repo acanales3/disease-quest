@@ -1,4 +1,3 @@
-<!-- pages/index.vue -->
 <template>
   <views-instructor-cases />
 </template>
