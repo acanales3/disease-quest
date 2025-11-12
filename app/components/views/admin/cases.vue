@@ -2,6 +2,11 @@
   <div class="flex flex-col w-full gap-6">
     <!-- Num Cases & Create Case Button -->
     <div class="flex justify-center gap-4">
+      <TotalCount
+        :count="data.length"
+        label="Total Cases"
+        icon="healthicons:health-worker-form"
+      />
       <CreateCaseDialog />
     </div>
     
