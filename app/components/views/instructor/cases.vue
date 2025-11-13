@@ -3,30 +3,33 @@
     <!-- Num Cases & Create Case Button -->
     <div class="flex justify-center gap-4">
       <TotalCount
-        :count="data.length"
+        :count="casesData.length"
         label="Total Cases"
         icon="si:book-line"
       />
-      <AssignCaseDialog  />
+      <AssignCaseDialog :cases="casesData" :classrooms="classroomsData" />
     </div>
     
     <!-- Cases Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable :columns="visibleColumns" :data="casesData" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
+import type { Classroom } from "~/assets/interface/Classroom";
 import { onMounted, ref, computed } from "vue";
 import { columns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { cases} from "~/assets/interface/Case"
+import { classrooms } from "~/assets/interface/Classroom"
 import TotalCount from "~/components/ui/TotalCount.vue";
 import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue";
 
-const data = ref<Case[]>([]);
+const casesData = ref<Case[]>([]);
+const classroomsData = ref<Classroom[]>([]);
 
 const visibleColumns = computed(() => {
   const columnsToShow = ['id', 'name', 'description', 'actions'];
@@ -36,12 +39,12 @@ const visibleColumns = computed(() => {
   });
 });
 
-async function getData(): Promise<Case[]> {
+async function getData(): Promise<[Case[], Classroom[]]> {
   // Fetch data from your API here.
-  return cases;
+  return [cases, classrooms];
 }
 
 onMounted(async () => {
-  data.value = await getData();
+  [casesData.value, classroomsData.value] = await getData();
 });
 </script>

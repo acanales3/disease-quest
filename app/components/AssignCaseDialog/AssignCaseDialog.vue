@@ -9,10 +9,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Icon } from "#components"
+import type { Case } from "~/assets/interface/Case"
+import type { Classroom } from "~/assets/interface/Classroom"
+import { ref } from "vue"
+import DataComboBox from "~/components/DataComboBox/DataComboBox.vue"
 
+
+const props = defineProps<{
+  cases: Case[]
+  classrooms: Classroom[]
+}>()
 
 const isOpen = ref(false);
 
@@ -41,7 +49,20 @@ const onOpenChange = (open: boolean) => {
           Select the case and classroom(s) from the dropdowns below.
         </DialogDescription>
       </DialogHeader>
-      
+      <div class="grid gap-4 py-4">
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label for="case" class="text-right">
+            Case
+          </Label>
+          <DataComboBox label="Case" :data="props.cases" />
+        </div>
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label for="classroom" class="text-right">
+            Classroom
+          </Label>
+         <DataComboBox label="Classroom" :data="props.classrooms" />
+        </div>
+      </div>
       <DialogFooter>
         <Button type="submit">
           Assign Case
