@@ -101,20 +101,6 @@
           </select>
         </div>
 
-        <!-- Classroom Code (Optional) -->
-        <div v-if="formData.role === 'student'">
-          <label for="classroomCode" class="block text-sm font-medium text-white">Classroom Code (Optional)</label>
-          <input 
-            v-model="formData.classroomCode"
-            type="text" 
-            id="classroomCode" 
-            name="classroomCode" 
-            placeholder="Enter classroom code to join"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
-          >
-          <p class="text-xs text-white mt-1">You can join a classroom later if you don't have a code yet.</p>
-        </div>
-
         <!-- Password -->
         <div>
           <label for="password" class="block text-sm font-medium text-white">Password</label>
