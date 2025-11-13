@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col w-full">
     
-    <div class="flex justify-center">
+    <div class="flex justify-center gap-4">
       <TotalCount
         :count="data.length"
         label="Total Classrooms"
