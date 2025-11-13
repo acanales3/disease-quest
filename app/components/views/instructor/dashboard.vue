@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full max-w-7xl mx-auto px-4">
+  <div class="flex flex-col justify-start w-full gap-4">
     <!-- Greeting Card -->
     <div
       class="rounded-lg text-center flex flex-col items-center justify-center w-full bg-white shadow-sm py-6"
