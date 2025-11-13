@@ -2,411 +2,106 @@ export interface Case {
   id: number;
   name: string;
   description: string;
-  classroom: number;
+  classroom: string;
   completionDate: string;
   status: "not started" | "in progress" | "completed";
-  // action column still needed
 }
 
 export const cases: Case[] = [
   { 
-    id: 0, 
-    name: "Case 1", 
-    description: "Description for Case 1", 
-    classroom: 1, 
-    completionDate: "N/A",
-    status: "not started" 
-  },
-  { 
     id: 1, 
-    name: "Case 2", 
-    description: "Description for Case 2", 
-    classroom: 2, 
-    completionDate: "N/A", 
+    name: "Read Chapter1-3", 
+    description: "Complete reading assignment for chapters 1-3", 
+    classroom: "English", 
+    completionDate: "12 May 2024",
     status: "in progress" 
   },
   { 
     id: 2, 
-    name: "Case 3", 
-    description: "Description for Case 3", 
-    classroom: 3, 
-    completionDate: "2023-01-15", 
-    status: "completed" 
+    name: "Complete Problem Set #5", 
+    description: "Solve all problems in mathematics problem set 5", 
+    classroom: "Maths", 
+    completionDate: "12 May 2024", 
+    status: "not started" 
   },
   { 
     id: 3, 
-    name: "Case 3", 
-    description: "Description for Case 3", 
-    classroom: 2, 
-    completionDate: "N/A", 
+    name: "Write Lab Report on Acid-Base Titration", 
+    description: "Document findings from chemistry lab experiment", 
+    classroom: "Physics", 
+    completionDate: "12 May 2024", 
     status: "in progress" 
   },
   { 
     id: 4, 
-    name: "Case 4", 
-    description: "Description for Case 4", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
+    name: "Prepare for Oral Presentation", 
+    description: "Prepare slides and practice for chemistry presentation", 
+    classroom: "Chemistry", 
+    completionDate: "12 May 2024", 
+    status: "in progress" 
   },
   { 
     id: 5, 
-    name: "Case 5", 
-    description: "Description for Case 5", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
+    name: "Create Art Piece for Final Project", 
+    description: "Complete final art project submission", 
+    classroom: "English", 
+    completionDate: "12 May 2024", 
+    status: "completed" 
   },
   { 
     id: 6, 
-    name: "Case 6", 
-    description: "Description for Case 6", 
-    classroom: 3, 
-    completionDate: "2023-01-25", 
-    status: "completed" 
-  },
-  { 
-    id: 7, 
-    name: "Case 7", 
-    description: "Description for Case 7", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 8, 
-    name: "Case 8", 
-    description: "Description for Case 8", 
-    classroom: 2, 
-    completionDate: "N/A", 
+    name: "Write Research Paper on Climate Change", 
+    description: "Research and write comprehensive paper on climate change", 
+    classroom: "EVS", 
+    completionDate: "12 May 2024", 
     status: "in progress" 
   },
   { 
-    id: 9, 
-    name: "Case 9", 
-    description: "Description for Case 9", 
-    classroom: 3, 
-    completionDate: "2023-02-05", 
+    id: 7, 
+    name: "Complete Math Quiz on Algebra", 
+    description: "Take online quiz covering algebra concepts", 
+    classroom: "Math", 
+    completionDate: "12 May 2024", 
     status: "completed" 
   },
   { 
+    id: 8, 
+    name: "Prepare for History Class Debate", 
+    description: "Research and prepare arguments for history debate", 
+    classroom: "History", 
+    completionDate: "12 May 2024", 
+    status: "not started" 
+  },
+  { 
+    id: 9, 
+    name: "Submit Final Design for Architecture Project", 
+    description: "Complete and submit final architectural design", 
+    classroom: "Architecture", 
+    completionDate: "12 May 2024", 
+    status: "in progress" 
+  },
+  { 
     id: 10, 
-    name: "Case 10", 
-    description: "Description for Case 10", 
-    classroom: 1, 
-    completionDate: "N/A", 
+    name: "Study for Biology Exam", 
+    description: "Review all chapters for upcoming biology examination", 
+    classroom: "Biology", 
+    completionDate: "15 May 2024", 
     status: "not started" 
   },
   { 
     id: 11, 
-    name: "Case 11", 
-    description: "Description for Case 11", 
-    classroom: 2, 
-    completionDate: "N/A", 
+    name: "Complete Programming Assignment", 
+    description: "Finish coding assignment for computer science class", 
+    classroom: "Computer Science", 
+    completionDate: "18 May 2024", 
     status: "in progress" 
   },
   { 
     id: 12, 
-    name: "Case 12", 
-    description: "Description for Case 12", 
-    classroom: 3, 
-    completionDate: "2023-02-15", 
+    name: "Write Essay on Shakespeare", 
+    description: "Analytical essay on Shakespeare's works", 
+    classroom: "English", 
+    completionDate: "20 May 2024", 
     status: "completed" 
-  },
-  { 
-    id: 13, 
-    name: "Case 13", 
-    description: "Description for Case 13", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 14, 
-    name: "Case 14", 
-    description: "Description for Case 14", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 15, 
-    name: "Case 15", 
-    description: "Description for Case 15", 
-    classroom: 3, 
-    completionDate: "2023-02-25", 
-    status: "completed" 
-  },
-  { 
-    id: 16, 
-    name: "Case 16", 
-    description: "Description for Case 16", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 17, 
-    name: "Case 17", 
-    description: "Description for Case 17", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 18, 
-    name: "Case 18", 
-    description: "Description for Case 18", 
-    classroom: 3, 
-    completionDate: "2023-03-07", 
-    status: "completed" 
-  },
-  { 
-    id: 19, 
-    name: "Case 19", 
-    description: "Description for Case 19", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 20, 
-    name: "Case 20", 
-    description: "Description for Case 20", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 21, 
-    name: "Case 21", 
-    description: "Description for Case 21", 
-    classroom: 3, 
-    completionDate: "2023-03-17", 
-    status: "completed" 
-  },
-  { 
-    id: 22, 
-    name: "Case 22", 
-    description: "Description for Case 22", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 23, 
-    name: "Case 23", 
-    description: "Description for Case 23", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 24, 
-    name: "Case 24", 
-    description: "Description for Case 24", 
-    classroom: 3, 
-    completionDate: "2023-03-27", 
-    status: "completed" 
-  },
-  { 
-    id: 25, 
-    name: "Case 25", 
-    description: "Description for Case 25", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 26, 
-    name: "Case 26", 
-    description: "Description for Case 26", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 27, 
-    name: "Case 27", 
-    description: "Description for Case 27", 
-    classroom: 3, 
-    completionDate: "2023-04-06", 
-    status: "completed" 
-  },
-  { 
-    id: 28, 
-    name: "Case 28", 
-    description: "Description for Case 28", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 29, 
-    name: "Case 29", 
-    description: "Description for Case 29", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 30, 
-    name: "Case 30", 
-    description: "Description for Case 30", 
-    classroom: 3, 
-    completionDate: "2023-04-16", 
-    status: "completed" 
-  },
-  { 
-    id: 31, 
-    name: "Case 31", 
-    description: "Description for Case 31", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 32, 
-    name: "Case 32", 
-    description: "Description for Case 32", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 33, 
-    name: "Case 33", 
-    description: "Description for Case 33", 
-    classroom: 3, 
-    completionDate: "2023-04-26", 
-    status: "completed" 
-  },
-  { 
-    id: 34, 
-    name: "Case 34", 
-    description: "Description for Case 34", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 35, 
-    name: "Case 35", 
-    description: "Description for Case 35", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 36, 
-    name: "Case 36", 
-    description: "Description for Case 36", 
-    classroom: 3, 
-    completionDate: "2023-05-06", 
-    status: "completed" 
-  },
-  { 
-    id: 37, 
-    name: "Case 37", 
-    description: "Description for Case 37", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 38, 
-    name: "Case 38", 
-    description: "Description for Case 38", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 39, 
-    name: "Case 39", 
-    description: "Description for Case 39", 
-    classroom: 3, 
-    completionDate: "2023-05-16", 
-    status: "completed" 
-  },
-  { 
-    id: 40, 
-    name: "Case 40", 
-    description: "Description for Case 40", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 41, 
-    name: "Case 41", 
-    description: "Description for Case 41", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 42, 
-    name: "Case 42", 
-    description: "Description for Case 42", 
-    classroom: 3, 
-    completionDate: "2023-05-26", 
-    status: "completed" 
-  },
-  { 
-    id: 43, 
-    name: "Case 43", 
-    description: "Description for Case 43", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 44, 
-    name: "Case 44", 
-    description: "Description for Case 44", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 45, 
-    name: "Case 45", 
-    description: "Description for Case 45", 
-    classroom: 3, 
-    completionDate: "2023-06-05", 
-    status: "completed" 
-  },
-  { 
-    id: 46, 
-    name: "Case 46", 
-    description: "Description for Case 46", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
-  },
-  { 
-    id: 47, 
-    name: "Case 47", 
-    description: "Description for Case 47", 
-    classroom: 2, 
-    completionDate: "N/A", 
-    status: "in progress" 
-  },
-  { 
-    id: 48, 
-    name: "Case 48", 
-    description: "Description for Case 48", 
-    classroom: 3, 
-    completionDate: "2023-06-15", 
-    status: "completed" 
-  },
-  { 
-    id: 49, 
-    name: "Case 49", 
-    description: "Description for Case 49", 
-    classroom: 1, 
-    completionDate: "N/A", 
-    status: "not started" 
   },
 ];

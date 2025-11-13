@@ -11,6 +11,9 @@ export default defineNuxtConfig({
   },
 
   modules: ["shadcn-nuxt", "@nuxt/icon", "@nuxtjs/supabase"],
+  supabase: {
+    redirect: false,
+  },
   shadcn: {
     /**
      * Prefix for all the imported component
@@ -21,9 +24,5 @@ export default defineNuxtConfig({
      * @default ".app/components/ui"
      */
     componentDir: "./components/ui",
-  },
-  // This is the important part
-  supabase: {
-    redirect: false,
   },
 });
