@@ -7,7 +7,7 @@
         label="Total Cases"
         icon="si:book-line"
       />
-      <CreateCaseDialog />
+      <AssignCaseDialog  />
     </div>
     
     <!-- Cases Table -->
@@ -24,7 +24,7 @@ import { columns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { cases} from "~/assets/interface/Case"
 import TotalCount from "~/components/ui/TotalCount.vue";
-import CreateCaseDialog from "~/components/CreateCaseDialog/CreateCaseDialog.vue";
+import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue";
 
 const data = ref<Case[]>([]);
 
