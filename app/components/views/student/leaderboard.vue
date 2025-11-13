@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import type { LeaderboardEntry } from "@/components/LeaderboardDatatable/columns";
+import type { LeaderboardEntry } from "~/assets/interface/Leaderboard";
 import { onMounted, ref, computed } from "vue";
 import { baseColumns } from "@/components/LeaderboardDatatable/columns";
 import DataTable from "@/components/LeaderboardDatatable/data-table.vue";
@@ -96,8 +96,8 @@ function handleClassroomSelected(classroomId: number) {
   top3.value = positions.slice(0, 3);
 }
 
-function displayName(entry: LeaderboardEntry) {
-  return entry.nickname;
+function displayName(entry?: LeaderboardEntry) {
+  return entry?.nickname ?? "-";
 }
 
 async function getData(): Promise<LeaderboardEntry[]> {
@@ -106,6 +106,9 @@ async function getData(): Promise<LeaderboardEntry[]> {
 
 onMounted(async () => {
   allData.value = await getData();
-  handleClassroomSelected(classrooms.value[0].id);
+  const firstClassroom = classrooms.value[0];
+  if (firstClassroom) {
+    handleClassroomSelected(firstClassroom.id);
+  }
 });
 </script>

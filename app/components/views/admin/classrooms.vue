@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex flex-col w-full">
     
     <div class="flex justify-center gap-4">
       <TotalCount
@@ -20,7 +20,7 @@
       </Button>
     </div>
 
-    <div class="container py-2 mx-auto">
+    <div class="w-full py-2">
       <DataTable :columns="columns" :data="data" />
     </div>
 

@@ -97,7 +97,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md">
+  <div class="bg-white p-6 rounded-md shadow-md w-full">
     <!-- Top bar: label left, search & column menu right -->
     <div class="flex items-center justify-between py-4">
       <!-- Left: label -->
@@ -150,7 +150,7 @@ onMounted(() => {
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md">
+    <div class="border rounded-md overflow-x-auto">
       <Table class="w-full text-center font-normal text-gray-500">
         <TableHeader class="bg-blue-50">
           <TableRow
