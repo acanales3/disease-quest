@@ -2,16 +2,18 @@
     <div class="w-full max-w-7xl mx-auto px-4">
         <!-- Greeting Card -->
         <div
-            class="rounded-lg flex flex-col items-start justify-center w-1/2 bg-white shadow-sm py-6 px-6 mb-6"
+            class="rounded-lg flex flex-col items-center text-center justify-center w-full bg-white shadow-sm py-6 px-6 mb-6"
         >
             <h1 class="text-2xl font-bold text-gray-800">
                 Hey {{ user.name }}!
             </h1>
-            <p class="text-sm text-gray-500 mt-2">{{ greeting }}</p>
+            <p class="text-sm text-gray-500 mt-2">
+                Welcome back to DiseaseQuest!
+            </p>
         </div>
 
-        <!-- Stats Row (2x2 grid) -->
-        <div class="grid w-1/2 grid-cols-2 gap-2 my-6 auto-rows-max">
+        <!-- Stats Row -->
+        <div class="flex w-full justify-between items-center gap-4 my-6">
             <TotalCount
                 icon="mdi:check-circle"
                 count="80%"
@@ -35,10 +37,7 @@
 
         <!-- Attempted Cases Table -->
         <div class="mt-8">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4">
-                Attempted Cases
-            </h2>
-            <DataTable :columns="columns" :data="caseData" />
+            <DataTable :columns="columns" :data="caseData" :row-length="5" />
         </div>
     </div>
 </template>
@@ -54,9 +53,6 @@ import { onMounted, ref } from 'vue'
 const user = {
     name: 'Alex',
 }
-
-const greeting =
-    "Welcome back! We're here to support you on your learning journey. Dive into your classes and keep progressing towards your goals"
 
 // Sample data for attempted cases
 const sampleCases: Case[] = [
