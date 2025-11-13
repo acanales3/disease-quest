@@ -27,17 +27,31 @@
           </select>
         </div>
 
-        <!-- Full Name -->
+        <!-- First Name -->
         <div>
-          <label for="name" class="block text-sm font-medium text-white">Full Name</label>
+          <label for="firstName" class="block text-sm font-medium text-white">First Name</label>
           <input 
-            v-model="formData.name"
+            v-model="formData.firstName"
             type="text" 
-            id="name" 
-            name="name" 
+            id="firstName" 
+            name="firstName" 
             required 
-            placeholder="John Doe"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            placeholder="John"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
+          >
+        </div>
+
+        <!-- Last Name -->
+        <div>
+          <label for="lastName" class="block text-sm font-medium text-white">Last Name</label>
+          <input 
+            v-model="formData.lastName"
+            type="text" 
+            id="lastName" 
+            name="lastName" 
+            required 
+            placeholder="Doe"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
         </div>
 
@@ -51,21 +65,7 @@
             name="email" 
             required 
             placeholder="john.doe@university.edu"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
-          >
-        </div>
-
-        <!-- Username -->
-        <div>
-          <label for="username" class="block text-sm font-medium text-white">Username</label>
-          <input 
-            v-model="formData.username"
-            type="text" 
-            id="username" 
-            name="username" 
-            required 
-            placeholder="johndoe"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
         </div>
 
@@ -79,7 +79,7 @@
             name="school" 
             required 
             placeholder="Texas Christian University"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
         </div>
 
@@ -112,7 +112,7 @@
             required 
             placeholder="••••••••"
             minlength="8"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
           <p class="text-xs text-white mt-1">Minimum 8 characters</p>
         </div>
@@ -128,7 +128,7 @@
             required 
             placeholder="••••••••"
             minlength="8"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
         </div>
 
@@ -165,9 +165,9 @@ import { ref, reactive } from 'vue';
 
 const formData = reactive({
   role: '',
-  name: '',
+  firstName: '',
+  lastName: '',
   email: '',
-  username: '',
   school: '',
   msyear: '',
   classroomCode: '',
@@ -203,9 +203,9 @@ const handleSubmit = async () => {
     // TODO: Implement actual registration logic with Supabase Auth
     console.log('Registration data:', {
       role: formData.role,
-      name: formData.name,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       email: formData.email,
-      username: formData.username,
       school: formData.school,
       msyear: formData.role === 'student' ? parseInt(formData.msyear) : null,
       classroomCode: formData.classroomCode || null
