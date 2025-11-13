@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     plugins: [tailwindcss()],
   },
 
-  modules: ["shadcn-nuxt", "@nuxt/icon"],
+  modules: ["shadcn-nuxt", "@nuxt/icon", "@nuxtjs/supabase"],
   shadcn: {
     /**
      * Prefix for all the imported component
@@ -21,5 +21,9 @@ export default defineNuxtConfig({
      * @default ".app/components/ui"
      */
     componentDir: "./components/ui",
+  },
+  // This is the important part
+  supabase: {
+    redirect: false,
   },
 });

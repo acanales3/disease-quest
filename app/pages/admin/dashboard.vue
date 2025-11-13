@@ -1,4 +1,3 @@
-<!-- pages/index.vue -->
 <template>
   <views-admin-dashboard />
 </template>

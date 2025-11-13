@@ -78,14 +78,14 @@ const table = useVueTable({
 
 </script>
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md">
+  <div class="bg-white p-6 rounded-md shadow-md w-full">
     <!-- Top bar: label left, search & column menu right -->
-    <div class="flex items-center justify-between py-4">
+    <div class="flex flex-wrap items-center justify-between gap-4 py-4">
       <!-- Left: label -->
       <div class="text-md font-light text-black">All Cases List</div>
 
       <!-- Right: search input + dropdowns -->
-      <div class="flex items-center space-x-4">
+      <div class="flex flex-wrap items-center gap-4">
         <div
           class="flex items-center justify-center w-8 h-8 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
         >
@@ -131,7 +131,7 @@ const table = useVueTable({
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md">
+    <div class="border rounded-md overflow-x-auto">
       <Table class="w-full text-center font-normal text-gray-500">
         <TableHeader class="bg-blue-50">
           <TableRow

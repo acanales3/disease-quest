@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@nuxt/icon": "^2.1.0",
+    "@nuxtjs/supabase": "^2.0.1",
     "@tailwindcss/vite": "^4.1.16",
     "@tanstack/vue-table": "^8.21.3",
     "@unovis/ts": "^1.6.1",
