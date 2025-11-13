@@ -88,8 +88,8 @@ const table = useVueTable({
 
 onMounted(() => {
   props.columns.forEach((col) => {
-    const key = (col.id ?? col.accessorKey) as string;
-    if (col.meta?.hidden) {
+    const key = (col.id ?? (col as any).accessorKey) as string;
+    if ((col as any).meta?.hidden) {
       table.getColumn(key)?.toggleVisibility(false);
     }
   });

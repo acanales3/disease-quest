@@ -61,7 +61,8 @@ const visibleColumns = computed(() => {
       ...col,
       meta: {
         ...col.meta,
-        hidden: !columnsToShow.includes(col.accessorKey as string),
+        hidden: !columnsToShow.includes(
+          (col as any).accessorKey as string),
       },
     };
   });
