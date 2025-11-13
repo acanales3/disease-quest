@@ -1,12 +1,17 @@
 <template>
-  <div>
+  <div class="flex flex-col w-full">
     <!-- Num Cases & Create Case Button -->
     <div class="flex justify-center gap-4">
+      <TotalCount
+        :count="data.length"
+        label="Total Cases"
+        icon="si:book-line"
+      />
       <CreateCaseDialog />
     </div>
     
     <!-- Cases Table -->
-    <div class="container py-2 mx-auto">
+    <div class="w-full py-2">
       <DataTable :columns="visibleColumns" :data="data" />
     </div>
   </div>
@@ -19,6 +24,7 @@ import { columns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { cases} from "~/assets/interface/Case"
 import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue";
+import TotalCount from "../../../components/ui/TotalCount.vue";
 
 const data = ref<Case[]>([]);
 
