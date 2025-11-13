@@ -78,62 +78,32 @@ const table = useVueTable({
 
 </script>
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md w-full">
-    <!-- Top bar: label left, search & column menu right -->
+  <div class="bg-white p-6 rounded-md w-full">
+    <!-- Top bar: label left, search right -->
     <div class="flex flex-wrap items-center justify-between gap-4 py-4">
       <!-- Left: label -->
-      <div class="text-md font-light text-black">All Cases List</div>
+      <div class="text-lg font-semibold text-gray-900">Attempted Cases</div>
 
-      <!-- Right: search input + dropdowns -->
-      <div class="flex flex-wrap items-center gap-4">
+      <!-- Right: search input -->
+      <div class="flex flex-wrap items-center gap-3">
         <div
-          class="flex items-center justify-center w-8 h-8 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
+          class="flex items-center justify-center w-10 h-10 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
         >
-          <Icon name="lets-icons:filter" />
+          <Icon name="lets-icons:filter" class="text-gray-600" />
         </div>
         <Input
-          class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
-          placeholder="Search by Classroom"
+          class="max-w-sm bg-gray-50 text-gray-700 placeholder-gray-400 border border-gray-200 rounded-lg px-4 py-2 w-64 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Search by Subject"
           :model-value="table.getColumn('classroom')?.getFilterValue() as string"
           @update:model-value="table.getColumn('classroom')?.setFilterValue($event)"
         />
-
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button
-              class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
-            >
-              All Classes
-              <ChevronDown class="w-4 h-4 ml-2" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            class="bg-white rounded-md shadow-md flex flex-col"
-          >
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 0
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 1
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 2
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md overflow-x-auto">
-      <Table class="w-full text-center font-normal text-gray-500">
-        <TableHeader class="bg-blue-50">
+    <div class="border border-gray-200 rounded-lg overflow-hidden">
+      <Table class="w-full text-center font-normal text-gray-600">
+        <TableHeader class="bg-gray-50 border-b border-gray-200">
           <TableRow
             v-for="headerGroup in table.getHeaderGroups()"
             :key="headerGroup.id"
@@ -141,7 +111,7 @@ const table = useVueTable({
             <TableHead
               v-for="header in headerGroup.headers"
               :key="header.id"
-              class="text-center font-semibold py-2 px-10"
+              class="text-center font-semibold text-gray-700 py-3 px-6"
             >
               <FlexRender
                 v-if="!header.isPlaceholder"
@@ -158,12 +128,13 @@ const table = useVueTable({
               v-for="(row, idx) in table.getRowModel().rows"
               :key="row.id"
               :data-state="row.getIsSelected() ? 'selected' : undefined"
-              :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
+              :class="idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
+              class="border-b border-gray-100 hover:bg-gray-100 transition-colors"
             >
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
-                class="text-center"
+                class="text-center py-4 px-6"
               >
                 <FlexRender
                   :render="cell.column.columnDef.cell"
@@ -175,7 +146,7 @@ const table = useVueTable({
 
           <template v-else>
             <TableRow>
-              <TableCell :colspan="columns.length" class="h-24 text-center">
+              <TableCell :colspan="columns.length" class="h-24 text-center text-gray-500">
                 No results.
               </TableCell>
             </TableRow>
@@ -185,23 +156,30 @@ const table = useVueTable({
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-end py-4 space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="!table.getCanPreviousPage()"
-        @click="table.previousPage()"
-      >
-        Previous
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="!table.getCanNextPage()"
-        @click="table.nextPage()"
-      >
-        Next
-      </Button>
+    <div class="flex items-center justify-between py-4">
+      <div class="text-sm text-gray-500">
+        Page {{ table.getState().pagination.pageIndex + 1 }} of {{ table.getPageCount() }}
+      </div>
+      <div class="flex items-center space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          :disabled="!table.getCanPreviousPage()"
+          @click="table.previousPage()"
+          class="px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-50"
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          :disabled="!table.getCanNextPage()"
+          @click="table.nextPage()"
+          class="px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-50"
+        >
+          Next
+        </Button>
+      </div>
     </div>
   </div>
 </template>
