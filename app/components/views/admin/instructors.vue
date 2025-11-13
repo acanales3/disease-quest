@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="flex flex-col w-full">
     <!-- Instructor Count & Instructor Invite -->
     <div class="flex justify-center gap-4">
       <TotalCount icon="hugeicons:teacher" :count="data.length" label="Total Instructors" />
@@ -7,9 +7,9 @@
     </div>
     
     <!-- Instructor Table -->
-    <div class="container py-2 mx-auto">
-    <DataTable :columns="columns" :data="data" />
-  </div>
+    <div class="w-full py-2">
+      <DataTable :columns="columns" :data="data" />
+    </div>
   </div>
 </template>
 

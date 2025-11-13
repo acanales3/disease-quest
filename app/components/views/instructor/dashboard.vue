@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full max-w-7xl mx-auto px-4">
+  <div class="flex flex-col justify-start w-full gap-4">
     <!-- Greeting Card -->
     <div
       class="rounded-lg text-center flex flex-col items-center justify-center w-full bg-white shadow-sm py-6"
@@ -39,7 +39,7 @@
     </div>
 
     <!-- Table -->
-    <div>
+    <div class="w-full py-2">
       <DataTable :columns="visibleColumns" :data="data" :row-length="5" />
     </div>
   </div>
@@ -89,7 +89,8 @@ const visibleColumns = computed(() => {
       ...col,
       meta: {
         ...col.meta,
-        hidden: !columnsToShow.includes(col.accessorKey as string),
+        hidden: !columnsToShow.includes(
+          (col as any).accessorKey as string),
       },
     };
   });

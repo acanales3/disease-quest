@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="flex flex-col w-full">
     
-    <div class="flex justify-center gap-4">
+    <div class="flex justify-center">
       <TotalCount
         :count="data.length"
         label="Total Classrooms"
@@ -20,7 +20,7 @@
       </Button>
     </div>
 
-    <div class="container py-2 mx-auto">
+    <div class="w-full py-2">
       <DataTable :columns="columns" :data="data" />
     </div>
 
@@ -61,7 +61,8 @@ const visibleColumns = computed(() => {
       ...col,
       meta: {
         ...col.meta,
-        hidden: !columnsToShow.includes(col.accessorKey as string),
+        hidden: !columnsToShow.includes(
+          (col as any).accessorKey as string),
       },
     };
   });
