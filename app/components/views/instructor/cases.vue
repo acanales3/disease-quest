@@ -1,5 +1,5 @@
 <template>
-  <div class="container py-2 mx-auto">
+  <div class="w-full py-2">
     <DataTable :columns="visibleColumns" :data="data" />
   </div>
 </template>

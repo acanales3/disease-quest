@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="flex flex-col items-center justify-center w-[90%] mx-auto space-y-8"
-  >
+  <div class="flex flex-col items-center justify-center w-full space-y-8">
     <!-- Top 3 Podium -->
     <div v-if="top3.length > 0" class="flex items-end justify-center gap-8">
       <!-- 2nd Place -->
@@ -34,7 +32,7 @@
     </div>
 
     <!-- Leaderboard Table -->
-    <div class="container py-8 mx-auto">
+    <div class="w-full py-8">
       <DataTable
         :columns="columns"
         :data="data"
@@ -97,7 +95,7 @@ function handleClassroomSelected(classroomId: number) {
 }
 
 function displayName(entry?: LeaderboardEntry) {
-  return entry?.nickname ?? "-";
+  return entry?.studentName ?? entry?.nickname ?? "-";
 }
 
 async function getData(): Promise<LeaderboardEntry[]> {

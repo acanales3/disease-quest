@@ -39,7 +39,7 @@
     </div>
 
     <!-- Table -->
-    <div>
+    <div class="w-full py-2">
       <DataTable :columns="visibleColumns" :data="data" :row-length="5" />
     </div>
   </div>
