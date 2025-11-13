@@ -38,10 +38,14 @@ import {
   TableRow,
 } from "~/components/ui/table";
 
-const props = defineProps<{
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    columns: ColumnDef<TData, TValue>[];
+    data: TData[];
+    rowLength?: number;
+  }>(),
+  { rowLength: 10 } // default to 10 rows per page
+);
 
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
@@ -56,10 +60,16 @@ const table = useVueTable({
   },
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
+  initialState: {
+    pagination: {
+      pageSize: props.rowLength,
+      pageIndex: 0,
+    },
+  },
   getSortedRowModel: getSortedRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
   onColumnFiltersChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnFilters),
-  getFilteredRowModel: getFilteredRowModel(),
   onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
   onColumnVisibilityChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnVisibility),
@@ -78,8 +88,8 @@ const table = useVueTable({
 
 onMounted(() => {
   props.columns.forEach((col) => {
-    const key = (col.id ?? col.accessorKey) as string;
-    if (col.meta?.hidden) {
+    const key = (col.id ?? (col as any).accessorKey) as string;
+    if ((col as any).meta?.hidden) {
       table.getColumn(key)?.toggleVisibility(false);
     }
   });
@@ -87,7 +97,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md">
+  <div class="bg-white p-6 rounded-md shadow-md w-full">
     <!-- Top bar: label left, search & column menu right -->
     <div class="flex items-center justify-between py-4">
       <!-- Left: label -->
@@ -140,7 +150,7 @@ onMounted(() => {
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md">
+    <div class="border rounded-md overflow-x-auto">
       <Table class="w-full text-center font-normal text-gray-500">
         <TableHeader class="bg-blue-50">
           <TableRow

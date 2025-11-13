@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="TData, TValue">
 import type {
+  Column,
   ColumnDef,
   SortingState,
   ColumnFiltersState,
@@ -26,7 +27,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 
 import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
-import { h, ref } from "vue";
+import { computed, ref } from "vue";
 import { valueUpdater } from "@/lib/utils";
 
 import {
@@ -75,9 +76,13 @@ const table = useVueTable({
     },
   },
 });
+
+const hideableColumns = computed(() =>
+  table.getAllColumns().filter((column) => column.getCanHide())
+);
 </script>
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md">
+  <div class="bg-white p-6 rounded-md shadow-md w-full">
     <!-- Top bar: label left, search & column menu right -->
     <div class="flex items-center justify-between py-4">
       <!-- Left: label -->
@@ -136,13 +141,11 @@ const table = useVueTable({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
-              v-for="column in table
-                .getAllColumns()
-                .filter((c) => c.getCanHide())"
+              v-for="column in hideableColumns"
               :key="column.id"
               class="capitalize"
               :modelValue="column.getIsVisible()"
-              @update:modelValue="(value) => column.toggleVisibility(!!value)"
+              @update:modelValue="(value: boolean) => column.toggleVisibility(!!value)"
             >
               {{ column.id }}
             </DropdownMenuCheckboxItem>
@@ -152,7 +155,7 @@ const table = useVueTable({
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md">
+    <div class="border rounded-md overflow-x-auto">
       <Table class="w-full text-center font-normal text-gray-500">
         <TableHeader class="bg-blue-50">
           <TableRow
