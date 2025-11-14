@@ -6,11 +6,12 @@
 
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, onUnmounted } from "vue";
 import { columns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { cases} from "~/assets/interface/Case"
 
+const router = useRouter();
 const data = ref<Case[]>([]);
 
 const visibleColumns = computed(() => {
@@ -26,7 +27,40 @@ async function getData(): Promise<Case[]> {
   return cases;
 }
 
+const playCase = (caseItem: Case) => {
+  router.push(`/student/case/${caseItem.id}`);
+};
+
+const handleCasePlay = (event: Event) => {
+  const customEvent = event as CustomEvent<Case>;
+  playCase(customEvent.detail);
+};
+
+const handleCaseEdit = (event: Event) => {
+  const customEvent = event as CustomEvent<Case>;
+  console.log("Edit case:", customEvent.detail);
+  // Implement edit functionality
+};
+
+const handleCaseDelete = (event: Event) => {
+  const customEvent = event as CustomEvent<Case>;
+  console.log("Delete case:", customEvent.detail);
+  // Implement delete functionality
+};
+
 onMounted(async () => {
   data.value = await getData();
+  
+  // Add event listeners for case actions
+  window.addEventListener("case:play", handleCasePlay);
+  window.addEventListener("case:edit", handleCaseEdit);
+  window.addEventListener("case:delete", handleCaseDelete);
+});
+
+onUnmounted(() => {
+  // Clean up event listeners
+  window.removeEventListener("case:play", handleCasePlay);
+  window.removeEventListener("case:edit", handleCaseEdit);
+  window.removeEventListener("case:delete", handleCaseDelete);
 });
 </script>

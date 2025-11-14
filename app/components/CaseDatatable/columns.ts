@@ -99,7 +99,27 @@ export const columns: ColumnDef<Case>[] = [
       return h(
         "div",
         { class: "relative flex justify-center" },
-        h(DropdownAction, { caseData })
+        h(DropdownAction, {
+          caseData,
+          onPlay: (data: Case) => {
+            // Emit play event - will be handled by parent component
+            window.dispatchEvent(
+              new CustomEvent("case:play", { detail: data })
+            );
+          },
+          onEdit: (data: Case) => {
+            // Emit edit event
+            window.dispatchEvent(
+              new CustomEvent("case:edit", { detail: data })
+            );
+          },
+          onDelete: (data: Case) => {
+            // Emit delete event
+            window.dispatchEvent(
+              new CustomEvent("case:delete", { detail: data })
+            );
+          },
+        })
       );
     },
   },
