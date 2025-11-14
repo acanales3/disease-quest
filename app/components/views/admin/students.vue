@@ -10,6 +10,13 @@
     <div class="w-full py-2">
       <DataTable :columns="columns" :data="data" />
     </div>
+
+    <AdminEditStudentDialog
+      :show="modalBus.openEditModal"
+      :data="modalBus.editData"
+      @close="modalBus.closeEdit()"
+      @save="handleSave"
+    />
   </div>
 </template>
 
@@ -21,6 +28,9 @@ import DataTable from "../../StudentDatatable/data-table.vue";
 import { student } from "~/assets/interface/Student";
 import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
+
+import { modalBus } from "@/components/AdminEditStudentDialog/modalBusEditStudent"
+import AdminEditStudentDialog from "@/components/AdminEditStudentDialog/AdminEditStudentDialog.vue"
 
 const data = ref<Student[]>([]);
 const count = ref<number>(0);
