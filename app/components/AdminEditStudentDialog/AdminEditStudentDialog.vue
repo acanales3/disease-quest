@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 import type { Student } from '~/assets/interface/Student';
 
@@ -12,6 +20,7 @@ const emit = defineEmits<{
 // reactive form data
 const form = ref<Student>({
   name: '',
+  nickname: '',
   email: '',
   school: '',
   msyear: 1,
@@ -44,13 +53,13 @@ const handleSave = () => {
 
 <template>
   <Dialog :open="props.show" @update:open="handleOpenChange">
-    <DialogContent>
+    <DialogContent class="max-h-[90vh] overflow-y-auto my-6">
       <DialogHeader>
         <DialogTitle>Edit {{ props.data?.name || 'Student' }}</DialogTitle>
-        <DialogDescription> 
+        <DialogDescription>
           Make changes to the student's profile here.
           <br />
-          Click 'save changes' when you're done. 
+          Click 'save changes' when you're done.
         </DialogDescription>
       </DialogHeader>
 
@@ -59,6 +68,11 @@ const handleSave = () => {
         <label class="flex flex-col">
           Name
           <input type="text" v-model="form.name" class="p-2 border rounded" />
+        </label>
+
+        <label class="flex flex-col">
+          Nickname
+          <input type="text" v-model="form.nickname" class="p-2 border rounded" />
         </label>
 
         <label class="flex flex-col">
@@ -90,11 +104,17 @@ const handleSave = () => {
         </label>
       </div>
 
-      <DialogFooter>
-        <button class="p-2 bg-gray-200 transition-colors duration-500 hover:bg-gray-300 rounded" @click="emit('close')">Close</button>
+        <DialogFooter>
+          <button class="p-2 bg-gray-400 transition-colors duration-500 hover:bg-gray-500 rounded text-white"
+            @click="emit('close')">
+            Close
+          </button>
 
-        <button class="p-2 bg-[#AF67F0] transition-colors duration-500 hover:bg-purple-500 rounded" @click="handleSave">Save Changes</button>
-      </DialogFooter>
+          <button class="p-2 bg-[#AF67F0] transition-colors duration-500 hover:bg-purple-600 rounded text-white"
+            @click="handleSave">
+            Save Changes
+          </button>
+        </DialogFooter>
     </DialogContent>
   </Dialog>
 </template>
