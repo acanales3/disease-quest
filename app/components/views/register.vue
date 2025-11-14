@@ -68,24 +68,6 @@
           >
         </div>
 
-        <!-- Medical School Year -->
-        <div>
-          <label for="msyear" class="block text-sm font-medium text-white">Medical School Year</label>
-          <select 
-            v-model="formData.msyear" 
-            id="msyear" 
-            name="msyear" 
-            required
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
-          >
-            <option value="">Select year</option>
-            <option value="1">Year 1 (MS1)</option>
-            <option value="2">Year 2 (MS2)</option>
-            <option value="3">Year 3 (MS3)</option>
-            <option value="4">Year 4 (MS4)</option>
-          </select>
-        </div>
-
         <!-- Password -->
         <div>
           <label for="password" class="block text-sm font-medium text-white">Password</label>
