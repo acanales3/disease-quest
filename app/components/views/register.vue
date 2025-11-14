@@ -12,21 +12,6 @@
     <div class="w-full max-w-md">
       <form @submit.prevent="handleSubmit" class="space-y-4">
         
-        <div>
-          <label for="role" class="block text-sm font-medium text-white mb-2">I am a...</label>
-          <select 
-            v-model="formData.role" 
-            id="role" 
-            name="role" 
-            required 
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
-          >
-            <option value="">Select your role</option>
-            <option value="student">Student</option>
-            <option value="instructor">Instructor</option>
-          </select>
-        </div>
-
         <!-- First Name -->
         <div>
           <label for="firstName" class="block text-sm font-medium text-white">First Name</label>
@@ -83,14 +68,14 @@
           >
         </div>
 
-        <!-- Medical School Year (Only for Students) -->
-        <div v-if="formData.role === 'student'">
+        <!-- Medical School Year -->
+        <div>
           <label for="msyear" class="block text-sm font-medium text-white">Medical School Year</label>
           <select 
             v-model="formData.msyear" 
             id="msyear" 
             name="msyear" 
-            :required="formData.role === 'student'"
+            required
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
           >
             <option value="">Select year</option>
@@ -164,7 +149,6 @@
 import { ref, reactive } from 'vue';
 
 const formData = reactive({
-  role: '',
   firstName: '',
   lastName: '',
   email: '',
@@ -192,22 +176,16 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (formData.role === 'student' && !formData.msyear) {
-    errorMessage.value = 'Please select your medical school year';
-    return;
-  }
-
   isSubmitting.value = true;
 
   try {
     // TODO: Implement actual registration logic with Supabase Auth
     console.log('Registration data:', {
-      role: formData.role,
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
       school: formData.school,
-      msyear: formData.role === 'student' ? parseInt(formData.msyear) : null,
+      msyear: formData.msyear || null,
       classroomCode: formData.classroomCode || null
     });
 
