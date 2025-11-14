@@ -5,31 +5,24 @@
     <!-- Personal Information Section -->
     <div class="mb-8">
       <h2 class="text-xl font-semibold mb-4 pb-2 border-b">Personal Information</h2>
-      <div class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="space-y-2">
-            <Label for="firstName">First Name</Label>
-            <Input
-              id="firstName"
-              v-model="formData.firstName"
-              type="text"
-              placeholder="Enter first name"
-              :class="{ 'border-red-500': errors.firstName }"
-            />
-            <p v-if="errors.firstName" class="text-sm text-red-500">{{ errors.firstName }}</p>
-          </div>
-
-          <div class="space-y-2">
-            <Label for="lastName">Last Name</Label>
-            <Input
-              id="lastName"
-              v-model="formData.lastName"
-              type="text"
-              placeholder="Enter last name"
-              :class="{ 'border-red-500': errors.lastName }"
-            />
-            <p v-if="errors.lastName" class="text-sm text-red-500">{{ errors.lastName }}</p>
-          </div>
+      <div class="grid gap-6 py-4">
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label for="firstName" class="text-right">First Name</Label>
+          <Input
+            id="firstName"
+            v-model="form.firstName"
+            class="col-span-3"
+            placeholder="Enter first name"
+          />
+        </div>
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label for="lastName" class="text-right">Last Name</Label>
+          <Input
+            id="lastName"
+            v-model="form.lastName"
+            class="col-span-3"
+            placeholder="Enter last name"
+          />
         </div>
       </div>
     </div>
@@ -37,37 +30,34 @@
     <!-- Security Section -->
     <div class="mb-8">
       <h2 class="text-xl font-semibold mb-4 pb-2 border-b">Security</h2>
-      <div class="space-y-4">
-        <div class="space-y-2">
-          <Label for="currentPassword">Current Password</Label>
+      <div class="grid gap-6 py-4">
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label for="currentPassword" class="text-right">Current Password</Label>
           <Input
             id="currentPassword"
-            v-model="formData.currentPassword"
+            v-model="form.currentPassword"
             type="password"
+            class="col-span-3"
             placeholder="Enter current password"
-            :class="{ 'border-red-500': errors.currentPassword }"
           />
-          <p v-if="errors.currentPassword" class="text-sm text-red-500">{{ errors.currentPassword }}</p>
         </div>
-
-        <div class="space-y-2">
-          <Label for="newPassword">New Password</Label>
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label for="newPassword" class="text-right">New Password</Label>
           <Input
             id="newPassword"
-            v-model="formData.newPassword"
+            v-model="form.newPassword"
             type="password"
+            class="col-span-3"
             placeholder="Enter new password"
-            :class="{ 'border-red-500': errors.newPassword }"
           />
-          <p v-if="errors.newPassword" class="text-sm text-red-500">{{ errors.newPassword }}</p>
         </div>
       </div>
     </div>
 
     <!-- Action Buttons -->
-    <div class="flex justify-end gap-4 pt-4">
-      <Button variant="outline" @click="handleCancel">Cancel</Button>
-      <Button @click="handleSave">Save Changes</Button>
+    <div class="flex justify-end gap-3 pt-4 border-t">
+      <Button variant="outline" @click="onCancel">Cancel</Button>
+      <Button @click="onSave">Save Changes</Button>
     </div>
 
     <!-- Confirmation Dialog -->
@@ -104,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -120,104 +110,57 @@ import {
 
 const router = useRouter();
 
-// Form data
-const formData = reactive({
+const form = ref({
   firstName: '',
   lastName: '',
   currentPassword: '',
   newPassword: '',
 });
 
-// Error messages
-const errors = reactive({
-  firstName: '',
-  lastName: '',
-  currentPassword: '',
-  newPassword: '',
-});
-
-// Dialog states
 const showConfirmDialog = ref(false);
 const showSuccessDialog = ref(false);
 
-// Validation function
-const validateForm = (): boolean => {
-  let isValid = true;
-
-  // Reset errors
-  Object.keys(errors).forEach(key => {
-    errors[key as keyof typeof errors] = '';
-  });
-
-  // Validate first name
-  if (!formData.firstName.trim()) {
-    errors.firstName = 'First name is required';
-    isValid = false;
+const onSave = () => {
+  if (!form.value.firstName || !form.value.lastName) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+  
+  if ((form.value.currentPassword || form.value.newPassword) && 
+      (!form.value.currentPassword || !form.value.newPassword)) {
+    alert('Please fill in both password fields to change your password.');
+    return;
   }
 
-  // Validate last name
-  if (!formData.lastName.trim()) {
-    errors.lastName = 'Last name is required';
-    isValid = false;
+  if (form.value.newPassword && form.value.newPassword.length < 8) {
+    alert('Password must be at least 8 characters.');
+    return;
   }
 
-  // If password fields are filled, validate them
-  if (formData.currentPassword || formData.newPassword) {
-    if (!formData.currentPassword) {
-      errors.currentPassword = 'Current password is required to change password';
-      isValid = false;
-    }
-
-    if (!formData.newPassword) {
-      errors.newPassword = 'New password is required';
-      isValid = false;
-    } else if (formData.newPassword.length < 8) {
-      errors.newPassword = 'Password must be at least 8 characters';
-      isValid = false;
-    }
-  }
-
-  return isValid;
+  showConfirmDialog.value = true;
 };
 
-// Handle save button click
-const handleSave = () => {
-  if (validateForm()) {
-    showConfirmDialog.value = true;
-  }
-};
-
-// Handle cancel button click
-const handleCancel = () => {
+const onCancel = () => {
   router.back();
 };
 
-// Confirm and save changes
 const confirmSave = async () => {
   showConfirmDialog.value = false;
-
+  
   // TODO: Add API call to save changes here
-  // await saveUserSettings(formData);
-
-  // Show success dialog
+  console.log('Saving settings:', form.value);
+  
   showSuccessDialog.value = true;
 };
 
-// Close success dialog and navigate
 const closeSuccessDialog = () => {
   showSuccessDialog.value = false;
   router.back();
 };
 
-// Load user data on mount
 onMounted(() => {
   // TODO: Load current user data from API
-  // For now, using placeholder data
-  formData.firstName = 'John';
-  formData.lastName = 'Doe';
+  form.value.firstName = 'John';
+  form.value.lastName = 'Doe';
 });
 </script>
-
-<style scoped>
-/* Additional custom styles if needed */
-</style>
