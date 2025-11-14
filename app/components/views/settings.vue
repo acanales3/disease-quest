@@ -32,16 +32,6 @@
       <h2 class="text-xl font-semibold mb-4 pb-2 border-b">Security</h2>
       <div class="grid gap-6 py-4">
         <div class="grid grid-cols-4 items-center gap-4">
-          <Label for="currentPassword" class="text-right">Current Password</Label>
-          <Input
-            id="currentPassword"
-            v-model="form.currentPassword"
-            type="password"
-            class="col-span-3"
-            placeholder="Enter current password"
-          />
-        </div>
-        <div class="grid grid-cols-4 items-center gap-4">
           <Label for="newPassword" class="text-right">New Password</Label>
           <Input
             id="newPassword"
@@ -49,6 +39,16 @@
             type="password"
             class="col-span-3"
             placeholder="Enter new password"
+          />
+        </div>
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label for="confirmPassword" class="text-right">Confirm Password</Label>
+          <Input
+            id="confirmPassword"
+            v-model="form.confirmPassword"
+            type="password"
+            class="col-span-3"
+            placeholder="Confirm new password"
           />
         </div>
       </div>
@@ -113,8 +113,8 @@ const router = useRouter();
 const form = ref({
   firstName: '',
   lastName: '',
-  currentPassword: '',
   newPassword: '',
+  confirmPassword: '',
 });
 
 const showConfirmDialog = ref(false);
@@ -126,14 +126,19 @@ const onSave = () => {
     return;
   }
   
-  if ((form.value.currentPassword || form.value.newPassword) && 
-      (!form.value.currentPassword || !form.value.newPassword)) {
+  if ((form.value.newPassword || form.value.confirmPassword) && 
+      (!form.value.newPassword || !form.value.confirmPassword)) {
     alert('Please fill in both password fields to change your password.');
     return;
   }
 
   if (form.value.newPassword && form.value.newPassword.length < 8) {
     alert('Password must be at least 8 characters.');
+    return;
+  }
+
+  if (form.value.newPassword !== form.value.confirmPassword) {
+    alert('Passwords do not match.');
     return;
   }
 
