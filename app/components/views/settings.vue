@@ -41,18 +41,6 @@
             
             <div class="space-y-4 max-w-md">
               <div class="space-y-2">
-                <Label for="currentPassword" class="text-sm font-normal text-gray-700">Current password</Label>
-                <Input
-                  id="currentPassword"
-                  v-model="formData.currentPassword"
-                  type="password"
-                  :class="{ 'border-red-500': errors.currentPassword }"
-                  @input="clearError('currentPassword')"
-                />
-                <p v-if="errors.currentPassword" class="text-xs text-red-500">{{ errors.currentPassword }}</p>
-              </div>
-
-              <div class="space-y-2">
                 <Label for="newPassword" class="text-sm font-normal text-gray-700">New password</Label>
                 <Input
                   id="newPassword"
@@ -141,7 +129,6 @@ const router = useRouter();
 const formData = reactive({
   firstName: '',
   lastName: '',
-  currentPassword: '',
   newPassword: '',
   confirmPassword: '',
 });
@@ -154,7 +141,6 @@ const originalData = reactive({
 const errors = reactive({
   firstName: '',
   lastName: '',
-  currentPassword: '',
   newPassword: '',
   confirmPassword: '',
 });
@@ -194,14 +180,9 @@ function validateForm(): boolean {
     isValid = false;
   }
 
-  const isPasswordChange = formData.currentPassword || formData.newPassword || formData.confirmPassword;
+  const isPasswordChange = formData.newPassword || formData.confirmPassword;
 
   if (isPasswordChange) {
-    if (!formData.currentPassword) {
-      errors.currentPassword = 'Current password is required';
-      isValid = false;
-    }
-
     if (!formData.newPassword) {
       errors.newPassword = 'New password is required';
       isValid = false;
@@ -248,11 +229,15 @@ async function confirmSave() {
     originalData.firstName = formData.firstName;
     originalData.lastName = formData.lastName;
 
-    formData.currentPassword = '';
     formData.newPassword = '';
     formData.confirmPassword = '';
 
     showSuccessDialog.value = true;
+    
+    // Reroute back after saving
+    setTimeout(() => {
+      router.back();
+    }, 500);
   } catch (error) {
     console.error('Error saving settings:', error);
     errors.firstName = 'An error occurred. Please try again.';
