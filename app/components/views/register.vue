@@ -12,32 +12,31 @@
     <div class="w-full max-w-md">
       <form @submit.prevent="handleSubmit" class="space-y-4">
         
+        <!-- First Name -->
         <div>
-          <label for="role" class="block text-sm font-medium text-white mb-2">I am a...</label>
-          <select 
-            v-model="formData.role" 
-            id="role" 
-            name="role" 
+          <label for="firstName" class="block text-sm font-medium text-white">First Name</label>
+          <input 
+            v-model="formData.firstName"
+            type="text" 
+            id="firstName" 
+            name="firstName" 
             required 
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            placeholder="John"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
-            <option value="">Select your role</option>
-            <option value="student">Student</option>
-            <option value="instructor">Instructor</option>
-          </select>
         </div>
 
-        <!-- Full Name -->
+        <!-- Last Name -->
         <div>
-          <label for="name" class="block text-sm font-medium text-white">Full Name</label>
+          <label for="lastName" class="block text-sm font-medium text-white">Last Name</label>
           <input 
-            v-model="formData.name"
+            v-model="formData.lastName"
             type="text" 
-            id="name" 
-            name="name" 
+            id="lastName" 
+            name="lastName" 
             required 
-            placeholder="John Doe"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            placeholder="Doe"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
         </div>
 
@@ -51,21 +50,7 @@
             name="email" 
             required 
             placeholder="john.doe@university.edu"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
-          >
-        </div>
-
-        <!-- Username -->
-        <div>
-          <label for="username" class="block text-sm font-medium text-white">Username</label>
-          <input 
-            v-model="formData.username"
-            type="text" 
-            id="username" 
-            name="username" 
-            required 
-            placeholder="johndoe"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
         </div>
 
@@ -79,26 +64,8 @@
             name="school" 
             required 
             placeholder="Texas Christian University"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
-        </div>
-
-        <!-- Medical School Year (Only for Students) -->
-        <div v-if="formData.role === 'student'">
-          <label for="msyear" class="block text-sm font-medium text-white">Medical School Year</label>
-          <select 
-            v-model="formData.msyear" 
-            id="msyear" 
-            name="msyear" 
-            :required="formData.role === 'student'"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
-          >
-            <option value="">Select year</option>
-            <option value="1">Year 1 (MS1)</option>
-            <option value="2">Year 2 (MS2)</option>
-            <option value="3">Year 3 (MS3)</option>
-            <option value="4">Year 4 (MS4)</option>
-          </select>
         </div>
 
         <!-- Password -->
@@ -112,7 +79,7 @@
             required 
             placeholder="••••••••"
             minlength="8"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
           <p class="text-xs text-white mt-1">Minimum 8 characters</p>
         </div>
@@ -128,7 +95,7 @@
             required 
             placeholder="••••••••"
             minlength="8"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
         </div>
 
@@ -164,10 +131,9 @@
 import { ref, reactive } from 'vue';
 
 const formData = reactive({
-  role: '',
-  name: '',
+  firstName: '',
+  lastName: '',
   email: '',
-  username: '',
   school: '',
   msyear: '',
   classroomCode: '',
@@ -192,22 +158,16 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (formData.role === 'student' && !formData.msyear) {
-    errorMessage.value = 'Please select your medical school year';
-    return;
-  }
-
   isSubmitting.value = true;
 
   try {
     // TODO: Implement actual registration logic with Supabase Auth
     console.log('Registration data:', {
-      role: formData.role,
-      name: formData.name,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
       email: formData.email,
-      username: formData.username,
       school: formData.school,
-      msyear: formData.role === 'student' ? parseInt(formData.msyear) : null,
+      msyear: formData.msyear || null,
       classroomCode: formData.classroomCode || null
     });
 
