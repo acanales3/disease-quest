@@ -9,6 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+
+import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
+
+const props = defineProps<{ instructor: Instructor }>();
+
+function onEdit() {
+  modalBus.openEdit(props.instructor);
+}
 </script>
 
 <template>
@@ -21,7 +29,7 @@ import {
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-      <DropdownMenuItem> Edit </DropdownMenuItem>
+      <DropdownMenuItem @click="onEdit"> Edit </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem>Delete</DropdownMenuItem>
     </DropdownMenuContent>
