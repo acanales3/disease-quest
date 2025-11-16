@@ -15,7 +15,7 @@
       :show="modalBus.openEditModal"
       :data="modalBus.editData"
       @close="modalBus.closeEdit()"
-      @save="handleSave"
+      @save="saveStudentEdits"
     />
   </div>
 </template>
@@ -40,6 +40,26 @@ async function getData(): Promise<Student[]> {
     // For now, we will use the mock student data from the interface.
     return student;
 }
+
+const saveStudentEdits = async (updated: Student) => {
+  try {
+    // Update backend
+    /* await $fetch(`/api/students/${updated.id}`, {
+      method: "PUT",
+      body: updated
+    }); */
+
+    // Update local ref array
+    // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place 
+    data.value = data.value.map(student => student.id === updated.id ? { ...updated } : student);
+
+    // Close modal
+    modalBus.closeEdit();
+  } catch (error) {
+    console.error("Error updating student: ", error);
+    useToast().error("Failed to update student. Please try again.");
+  }
+};
 
 onMounted(async () => {
     data.value = await getData();

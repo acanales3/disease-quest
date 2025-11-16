@@ -6,7 +6,6 @@ export interface EditModalBus {
   openEditModal: boolean;
   openEdit: (data: Student) => void;
   closeEdit: () => void;
-  saveEdit: (data: Student) => void;
 }
 
 export const modalBus: EditModalBus = reactive({
@@ -22,8 +21,4 @@ export const modalBus: EditModalBus = reactive({
     this.openEditModal = false;
     this.editData = null;
   },
-
-  saveEdit(data: Student) {
-    // TODO: save updated data to database and update frontend.
-  }
 });
