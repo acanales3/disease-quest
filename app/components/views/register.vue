@@ -1,14 +1,16 @@
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[rgb(175,103,240)] to-white py-8">
-   
+  <div
+    class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[rgb(175,103,240)] to-white py-8"
+  >
     <div class="flex items-center space-x-3 mb-8">
       <div class="p-4 bg-white rounded-full shadow-lg">
         <Icon name="healthicons:autoimmune-disease-outline" class="text-6xl" />
       </div>
-      <h1 class="text-4xl font-bold text-white drop-shadow-lg">Register for DiseaseQuest</h1>
+      <h1 class="text-4xl font-bold text-white drop-shadow-lg">
+        Register for DiseaseQuest
+      </h1>
     </div>
 
-    
     <div class="w-full max-w-md">
       <form @submit.prevent="handleSubmit" class="space-y-4">
         
@@ -38,17 +40,28 @@
             placeholder="Doe"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
+          <input
+            v-model="formData.lastName"
+            type="text"
+            id="lastName"
+            name="lastName"
+            required
+            placeholder="Doe"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
+          />
         </div>
 
         <!-- Email -->
         <div>
-          <label for="email" class="block text-sm font-medium text-white">Email</label>
-          <input 
+          <label for="email" class="block text-sm font-medium text-white"
+            >Email</label
+          >
+          <input
             v-model="formData.email"
-            type="email" 
-            id="email" 
-            name="email" 
-            required 
+            type="email"
+            id="email"
+            name="email"
+            required
             placeholder="john.doe@university.edu"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
@@ -56,13 +69,15 @@
 
         <!-- School/Institution -->
         <div>
-          <label for="school" class="block text-sm font-medium text-white">School/Institution</label>
-          <input 
+          <label for="school" class="block text-sm font-medium text-white"
+            >School/Institution</label
+          >
+          <input
             v-model="formData.school"
-            type="text" 
-            id="school" 
-            name="school" 
-            required 
+            type="text"
+            id="school"
+            name="school"
+            required
             placeholder="Texas Christian University"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
           >
@@ -70,13 +85,15 @@
 
         <!-- Password -->
         <div>
-          <label for="password" class="block text-sm font-medium text-white">Password</label>
-          <input 
+          <label for="password" class="block text-sm font-medium text-white"
+            >Password</label
+          >
+          <input
             v-model="formData.password"
-            type="password" 
-            id="password" 
-            name="password" 
-            required 
+            type="password"
+            id="password"
+            name="password"
+            required
             placeholder="••••••••"
             minlength="8"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
@@ -86,13 +103,17 @@
 
         <!-- Confirm Password -->
         <div>
-          <label for="confirmPassword" class="block text-sm font-medium text-white">Confirm Password</label>
-          <input 
+          <label
+            for="confirmPassword"
+            class="block text-sm font-medium text-white"
+            >Confirm Password</label
+          >
+          <input
             v-model="formData.confirmPassword"
-            type="password" 
-            id="confirmPassword" 
-            name="confirmPassword" 
-            required 
+            type="password"
+            id="confirmPassword"
+            name="confirmPassword"
+            required
             placeholder="••••••••"
             minlength="8"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
@@ -100,24 +121,30 @@
         </div>
 
         <!-- Error Message -->
-        <div v-if="errorMessage" class="text-red-600 bg-red-100 p-3 rounded-md text-sm">
+        <div
+          v-if="errorMessage"
+          class="text-red-600 bg-red-100 p-3 rounded-md text-sm"
+        >
           {{ errorMessage }}
         </div>
 
         <!-- Submit Button -->
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           :disabled="isSubmitting"
           class="w-full bg-purple-600 text-white p-2 rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {{ isSubmitting ? 'Creating Account...' : 'Create Account' }}
+          {{ isSubmitting ? "Creating Account..." : "Create Account" }}
         </button>
 
         <!-- Login Link -->
         <div class="text-center mt-4">
           <p class="text-white text-sm">
-            Already have an account? 
-            <NuxtLink to="/login" class="font-medium underline hover:text-purple-200">
+            Already have an account?
+            <NuxtLink
+              to="/login"
+              class="font-medium underline hover:text-purple-200"
+            >
               Login here
             </NuxtLink>
           </p>
@@ -128,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive } from "vue";
 
 const formData = reactive({
   firstName: '',
@@ -141,15 +168,15 @@ const formData = reactive({
   confirmPassword: ''
 });
 
-const errorMessage = ref('');
+const errorMessage = ref("");
 const isSubmitting = ref(false);
 
 const handleSubmit = async () => {
-  errorMessage.value = '';
+  errorMessage.value = "";
 
   // Validation
   if (formData.password !== formData.confirmPassword) {
-    errorMessage.value = 'Passwords do not match';
+    errorMessage.value = "Passwords do not match";
     return;
   }
 
@@ -172,15 +199,17 @@ const handleSubmit = async () => {
     });
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     // Redirect to login or dashboard after successful registration
     // navigateTo('/login');
-    
-    alert('Registration successful! Please check your email to verify your account.');
+
+    alert(
+      "Registration successful! Please check your email to verify your account."
+    );
   } catch (error) {
-    console.error('Registration error:', error);
-    errorMessage.value = 'Registration failed. Please try again.';
+    console.error("Registration error:", error);
+    errorMessage.value = "Registration failed. Please try again.";
   } finally {
     isSubmitting.value = false;
   }
