@@ -26,7 +26,12 @@ import {
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem>Play</DropdownMenuItem>
+
+      <DropdownMenuItem as-child>
+        <NuxtLink :to="`/case/introduction`">Play</NuxtLink>
+      </DropdownMenuItem>
+
+
       <DropdownMenuItem> Edit </DropdownMenuItem>
       <DropdownMenuItem>Delete</DropdownMenuItem>
     </DropdownMenuContent>
