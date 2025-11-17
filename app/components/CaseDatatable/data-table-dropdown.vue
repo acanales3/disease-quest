@@ -9,6 +9,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import type { Case } from "./columns";
+
+interface Props {
+  caseData: Case;
+}
+
+const props = defineProps<Props>();
+
+// Determine button text and action based on case status
+const getButtonText = () => {
+  switch (props.caseData.status) {
+    case "not started":
+      return "Begin";
+    case "in progress":
+      return "Continue";
+    case "completed":
+      return "Replay";
+    default:
+      return "Begin";
+  }
+};
 </script>
 
 <!-- eventually want to make this dynmaic where the actions shown are based on the role of the user -->
@@ -28,7 +49,7 @@ import {
       <DropdownMenuSeparator />
 
       <DropdownMenuItem as-child>
-        <NuxtLink :to="`/case/introduction`">Play</NuxtLink>
+        <NuxtLink :to="`/case/introduction`">{{ getButtonText() }}</NuxtLink>
       </DropdownMenuItem>
 
 
