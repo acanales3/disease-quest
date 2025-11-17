@@ -30,87 +30,12 @@ import type { Case } from '../../CaseDatatable/columns'
 import TotalCount from '@/components/ui/TotalCount.vue'
 import { cases } from "~/assets/interface/Case";
 import { onMounted, ref } from 'vue'
+import { computed } from 'vue'
 
 // Example user - replace with api data
 const user = {
     name: 'Alex',
 }
-
-// Sample data for attempted cases
-const sampleCases: Case[] = [
-    {
-        id: 1,
-        name: 'Read Chapters1-3',
-        description: 'Read Chapters1-3',
-        classroom: 1,
-        completionDate: '12 May 2024',
-        status: 'in progress',
-    },
-    {
-        id: 2,
-        name: 'Complete Problem Set #5',
-        description: 'Complete Problem Set #5',
-        classroom: 2,
-        completionDate: '12 May 2024',
-        status: 'not started',
-    },
-    {
-        id: 3,
-        name: 'Write Lab Report on Acid-Base Titration',
-        description: 'Write Lab Report on Acid-Base Titration',
-        classroom: 3,
-        completionDate: '12 May 2024',
-        status: 'in progress',
-    },
-    {
-        id: 4,
-        name: 'Prepare for Oral Presentation',
-        description: 'Prepare for Oral Presentation',
-        classroom: 4,
-        completionDate: '12 May 2024',
-        status: 'in progress',
-    },
-    {
-        id: 5,
-        name: 'Create Art Piece for Final Project',
-        description: 'Create Art Piece for Final Project',
-        classroom: 1,
-        completionDate: '12 May 2024',
-        status: 'completed',
-    },
-    {
-        id: 6,
-        name: 'Write Research Paper on Climate Change',
-        description: 'Write Research Paper on Climate Change',
-        classroom: 5,
-        completionDate: '12 May 2024',
-        status: 'in progress',
-    },
-    {
-        id: 7,
-        name: 'Complete Math Quiz on Algebra',
-        description: 'Complete Math Quiz on Algebra',
-        classroom: 2,
-        completionDate: '12 May 2024',
-        status: 'completed',
-    },
-    {
-        id: 8,
-        name: 'Prepare for History Class Debate',
-        description: 'Prepare for History Class Debate',
-        classroom: 6,
-        completionDate: '12 May 2024',
-        status: 'not started',
-    },
-    {
-        id: 9,
-        name: 'Submit Final Design for Architecture Project',
-        description: 'Submit Final Design for Architecture Project',
-        classroom: 7,
-        completionDate: '12 May 2024',
-        status: 'in progress',
-    },
-]
 
 const caseData = ref<Case[]>([])
 
