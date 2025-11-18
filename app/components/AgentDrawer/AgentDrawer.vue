@@ -11,6 +11,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer'
+import CaseTextArea from '@/components/CaseTextArea/text-area.vue'
 
 const data = [
   { goal: 400 },
@@ -28,7 +29,7 @@ const data = [
   { goal: 349 },
 ]
 const props = defineProps({
-  title: {
+  agent: {
     type: String,
     required: true,
   },
@@ -41,13 +42,13 @@ const goal = ref(350)
   <Drawer>
     <DrawerTrigger as-child>
       <Button variant="outline">
-        Open Drawer
+        {{agent}} Agent
       </Button>
     </DrawerTrigger>
     <DrawerContent>
       <div class="mx-auto w-full max-w-sm">
         <DrawerHeader>
-          <DrawerTitle>Move Goal</DrawerTitle>
+          <DrawerTitle>{{agent}} Agent</DrawerTitle>
           <DrawerDescription>Set your daily activity goal.</DrawerDescription>
         </DrawerHeader>
         <div class="p-4 pb-0">
