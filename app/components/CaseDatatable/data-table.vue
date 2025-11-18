@@ -93,9 +93,9 @@ const table = useVueTable({
         </div>
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
-          placeholder="Search by Classroom"
-          :model-value="table.getColumn('classroom')?.getFilterValue() as string"
-          @update:model-value="table.getColumn('classroom')?.setFilterValue($event)"
+          placeholder="Search by Case Name"
+          :model-value="table.getColumn('name')?.getFilterValue() as string"
+          @update:model-value="table.getColumn('name')?.setFilterValue($event)"
         />
 
         <DropdownMenu>
