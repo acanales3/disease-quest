@@ -1,11 +1,11 @@
 <template>
-    <views-case-patient />
+  <views-case-patient />
 </template>
 
 <script setup>
-
+definePageMeta({
+  layout: "case",
+});
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
