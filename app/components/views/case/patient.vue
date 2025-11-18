@@ -22,7 +22,7 @@
 import BackwardButton from "~/components/BackwardButton/BackwardButton.vue";
 import ForwardButton from "~/components/ForwardButton/ForwardButton.vue";
 import CaseTextArea from "@/components/CaseTextArea/text-area.vue";
-import AgentDrawer from "@/components/AgentDrawer/AgentDrawer.vue";
+import AgentSheet from "@/components/AgentSheet/AgentSheet.vue";
 
 const caseName = ref('')
 

@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import type { PropType } from 'vue'
+import CaseTextArea from '@/components/CaseTextArea/text-area.vue'
 
 const props = defineProps({
   agent: {
@@ -30,33 +31,23 @@ const props = defineProps({
 <template>
   <Sheet>
     <SheetTrigger as-child>
-      <Button variant="outline">
-        Open
+      <Button variant="default" size="lg">
+       {{ agent }} Agent
       </Button>
     </SheetTrigger>
-    <SheetContent :side="side">
+    <SheetContent :side=side>
       <SheetHeader>
-        <SheetTitle>Edit profile</SheetTitle>
+        <SheetTitle>{{ agent }} Agent</SheetTitle>
         <SheetDescription>
-          Make changes to your profile here. Click save when you're done.
+          Discuss with the {{ agent }} Agent
         </SheetDescription>
       </SheetHeader>
-      <div class="grid flex-1 auto-rows-min gap-6 px-4">
-        <div class="grid gap-3">
-          <Label for="sheet-demo-name">Name</Label>
-          <Input id="sheet-demo-name" default-value="Pedro Duarte" />
-        </div>
-        <div class="grid gap-3">
-          <Label for="sheet-demo-username">Username</Label>
-          <Input id="sheet-demo-username" default-value="@peduarte" />
-        </div>
+      <div class="flex flex-1 gap-6 px-4 py-2">
+        <CaseTextArea />
       </div>
       <SheetFooter>
-        <Button type="submit">
-          Save changes
-        </Button>
         <SheetClose as-child>
-          <Button variant="outline">
+          <Button variant="outline"> 
             Close
           </Button>
         </SheetClose>
