@@ -82,7 +82,7 @@ const hideableColumns = computed(() =>
 );
 </script>
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md w-full">
+  <div class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden">
     <!-- Top bar: label left, search & column menu right -->
     <div class="flex items-center justify-between py-4">
       <!-- Left: label -->
@@ -165,7 +165,7 @@ const hideableColumns = computed(() =>
             <TableHead
               v-for="header in headerGroup.headers"
               :key="header.id"
-              class="text-center font-semibold py-2 px-10"
+              class="text-center font-semibold py-2 px-4"
             >
               <FlexRender
                 v-if="!header.isPlaceholder"

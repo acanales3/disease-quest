@@ -1,6 +1,6 @@
 <template>
-  <div class="w-full py-2">
-    <div class="flex w-full justify-between items-center gap-4 mb-6">
+  <div class="flex flex-col w-full">
+    <div class="flex justify-center gap-4">
       <TotalCount
         icon="mdi:check-circle"
         :count="`${completionPercentage}%`"
@@ -20,7 +20,7 @@
       />
     </div>
 
-    <div class="w-full">
+    <div class="w-full py-2">
       <DataTable :columns="visibleColumns" :data="data" />
     </div>
   </div>
