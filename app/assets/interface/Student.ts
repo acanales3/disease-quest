@@ -1,6 +1,7 @@
 interface Student {
     id: number;
     name: string;
+    nickname: string;
     email: string;
     school: string;
     msyear: number;
@@ -12,6 +13,7 @@ export const student: Student[] = [
   {
     id: 0,
     name: "Alex Johnson",
+    nickname: "Alex",
     email: "student0@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -21,6 +23,7 @@ export const student: Student[] = [
   {
     id: 1,
     name: "Jamie Smith",
+    nickname: "Jamie",
     email: "student1@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -30,6 +33,7 @@ export const student: Student[] = [
   {
     id: 2,
     name: "Taylor Wilson",
+    nickname: "Taylor",
     email: "student2@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -39,6 +43,7 @@ export const student: Student[] = [
   {
     id: 3,
     name: "Casey Brown",
+    nickname: "Casey",
     email: "student3@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -48,6 +53,7 @@ export const student: Student[] = [
   {
     id: 4,
     name: "Jordan Taylor",
+    nickname: "Jordan",
     email: "student4@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -57,6 +63,7 @@ export const student: Student[] = [
   {
     id: 5,
     name: "Morgan Martinez",
+    nickname: "Morgan",
     email: "student5@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -66,6 +73,7 @@ export const student: Student[] = [
   {
     id: 6,
     name: "Riley Anderson",
+    nickname: "Riley",
     email: "student6@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -75,6 +83,7 @@ export const student: Student[] = [
   {
     id: 7,
     name: "Avery Thomas",
+    nickname: "Avery",
     email: "student7@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -84,6 +93,7 @@ export const student: Student[] = [
   {
     id: 8,
     name: "Quinn Hernandez",
+    nickname: "Quinn",
     email: "student8@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -93,6 +103,7 @@ export const student: Student[] = [
   {
     id: 9,
     name: "Peyton Moore",
+    nickname: "Peyton",
     email: "student9@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -102,6 +113,7 @@ export const student: Student[] = [
   {
     id: 10,
     name: "Skyler Martin",
+    nickname: "Skyler",
     email: "student10@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -111,6 +123,7 @@ export const student: Student[] = [
   {
     id: 11,
     name: "Dakota Jackson",
+    nickname: "Dakota",
     email: "student11@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -120,6 +133,7 @@ export const student: Student[] = [
   {
     id: 12,
     name: "Cameron Thompson",
+    nickname: "Cameron",
     email: "student12@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -129,6 +143,7 @@ export const student: Student[] = [
   {
     id: 13,
     name: "Blake White",
+    nickname: "Blake",
     email: "student13@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -138,6 +153,7 @@ export const student: Student[] = [
   {
     id: 14,
     name: "Hayden Lopez",
+    nickname: "Hayden",
     email: "student14@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -147,6 +163,7 @@ export const student: Student[] = [
   {
     id: 15,
     name: "Reese Lee",
+    nickname: "Reese",
     email: "student15@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -156,6 +173,7 @@ export const student: Student[] = [
   {
     id: 16,
     name: "Spencer Gonzalez",
+    nickname: "Spencer",
     email: "student16@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -165,6 +183,7 @@ export const student: Student[] = [
   {
     id: 17,
     name: "Sage Harris",
+    nickname: "Sage",
     email: "student17@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -174,6 +193,7 @@ export const student: Student[] = [
   {
     id: 18,
     name: "Finley Clark",
+    nickname: "Finley",
     email: "student18@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -183,6 +203,7 @@ export const student: Student[] = [
   {
     id: 19,
     name: "Rowan Lewis",
+    nickname: "Rowan",
     email: "student19@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -192,6 +213,7 @@ export const student: Student[] = [
   {
     id: 20,
     name: "Elliot Robinson",
+    nickname: "Elliot",
     email: "student20@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -201,6 +223,7 @@ export const student: Student[] = [
   {
     id: 21,
     name: "Charlie Walker",
+    nickname: "Charlie",
     email: "student21@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -210,6 +233,7 @@ export const student: Student[] = [
   {
     id: 22,
     name: "Emerson Perez",
+    nickname: "Emerson",
     email: "student22@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -219,6 +243,7 @@ export const student: Student[] = [
   {
     id: 23,
     name: "Sawyer Hall",
+    nickname: "Sawyer",
     email: "student23@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -228,6 +253,7 @@ export const student: Student[] = [
   {
     id: 24,
     name: "Avery King",
+    nickname: "Avery",
     email: "student24@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -237,6 +263,7 @@ export const student: Student[] = [
   {
     id: 25,
     name: "Riley Scott",
+    nickname: "Riley",
     email: "student25@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -246,6 +273,7 @@ export const student: Student[] = [
   {
     id: 26,
     name: "Quinn Young",
+    nickname: "Quinn",
     email: "student26@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -255,6 +283,7 @@ export const student: Student[] = [
   {
     id: 27,
     name: "Peyton Allen",
+    nickname: "Peyton",
     email: "student27@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -264,6 +293,7 @@ export const student: Student[] = [
   {
     id: 28,
     name: "Skyler Wright",
+    nickname: "Skyler",
     email: "student28@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -273,6 +303,7 @@ export const student: Student[] = [
   {
     id: 29,
     name: "Dakota Torres",
+    nickname: "Dakota",
     email: "student29@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -282,6 +313,7 @@ export const student: Student[] = [
   {
     id: 30,
     name: "Cameron Nguyen",
+    nickname: "Cameron",
     email: "student30@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -291,6 +323,7 @@ export const student: Student[] = [
   {
     id: 31,
     name: "Blake Hill",
+    nickname: "Blake",
     email: "student31@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -300,6 +333,7 @@ export const student: Student[] = [
   {
     id: 32,
     name: "Hayden Flores",
+    nickname: "Hayden",
     email: "student32@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -309,6 +343,7 @@ export const student: Student[] = [
   {
     id: 33,
     name: "Reese Green",
+    nickname: "Reese",
     email: "student33@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -318,6 +353,7 @@ export const student: Student[] = [
   {
     id: 34,
     name: "Spencer Adams",
+    nickname: "Spencer",
     email: "student34@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -327,6 +363,7 @@ export const student: Student[] = [
   {
     id: 35,
     name: "Sage Nelson",
+    nickname: "Sage",
     email: "student35@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -336,6 +373,7 @@ export const student: Student[] = [
   {
     id: 36,
     name: "Finley Baker",
+    nickname: "Finley",
     email: "student36@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -345,6 +383,7 @@ export const student: Student[] = [
   {
     id: 37,
     name: "Rowan Hall",
+    nickname: "Rowan",
     email: "student37@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -354,6 +393,7 @@ export const student: Student[] = [
   {
     id: 38,
     name: "Elliot Rivera",
+    nickname: "Elliot",
     email: "student38@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -363,6 +403,7 @@ export const student: Student[] = [
   {
     id: 39,
     name: "Charlie Campbell",
+    nickname: "Charlie",
     email: "student39@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -372,6 +413,7 @@ export const student: Student[] = [
   {
     id: 40,
     name: "Emerson Mitchell",
+    nickname: "Emerson",
     email: "student40@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -381,6 +423,7 @@ export const student: Student[] = [
   {
     id: 41,
     name: "Sawyer Carter",
+    nickname: "Sawyer",
     email: "student41@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -390,6 +433,7 @@ export const student: Student[] = [
   {
     id: 42,
     name: "Jordan Roberts",
+    nickname: "Jordan",
     email: "student42@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -399,6 +443,7 @@ export const student: Student[] = [
   {
     id: 43,
     name: "Morgan Phillips",
+    nickname: "Morgan",
     email: "student43@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -408,6 +453,7 @@ export const student: Student[] = [
   {
     id: 44,
     name: "Riley Evans",
+    nickname: "Riley",
     email: "student44@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -417,6 +463,7 @@ export const student: Student[] = [
   {
     id: 45,
     name: "Avery Turner",
+    nickname: "Avery",
     email: "student45@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,
@@ -426,6 +473,7 @@ export const student: Student[] = [
   {
     id: 46,
     name: "Quinn Parker",
+    nickname: "Quinn",
     email: "student46@tcu.edu",
     school: "Texas Christian University",
     msyear: 3,
@@ -435,6 +483,7 @@ export const student: Student[] = [
   {
     id: 47,
     name: "Peyton Collins",
+    nickname: "Peyton",
     email: "student47@tcu.edu",
     school: "Texas Christian University",
     msyear: 4,
@@ -444,6 +493,7 @@ export const student: Student[] = [
   {
     id: 48,
     name: "Skyler Stewart",
+    nickname: "Skyler",
     email: "student48@tcu.edu",
     school: "Texas Christian University",
     msyear: 1,
@@ -453,6 +503,7 @@ export const student: Student[] = [
   {
     id: 49,
     name: "Dakota Morris",
+    nickname: "Dakota",
     email: "student49@tcu.edu",
     school: "Texas Christian University",
     msyear: 2,

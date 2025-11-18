@@ -5,7 +5,7 @@ import TopNavBar from '~/components/NavBars/TopNavBar.vue';
 
 <template>
   <div class="flex flex-col min-h-screen p-4 bg-gray-100">
-    <div class="flex flex-1 gap-4">
+    <div class="flex flex-1 gap-4 min-w-0">
       
       <!-- Sidebar -->
       <aside class="w-64 bg-[#AF67F0] text-white flex flex-col rounded-xl">
@@ -20,12 +20,12 @@ import TopNavBar from '~/components/NavBars/TopNavBar.vue';
       </aside>
 
       <!-- Main: header + page view -->
-      <div class="flex flex-col flex-1 gap-4">
+      <div class="flex flex-col flex-1 gap-4 min-w-0">
         <!-- Header -->
         <TopNavBar />
 
         <!-- Page view -->
-        <main class="flex-1 p-6 flex justify-center">
+        <main class="flex-1 p-6 min-w-0">
           <slot /> <!-- Page content renders here -->
         </main>
       </div>

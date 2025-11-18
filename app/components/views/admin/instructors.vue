@@ -50,7 +50,7 @@ const saveInstructorEdits = async (updated: Instructor) => {
 
     // Update local ref array
     // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place.
-    data.value = data.value.map(instructor => instructor.id === updated.id ? { ...updated } : student);
+    data.value = data.value.map(instructor => instructor.id === updated.id ? { ...updated } : instructor);
 
     // Close modal
     modalBus.closeEdit();

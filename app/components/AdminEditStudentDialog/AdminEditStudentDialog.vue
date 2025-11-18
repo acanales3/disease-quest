@@ -1,25 +1,28 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-import type { Instructor } from '~/assets/interface/Instructor';
+import type { Student } from '~/assets/interface/Student';
 
-const props = defineProps<{ show: boolean; data: Instructor }>();
+const props = defineProps<{ show: boolean; data: Student }>();
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'save', instructor: Instructor): void;
+  (e: 'save', student: Student): void;
 }>();
 
 // reactive form data
-const form = ref<Instructor>({
+const form = ref<Student>({
   name: '',
+  nickname: '',
   email: '',
   school: '',
+  msyear: 1,
   classroom: 0,
-  status: 'active',
+  status: 'registered',
 });
 
 const errors = ref({
   name: '',
+  nickname: '',
   email: '',
   school: '',
 });
@@ -31,25 +34,34 @@ watch(
     if (!val.name) {
       errors.value.name = 'Name is required.';
     } else if (val.name.length > 100) {
-      errors.value.name = 'Name cannot exceed 100 characters';
+      errors.value.name = 'Names cannot exceed 100 characters'
     } else {
       errors.value.name = '';
     }
 
+    // nickname validation
+    if (!val.nickname) {
+      errors.value.nickname = 'Nickname is required.';
+    } else if (val.nickname.length > 30) {
+      errors.value.nickname = 'Nickname cannot exceed 30 characters'
+    } else {
+      errors.value.nickname = '';
+    }
+
     // email validation
     if (!val.email) {
-      errors.value.email = 'Email is required';
+      errors.value.email = 'Email is required.';
     } else if (!val.email.endsWith('.edu')) {
-      errors.value.email = 'Email must be a .edu address';
+      errors.value.email = 'Email must be a .edu address.';
     } else {
       errors.value.email = '';
     }
 
     // school validation
     if (!val.school) {
-      errors.value.school = 'School is required';
+      errors.value.school = 'School is required.';
     } else if (val.school.length > 255) {
-      errors.value.school = 'School name cannot exceed 255 characters';
+      errors.value.school = 'School name cannot exceed 255 characters'
     } else {
       errors.value.school = '';
     }
@@ -88,9 +100,9 @@ const handleSave = () => {
   <Dialog :open="props.show" @update:open="handleOpenChange">
     <DialogContent class="max-h-[90vh] overflow-y-auto my-6">
       <DialogHeader>
-        <DialogTitle>Edit {{ props.data?.name || 'Instructor' }}</DialogTitle>
+        <DialogTitle>Edit {{ props.data?.name || 'Student' }}</DialogTitle>
         <DialogDescription>
-          Make changes to the instructor's profile here.
+          Make changes to the student's profile here.
           <br />
           Click 'save changes' when you're done.
         </DialogDescription>
@@ -103,6 +115,14 @@ const handleSave = () => {
           <input type="text" v-model="form.name" class="p-2 border rounded" :class="{ 'border-red-500': errors.name }" />
           <p v-if="errors.name" class="text-red-500 text-xs mt-1">
             {{ errors.name }}
+          </p>
+        </label>
+
+        <label class="flex flex-col">
+          Nickname
+          <input type="text" v-model="form.nickname" class="p-2 border rounded" :class="{ 'border-red-500': errors.nickname }" />
+          <p v-if="errors.nickname" class="text-red-500 text-xs mt-1">
+            {{ errors.nickname }}
           </p>
         </label>
 
@@ -123,6 +143,11 @@ const handleSave = () => {
         </label>
 
         <label class="flex flex-col">
+          MS Year
+          <input type="number" v-model.number="form.msyear" min="1" max="4" class="p-2 border rounded" />
+        </label>
+
+        <label class="flex flex-col">
           Classroom
           <input type="number" v-model.number="form.classroom" min="0" class="p-2 border rounded" />
         </label>
@@ -130,8 +155,8 @@ const handleSave = () => {
         <label class="flex flex-col">
           Status
           <select v-model="form.status" class="p-2 border rounded">
-            <option value="active">Active</option>
-            <option value="deactivated">Deactivated</option>
+            <option value="registered">Registered</option>
+            <option value="unregistered">Unregistered</option>
           </select>
         </label>
       </div>
@@ -141,8 +166,8 @@ const handleSave = () => {
 
         <button
           class="p-2 bg-[#AF67F0] transition-colors duration-500 hover:bg-purple-600 rounded text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          @click="handleSave"
           :disabled="isInvalid"
+          @click="handleSave"
         >
           Save Changes
         </button>
