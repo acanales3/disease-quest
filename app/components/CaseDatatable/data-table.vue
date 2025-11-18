@@ -41,7 +41,6 @@ import {
 const props = defineProps<{
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
-    rowLength?: number
 }>()
 
 const sorting = ref<SortingState>([])
@@ -74,17 +73,13 @@ const table = useVueTable({
         get columnVisibility() {
             return columnVisibility.value
         },
-        get pagination() {
-            return {
-                pageIndex: 0,
-                pageSize: props.rowLength || 10,
-            }
-        },
     },
 })
 </script>
 <template>
-    <div class="bg-white p-6 rounded-md shadow-md w-full">
+    <div
+        class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden"
+    >
         <!-- Top bar: label left, search & column menu right -->
         <div class="flex flex-wrap items-center justify-between gap-4 py-4">
             <!-- Left: label -->
@@ -149,7 +144,7 @@ const table = useVueTable({
                         <TableHead
                             v-for="header in headerGroup.headers"
                             :key="header.id"
-                            class="text-center font-semibold py-2 px-10"
+                            class="text-center font-semibold py-2 px-4"
                         >
                             <FlexRender
                                 v-if="!header.isPlaceholder"

@@ -17,22 +17,18 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const emit = defineEmits<{
-    play: [caseData: Case]
-    edit: [caseData: Case]
-    delete: [caseData: Case]
-}>()
-
-const handlePlay = () => {
-    emit('play', props.caseData)
-}
-
-const handleEdit = () => {
-    emit('edit', props.caseData)
-}
-
-const handleDelete = () => {
-    emit('delete', props.caseData)
+// Determine button text and action based on case status
+const getButtonText = () => {
+    switch (props.caseData.status) {
+        case 'not started':
+            return 'Begin'
+        case 'in progress':
+            return 'Continue'
+        case 'completed':
+            return 'Replay'
+        default:
+            return 'Begin'
+    }
 }
 </script>
 
@@ -51,9 +47,15 @@ const handleDelete = () => {
         <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem @click="handlePlay">Play</DropdownMenuItem>
-            <DropdownMenuItem @click="handleEdit">Edit</DropdownMenuItem>
-            <DropdownMenuItem @click="handleDelete">Delete</DropdownMenuItem>
+
+            <DropdownMenuItem as-child>
+                <NuxtLink :to="`/case/introduction`">{{
+                    getButtonText()
+                }}</NuxtLink>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem> Edit </DropdownMenuItem>
+            <DropdownMenuItem>Delete</DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
 </template>
