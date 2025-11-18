@@ -18,14 +18,17 @@ const currentIndex = computed(() => {
   );
 });
 
-// Compute previous and next routes
+// Compute previous and next routes, with /admin/cases as fallback
+// NEED TO BE FIXED BASED ON THE USER TOKEN - DEFAULT RIGHT NOW
 const previousRoute = computed(() =>
-  currentIndex.value > 0 ? `/case/${steps[currentIndex.value - 1]}` : null
+  currentIndex.value > 0
+    ? `/case/${steps[currentIndex.value - 1]}`
+    : "/admin/cases"
 );
 const nextRoute = computed(() =>
   currentIndex.value < steps.length - 1
     ? `/case/${steps[currentIndex.value + 1]}`
-    : null
+    : "/admin/cases"
 );
 </script>
 
