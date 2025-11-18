@@ -33,6 +33,8 @@ watch(
     // name validation
     if (!val.name) {
       errors.value.name = 'Name is required.';
+    } else if (val.name.length > 100) {
+      errors.value.name = 'Names cannot exceed 100 characters'
     } else {
       errors.value.name = '';
     }
@@ -40,6 +42,8 @@ watch(
     // nickname validation
     if (!val.nickname) {
       errors.value.nickname = 'Nickname is required.';
+    } else if (val.nickname.length > 30) {
+      errors.value.nickname = 'Nickname cannot exceed 30 characters'
     } else {
       errors.value.nickname = '';
     }
@@ -56,6 +60,8 @@ watch(
     // school validation
     if (!val.school) {
       errors.value.school = 'School is required.';
+    } else if (val.school.length > 255) {
+      errors.value.school = 'School name cannot exceed 255 characters'
     } else {
       errors.value.school = '';
     }
