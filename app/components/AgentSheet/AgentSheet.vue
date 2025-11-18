@@ -47,7 +47,7 @@ const props = defineProps({
       </div>
       <SheetFooter>
         <SheetClose as-child>
-          <Button variant="outline"> 
+          <Button variant="default"> 
             Close
           </Button>
         </SheetClose>
