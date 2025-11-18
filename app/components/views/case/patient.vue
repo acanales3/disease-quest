@@ -1,9 +1,9 @@
 <template>
   <div>
+    <StepperFlowVisual></StepperFlowVisual>
     <h1>Case Patient Page</h1>
     <BackwardButton route="/case/mentor"></BackwardButton>
     <ForwardButton route="/case/evaluation"></ForwardButton>
-    <StepperFlowVisual></StepperFlowVisual>
   </div>
 </template>
 
