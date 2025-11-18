@@ -6,8 +6,9 @@
     <!-- need to add 'Patient and Diagnostic Interactions' to top right of header -->
     <!-- need to add 'Case Name' above CaseTextArea   -->
   </div>
-  <div class="flex justify-center">
-    <h1 class="text-lg font-bold text-center">Case: {{ caseName }}</h1>
+  <div class="flex flex-col items-center">
+    <h1 class="text-lg font-bold pt-8">Patient Agent</h1>
+    <p class="text-md text-muted-foreground ">Discuss with the patient</p>
   </div>
   <div class="flex justify-center py-2">
     <CaseTextArea />
@@ -23,10 +24,9 @@ import BackwardButton from "~/components/BackwardButton/BackwardButton.vue";
 import ForwardButton from "~/components/ForwardButton/ForwardButton.vue";
 import CaseTextArea from "@/components/CaseTextArea/text-area.vue";
 import AgentSheet from "@/components/AgentSheet/AgentSheet.vue";
-
-const caseName = ref('')
-
 import StepperFlowVisual from "~/components/StepperFlowVisual/StepperFlowVisual.vue";
+
+
 </script>
 
 <style scoped></style>
