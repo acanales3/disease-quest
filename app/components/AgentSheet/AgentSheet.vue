@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import type { PropType } from 'vue'
 
 const props = defineProps({
   agent: {
@@ -19,9 +20,10 @@ const props = defineProps({
     required: true,
   },
   side: {
-    type: String,
-    required: true,
-  },
+    type: String as PropType<'left' | 'right' | 'top' | 'bottom'>,
+    default: 'right',
+    validator: (value: string) => ['left', 'right', 'top', 'bottom'].includes(value)
+  }
 })
 </script>
 
@@ -32,7 +34,7 @@ const props = defineProps({
         Open
       </Button>
     </SheetTrigger>
-    <SheetContent>
+    <SheetContent :side="side">
       <SheetHeader>
         <SheetTitle>Edit profile</SheetTitle>
         <SheetDescription>
