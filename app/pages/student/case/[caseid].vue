@@ -82,12 +82,12 @@
 
             <!-- Action button -->
             <div class="flex justify-center pt-6 pb-4">
-                <button
-                    @click="startCase"
-                    class="px-8 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium"
+                <NuxtLink
+                    :to="`/student/case/${caseData.id}/patient`"
+                    class="px-8 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium inline-block"
                 >
                     Start Case
-                </button>
+                </NuxtLink>
             </div>
         </div>
 
@@ -141,8 +141,8 @@ const goBack = () => {
 }
 
 const startCase = () => {
-    // TODO: Implement case start logic (maybe navigate to the actual case questions)
-    console.log('Starting case:', caseData.value?.id)
+    // Navigate to patient page as the first step of the case
+    router.push(`/student/case/${caseData.value?.id}/patient`)
 }
 
 onMounted(() => {
