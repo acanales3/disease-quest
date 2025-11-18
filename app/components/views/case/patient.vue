@@ -5,7 +5,7 @@
       <p class="text-md text-muted-foreground ">Discuss with the patient</p>
       <CaseTextArea class="w-full"/>
     </div>
-    <div class="flex justify-center space-x-50 py-20 w-full">
+    <div class="flex justify-center space-x-50 w-full py-8">
       <AgentSheet agent="Diagnostic" side="left" />
       <AgentSheet agent="Mentor" side="right" />
     </div>
