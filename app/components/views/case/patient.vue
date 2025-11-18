@@ -1,19 +1,20 @@
 <template>
-  <div>
-    <StepperFlowVisual></StepperFlowVisual>
-    <h1>Case Patient Page</h1>
+  <div class="flex justify-center">
     <BackwardButton route="/case/mentor"></BackwardButton>
     <ForwardButton route="/case/evaluation"></ForwardButton>
+    <StepperFlowVisual></StepperFlowVisual>
     <!-- need to add 'Patient and Diagnostic Interactions' to top right of header -->
     <!-- need to add 'Case Name' above CaseTextArea   -->
   </div>
-  <div class="flex justify-center py-10 min-h-[calc(100vh-22rem)]">
-    Now let's get started with {{ caseName }}
+  <div class="flex justify-center">
+    <h1 class="text-lg font-bold text-center">Case: {{ caseName }}</h1>
+  </div>
+  <div class="flex justify-center py-2">
     <CaseTextArea />
   </div>
-  <div class="flex justify-center space-x-4 py-10 w-full">
-    <AgentDrawer agent="Diagnostic" />
-    <AgentDrawer agent="Mentor" />
+  <div class="flex justify-center space-x-8 py-20 w-full">
+    <AgentSheet agent="Diagnostic" side="left" />
+    <AgentSheet agent="Mentor" side="right" />
   </div>
 </template>
 
