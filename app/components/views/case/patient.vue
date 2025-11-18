@@ -1,5 +1,7 @@
 <template>
-  <div class="py-2 min-w-0">
+  <div>
+    <StepperFlowVisual></StepperFlowVisual>
+    <h1>Case Patient Page</h1>
     <BackwardButton route="/case/mentor"></BackwardButton>
     <ForwardButton route="/case/evaluation"></ForwardButton>
     <!-- need to add 'Patient and Diagnostic Interactions' to top right of header -->
@@ -23,6 +25,7 @@ import AgentDrawer from "@/components/AgentDrawer/AgentDrawer.vue";
 
 const caseName = ref('')
 
+import StepperFlowVisual from "~/components/StepperFlowVisual/StepperFlowVisual.vue";
 </script>
 
 <style scoped></style>

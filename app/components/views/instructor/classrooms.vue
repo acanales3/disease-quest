@@ -21,7 +21,7 @@
     </div>
 
     <div class="w-full py-2">
-      <DataTable :columns="columns" :data="data" />
+      <DataTable :columns="visibleColumns" :data="data" />
     </div>
 
     <CreateClassroomModal 
