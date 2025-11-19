@@ -4,7 +4,18 @@ import DropdownAction from "@/components/InstructorDatatable/data-table-dropdown
 import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 
-export const columns: ColumnDef<Instructor>[] = [
+export interface Instructor {
+  id: number;
+  name: string;
+  email: string;
+  school: string;
+  classroom: number;
+  status: "active" | "deactived";
+  // action column still needed
+}
+
+export function getColumns(role: string): ColumnDef<Instructor>[] {
+  return [
   {
     accessorKey: "id",
     header: () =>
@@ -100,18 +111,12 @@ export const columns: ColumnDef<Instructor>[] = [
       return h(
         "div",
         { class: "relative flex justify-center" },
-        h(DropdownAction, { instructor })
+        h(DropdownAction, { 
+          instructor,
+          role,
+        })
       );
     },
   },
 ];
-
-export interface Instructor {
-  id: number;
-  name: string;
-  email: string;
-  school: string;
-  classroom: number;
-  status: "active" | "deactived";
-  // action column still needed
 }
