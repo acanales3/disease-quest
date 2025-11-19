@@ -35,7 +35,6 @@ const visibleColumns = computed(() => {
     'startDate',
     'endDate',
     'status',
-    'actions',
   ];
   return getColumns('student').filter(column => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
