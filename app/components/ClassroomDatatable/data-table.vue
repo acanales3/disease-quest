@@ -160,7 +160,7 @@ onMounted(() => {
             <TableHead
               v-for="header in headerGroup.headers"
               :key="header.id"
-              class="text-center font-semibold py-1 px-4"
+              class="text-center font-semibold py-2 px-4"
             >
               <FlexRender
                 v-if="!header.isPlaceholder"

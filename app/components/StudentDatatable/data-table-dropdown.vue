@@ -9,10 +9,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-
+import type { Student } from "./columns";
 import { modalBus } from "@/components/AdminEditStudentDialog/modalBusEditStudent"
 
-const props = defineProps<{ student: Student }>();
+interface Props {
+  student: Student;
+  role: string;
+}
+
+const props = defineProps<Props>();
 
 function onEdit() {
   modalBus.openEdit(props.student);
@@ -31,9 +36,9 @@ function onEdit() {
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem @click="onEdit"> Edit </DropdownMenuItem>
-      <DropdownMenuItem>Delete</DropdownMenuItem>
-      <DropdownMenuItem>View Analytics</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Remove from Classroom</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

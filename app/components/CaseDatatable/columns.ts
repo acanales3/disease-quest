@@ -4,7 +4,18 @@ import DropdownAction from "@/components/CaseDatatable/data-table-dropdown.vue";
 import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 
-export const columns: ColumnDef<Case>[] = [
+export interface Case {
+  id: number;
+  name: string;
+  description: string;
+  classroom: number;
+  completionDate: string;
+  status: "not started" | "in progress" | "completed";
+  // action column still needed
+}
+
+export function getColumns(role: string): ColumnDef<Case>[] {  
+  return [
   {
     accessorKey: "id",
     header: () =>
@@ -99,18 +110,12 @@ export const columns: ColumnDef<Case>[] = [
       return h(
         "div",
         { class: "relative flex justify-center" },
-        h(DropdownAction, { caseData })
+        h(DropdownAction, { 
+          caseData,
+          role,
+        })
       );
     },
   },
 ];
-
-export interface Case {
-  id: number;
-  name: string;
-  description: string;
-  classroom: number;
-  completionDate: string;
-  status: "not started" | "in progress" | "completed";
-  // action column still needed
 }
