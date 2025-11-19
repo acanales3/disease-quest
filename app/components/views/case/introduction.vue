@@ -1,15 +1,11 @@
 <template>
-    <div class="flex flex-col h-full bg-background">
+    <div class="flex flex-col w-full mx-auto px-4 pb-10">
         <!-- Header -->
-        <div class="flex items-center justify-between p-6 border-b">
-            <h1 class="text-xl font-semibold">Introduction</h1>
-        </div>
-
+    <div class="flex flex-col items-center w-full">
+      <h1 class="text-lg font-bold pt-12">{{ caseData.title }}</h1>
+    </div>
         <!-- Main Content -->
         <div class="flex-1 overflow-y-auto p-8">
-            <!-- Case Title -->
-            <h2 class="text-2xl font-bold mb-6">{{ caseData.title }}</h2>
-
             <!-- Content Paragraphs -->
             <div class="space-y-4 text-foreground leading-relaxed">
                 <p
