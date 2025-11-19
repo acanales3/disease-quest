@@ -9,6 +9,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import type { Classroom } from "./columns";
+
+interface Props {
+  classroom: Classroom;
+  role: string;
+}
+
+const props = defineProps<Props>();
 </script>
 
 <template>
@@ -22,9 +30,10 @@ import {
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem>Edit </DropdownMenuItem>
-      <DropdownMenuItem>Delete</DropdownMenuItem>
-      <DropdownMenuItem>View Analytics </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Edit</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">View Analytics</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Mange Classroom</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
