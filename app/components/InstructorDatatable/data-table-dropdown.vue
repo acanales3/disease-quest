@@ -34,8 +34,8 @@ function onEdit() {
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
+      <DropdownMenuSeparator />
       <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
-      <DropdownMenuSeparator v-if="props.role === 'admin'" />
       <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
