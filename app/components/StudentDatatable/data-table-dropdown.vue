@@ -36,7 +36,7 @@ function onEdit() {
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Remove from Classroom</DropdownMenuItem>
     </DropdownMenuContent>

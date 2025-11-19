@@ -31,7 +31,7 @@ const props = defineProps<Props>();
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Edit</DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'admin' || props.role === 'instructor'">Delete</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">View Analytics</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Mange Classroom</DropdownMenuItem>
     </DropdownMenuContent>

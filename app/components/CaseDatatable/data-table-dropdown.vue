@@ -55,7 +55,7 @@ const getButtonText = () => {
         </NuxtLink>
       </DropdownMenuItem>
 
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'"> Edit </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'"> Edit </DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'student' && props.caseData.status === 'completed'">Review Case</DropdownMenuItem>
     </DropdownMenuContent>
