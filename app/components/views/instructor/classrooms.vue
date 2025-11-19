@@ -80,6 +80,15 @@ function openCreateModal() {
 function handleClassroomCreated(classroom: any) {
   console.log('Classroom created:', classroom);
   // data.value = await getData();
+  
+  // Will likely need to replace this once api is ready
+  const newClassroom = {
+    id: data.value.length + 1,
+    ...classroom,
+  };
+
+  data.value = [...data.value, newClassroom];
+  isCreateModalOpen.value = false;
 }
 
 onMounted(async () => {
