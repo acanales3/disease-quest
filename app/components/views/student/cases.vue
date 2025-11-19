@@ -29,7 +29,7 @@
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
 import { onMounted, ref, computed } from "vue";
-import { columns } from "../../CaseDatatable/columns";
+import { getColumns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { cases } from "~/assets/interface/Case";
 import TotalCount from "../../ui/TotalCount.vue";
@@ -38,7 +38,7 @@ const data = ref<Case[]>([]);
 
 const visibleColumns = computed(() => {
   const columnsToShow = ['id', 'name', 'description', 'classroom', 'completionDate', 'status', 'actions'];
-  return columns.filter(column => {
+  return getColumns('student').filter(column => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });

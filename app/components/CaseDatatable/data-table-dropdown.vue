@@ -13,6 +13,7 @@ import type { Case } from "./columns";
 
 interface Props {
   caseData: Case;
+  role: string;
 }
 
 const props = defineProps<Props>();
@@ -49,12 +50,14 @@ const getButtonText = () => {
       <DropdownMenuSeparator />
 
       <DropdownMenuItem as-child>
-        <NuxtLink :to="`/case/introduction`">{{ getButtonText() }}</NuxtLink>
+        <NuxtLink :to="`/case/introduction`">
+          {{ getButtonText() }}
+        </NuxtLink>
       </DropdownMenuItem>
 
-
-      <DropdownMenuItem> Edit </DropdownMenuItem>
-      <DropdownMenuItem>Delete</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'"> Edit </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'student' && props.caseData.status === 'completed'">Review Case</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
