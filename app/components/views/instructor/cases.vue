@@ -21,7 +21,7 @@
 import type { Case } from "../../CaseDatatable/columns";
 import type { Classroom } from "~/assets/interface/Classroom";
 import { onMounted, ref, computed } from "vue";
-import { getColumns } from "../../CaseDatatable/columns";
+import { columns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { cases} from "~/assets/interface/Case"
 import { classrooms } from "~/assets/interface/Classroom"
@@ -33,7 +33,7 @@ const classroomsData = ref<Classroom[]>([]);
 
 const visibleColumns = computed(() => {
   const columnsToShow = ['id', 'name', 'description', 'actions'];
-  return getColumns('instructor').filter(column => {
+  return columns.filter(column => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });

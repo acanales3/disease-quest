@@ -3,20 +3,7 @@ import { h } from "vue";
 import DropdownAction from "@/components/ClassroomDatatable/data-table-dropdown.vue";
 import { ArrowUpDown } from "lucide-vue-next";
 
-export interface Classroom {
-  id: number;
-  name: string;
-  code: string;
-  instructor: string;
-  school: string;
-  section: string;
-  startDate: string;
-  endDate: string;
-  status: "active" | "inactive";
-}
-
-export function getColumns(role: string): ColumnDef<Classroom>[] {
-  return [
+export const columns: ColumnDef<Classroom>[] = [
   {
     accessorKey: "id",
     header: () =>
@@ -153,12 +140,20 @@ export function getColumns(role: string): ColumnDef<Classroom>[] {
       return h(
         "div",
         { class: "relative flex justify-center" },
-        h(DropdownAction, { 
-          classroom,
-          role,
-        })
+        h(DropdownAction, { classroom })
       );
     },
   },
 ];
+
+export interface Classroom {
+  id: number;
+  name: string;
+  code: string;
+  instructor: string;
+  school: string;
+  section: string;
+  startDate: string;
+  endDate: string;
+  status: "active" | "inactive";
 }
