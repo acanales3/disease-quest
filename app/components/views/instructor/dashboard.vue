@@ -48,12 +48,12 @@
 <script setup lang="ts">
 import PieChart from "../../PieChart/pie-chart.vue";
 
-import { getColumns } from "../../ClassroomDatatable/columns";
+import { columns } from "../../ClassroomDatatable/columns";
 import DataTable from "../../ClassroomDatatable/data-table.vue";
 import { classrooms } from "../../../assets/interface/Classroom";
 import type { Classroom } from "../../ClassroomDatatable/columns";
 import TotalCount from "@/components/ui/TotalCount.vue";
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref } from "vue";
 
 const graphData = [
   { name: "Registered", total: 30 },
@@ -74,19 +74,25 @@ async function getData(): Promise<Classroom[]> {
 const data = ref<Classroom[]>([]);
 
 const visibleColumns = computed(() => {
-  const columnsToShow = [
-    "id",
-    "name",
-    "code",
-    "section",
-    "startDate",
-    "endDate",
-    "status",
-    "actions",
-  ];
-  return getColumns('instructor').filter(column => {
-    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
-    return key ? columnsToShow.includes(String(key)) : false;
+  return columns.map((col) => {
+    const columnsToShow = [
+      "id",
+      "name",
+      "code",
+      "section",
+      "startDate",
+      "endDate",
+      "status",
+    ];
+
+    return {
+      ...col,
+      meta: {
+        ...col.meta,
+        hidden: !columnsToShow.includes(
+          (col as any).accessorKey as string),
+      },
+    };
   });
 });
 

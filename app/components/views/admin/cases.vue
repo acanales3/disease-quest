@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
 import { onMounted, ref, computed } from "vue";
-import { getColumns } from "@/components/CaseDatatable/columns";
+import { columns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { cases} from "~/assets/interface/Case"
 import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue";
@@ -30,7 +30,7 @@ const data = ref<Case[]>([]);
 
 const visibleColumns = computed(() => {
   const columnsToShow = ['id', 'name', 'description', 'actions'];
-  return getColumns('admin').filter(column => {
+  return columns.filter(column => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });

@@ -8,7 +8,7 @@
 
     <!-- Instructor Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable :columns="columns" :data="data" />
     </div>
 
     <!-- Instructor Edit Modal -->
@@ -23,8 +23,8 @@
 
 <script setup lang="ts">
 import type { Instructor } from "../../InstructorDatatable/columns";
-import { onMounted, ref, computed } from "vue";
-import { getColumns } from "../../InstructorDatatable/columns";
+import { onMounted, ref } from "vue";
+import { columns } from "../../InstructorDatatable/columns";
 import DataTable from "../../InstructorDatatable/data-table.vue";
 import { instructors } from "../../../assets/interface/Instructor";
 import TotalCount from "@/components/ui/TotalCount.vue";
@@ -34,10 +34,6 @@ import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditIns
 import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue"
 
 const data = ref<Instructor[]>([]);
-
-const visibleColumns = computed(() => {
-  return getColumns('admin');
-});
 
 async function getData(): Promise<Instructor[]> {
   // Fetch data from your API here.

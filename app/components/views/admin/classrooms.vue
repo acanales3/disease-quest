@@ -21,7 +21,7 @@
     </div>
 
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable :columns="columns" :data="data" />
     </div>
 
     <CreateClassroomModal 
@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { getColumns } from "../../ClassroomDatatable/columns";
+import { columns } from "../../ClassroomDatatable/columns";
 import { classrooms } from "../../../assets/interface/Classroom";
 import type { Classroom } from '../../ClassroomDatatable/columns'
 import { onMounted, ref, computed } from 'vue'
@@ -44,10 +44,6 @@ import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModa
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
-
-const visibleColumns = computed(() => {
-  return getColumns('admin');
-});
 
 
 
