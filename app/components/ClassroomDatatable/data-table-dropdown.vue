@@ -35,14 +35,9 @@ const props = defineProps<Props>();
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">View Analytics</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
         <NuxtLink 
-          :to="{
-            path: props.role === 'admin'
-              ? `/admin/classrooms/${classroom.id}`
-              : `/instructor/classrooms/${classroom.id}`,
-            query: {
-              data: JSON.stringify(classroom)
-            }
-          }"
+          :to="props.role === 'admin' 
+            ? `/admin/classrooms/${classroom.id}` 
+            : `/instructor/classrooms/${classroom.id}`"
         >         
           Manage Classroom
         </NuxtLink>

@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-10">
     <!-- CLASSROOM DETAILS -->
-    <div class="bg-white shadow rounded p-8 text-center">
+    <div v-if="classroom" class="bg-white shadow rounded p-8 text-center">
       <!-- Title -->
       <h1 class="text-2xl font-bold mb-6 text-gray-900">
         {{ classroom.name }}
@@ -50,25 +50,25 @@
       </div>
     </div>
 
-    <!-- CASES TABLE -->
-
-    <!-- STUDENTS TABLE -->
+    <div v-else class="text-center text-gray-500">
+      Classroom not found.
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRoute } from "vue-router";
+import { classrooms, type Classroom } from "~/assets/interface/Classroom";
 
-/* GET CLASSROOM DATA */
 const route = useRoute();
-let classroom = null;
 
-// If classroom data passed via query
-if (typeof route.query.data === 'string') {
-  classroom = JSON.parse(route.query.data);
-}
+// Get classroomId from route params (as number)
+const classroomId = Number(route.params.classroomId);
 
-
+// Find the classroom in mock data
+const classroom: Classroom | undefined = classrooms.find(
+  c => c.id === classroomId
+);
 </script>
 
 <style scoped></style>
