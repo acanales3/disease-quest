@@ -46,11 +46,23 @@
       Classroom not found.
     </div>
   </div>
+
+   <!-- Student Table -->
+    <div class="w-full py-2">
+      <DataTable :columns="visibleColumns" :data="data"/>
+    </div>
 </template>
+
+
 
 <script setup lang="ts">
 import { useRoute } from "vue-router";
 import { classrooms, type Classroom } from "~/assets/interface/Classroom";
+import type { Student } from "../../StudentDatatable/columns";
+import { onMounted, ref, computed } from "vue";
+import { getColumns } from "../../StudentDatatable/columns";
+import DataTable from "../../StudentDatatable/data-table.vue";
+import { student } from "~/assets/interface/Student";
 
 const route = useRoute();
 
@@ -61,6 +73,29 @@ const classroomId = Number(route.params.classroomId);
 const classroom: Classroom | undefined = classrooms.find(
   c => c.id === classroomId
 );
+
+const data = ref<Student[]>([]);
+const count = ref<number>(0);
+
+const visibleColumns = computed(() => {
+  return getColumns('instructor');
+});
+
+async function getData(): Promise<Student[]> {
+    // Fetch data from the API here.
+    // For now, we will use the mock student data from the interface.
+    return student;
+}
+
+async function getStudentCount(): Promise<number> {
+  return 153;
+}
+
+onMounted(async () => {
+    data.value = await getData();
+    count.value = await getStudentCount();
+});
+
 </script>
 
 <style scoped></style>
