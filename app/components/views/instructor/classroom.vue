@@ -2,14 +2,11 @@
   <div class="space-y-10">
     <!-- CLASSROOM DETAILS -->
     <div v-if="classroom" class="bg-white shadow rounded p-8 text-center">
-      <!-- Title -->
       <h1 class="text-2xl font-bold mb-6 text-gray-900">
         {{ classroom.name }}
       </h1>
 
-      <!-- Details grid -->
-      <div class="grid grid-cols-3 gap-y-6 gap-x-10 text-center max-w-6xl mx-auto text-gray-700">
-        <!-- Column 1: Code & Section -->
+      <div class="grid grid-cols-3 gap-y-6 gap-x-10 max-w-6xl mx-auto text-gray-700">
         <div>
           <div class="font-semibold">Code</div>
           <div>{{ classroom.code }}</div>
@@ -17,7 +14,6 @@
           <div>{{ classroom.section }}</div>
         </div>
 
-        <!-- Column 3: Start & End Date -->
         <div>
           <div class="font-semibold">Start Date</div>
           <div>{{ classroom.startDate }}</div>
@@ -25,19 +21,16 @@
           <div>{{ classroom.endDate }}</div>
         </div>
 
-        <!-- Column 4: Status -->
         <div>
           <div class="font-semibold">Status</div>
-          <div>
-            <span
-              :class="{
-                'text-green-600': classroom.status === 'active',
-                'text-red-600': classroom.status === 'inactive',
-              }"
-            >
-              {{ classroom.status }}
-            </span>
-          </div>
+          <span
+            :class="{
+              'text-green-600': classroom.status === 'active',
+              'text-red-600': classroom.status === 'inactive',
+            }"
+          >
+            {{ classroom.status }}
+          </span>
         </div>
       </div>
     </div>
@@ -45,57 +38,76 @@
     <div v-else class="text-center text-gray-500">
       Classroom not found.
     </div>
-  </div>
 
-   <!-- Student Table -->
+    <!-- CASES TABLE -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data"/>
+      <CaseDataTable :columns="caseColumns" :data="caseData" />
     </div>
+
+    <!-- STUDENT TABLE -->
+    <div class="w-full py-2">
+      <StudentDataTable :columns="studentColumns" :data="studentData" />
+    </div>
+  </div>
 </template>
 
-
-
 <script setup lang="ts">
+import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
+
+/* classroom */
 import { classrooms, type Classroom } from "~/assets/interface/Classroom";
+
+/* students */
 import type { Student } from "../../StudentDatatable/columns";
-import { onMounted, ref, computed } from "vue";
-import { getColumns } from "../../StudentDatatable/columns";
-import DataTable from "../../StudentDatatable/data-table.vue";
+import { getColumns as getStudentColumns } from "../../StudentDatatable/columns";
+import StudentDataTable from "../../StudentDatatable/data-table.vue";
 import { student } from "~/assets/interface/Student";
 
-const route = useRoute();
+/* cases */
+import type { Case } from "../../CaseDatatable/columns";
+import { getColumns as getCaseColumns } from "../../CaseDatatable/columns";
+import CaseDataTable from "../../CaseDatatable/data-table.vue";
+import { cases } from "~/assets/interface/Case";
 
-// Get classroomId from route params (as number)
+const route = useRoute();
 const classroomId = Number(route.params.classroomId);
 
-// Find the classroom in mock data
 const classroom: Classroom | undefined = classrooms.find(
   c => c.id === classroomId
 );
 
-const data = ref<Student[]>([]);
-const count = ref<number>(0);
+/* ===== STUDENTS ===== */
+const studentData = ref<Student[]>([]);
+const studentColumns = computed(() => getStudentColumns("instructor"));
 
-const visibleColumns = computed(() => {
-  return getColumns('instructor');
-});
-
-async function getData(): Promise<Student[]> {
-    // Fetch data from the API here.
-    // For now, we will use the mock student data from the interface.
-    return student;
+async function getStudents(): Promise<Student[]> {
+  return student;
 }
 
-async function getStudentCount(): Promise<number> {
-  return 153;
+/* ===== CASES ===== */
+const caseData = ref<Case[]>([]);
+const caseColumns = computed(() => {
+  const columnsToShow = ["id", "name", "description"];
+  return getCaseColumns("instructor").filter(column => {
+    const key =
+      "id" in column
+        ? column.id
+        : "accessorKey" in column
+        ? column.accessorKey
+        : undefined;
+    return key ? columnsToShow.includes(String(key)) : false;
+  });
+});
+
+async function getCases(): Promise<Case[]> {
+  return cases;
 }
 
 onMounted(async () => {
-    data.value = await getData();
-    count.value = await getStudentCount();
+  studentData.value = await getStudents();
+  caseData.value = await getCases();
 });
-
 </script>
 
 <style scoped></style>
