@@ -49,7 +49,7 @@ const getButtonText = () => {
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
 
-      <DropdownMenuItem as-child>
+      <DropdownMenuItem>
         <NuxtLink :to="`/case/introduction`">
           {{ getButtonText() }}
         </NuxtLink>

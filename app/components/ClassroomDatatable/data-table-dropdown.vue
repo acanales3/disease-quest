@@ -33,7 +33,15 @@ const props = defineProps<Props>();
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Edit</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">View Analytics</DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Mange Classroom</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
+        <NuxtLink 
+          :to="props.role === 'admin' 
+            ? `/admin/classrooms/${classroom.id}` 
+            : `/instructor/classrooms/${classroom.id}`"
+        >         
+          Manage Classroom
+        </NuxtLink>
+      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
