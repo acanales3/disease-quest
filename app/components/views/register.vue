@@ -13,32 +13,26 @@
 
     <div class="w-full max-w-md">
       <form @submit.prevent="handleSubmit" class="space-y-4">
-        
         <!-- First Name -->
         <div>
-          <label for="firstName" class="block text-sm font-medium text-white">First Name</label>
-          <input 
+          <label for="firstName" class="block text-sm font-medium text-white"
+            >First Name</label
+          >
+          <input
             v-model="formData.firstName"
-            type="text" 
-            id="firstName" 
-            name="firstName" 
-            required 
+            type="text"
+            id="firstName"
+            name="firstName"
+            required
             placeholder="John"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
-          >
+          />
         </div>
 
         <!-- Last Name -->
         <div>
-          <label for="lastName" class="block text-sm font-medium text-white">Last Name</label>
-          <input 
-            v-model="formData.lastName"
-            type="text" 
-            id="lastName" 
-            name="lastName" 
-            required 
-            placeholder="Doe"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
+          <label for="lastName" class="block text-sm font-medium text-white"
+            >Last Name</label
           >
           <input
             v-model="formData.lastName"
@@ -64,7 +58,7 @@
             required
             placeholder="john.doe@university.edu"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
-          >
+          />
         </div>
 
         <!-- School/Institution -->
@@ -80,7 +74,7 @@
             required
             placeholder="Texas Christian University"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
-          >
+          />
         </div>
 
         <!-- Password -->
@@ -97,7 +91,7 @@
             placeholder="••••••••"
             minlength="8"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
-          >
+          />
           <p class="text-xs text-white mt-1">Minimum 8 characters</p>
         </div>
 
@@ -117,7 +111,7 @@
             placeholder="••••••••"
             minlength="8"
             class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
-          >
+          />
         </div>
 
         <!-- Error Message -->
@@ -158,14 +152,14 @@
 import { ref, reactive } from "vue";
 
 const formData = reactive({
-  firstName: '',
-  lastName: '',
-  email: '',
-  school: '',
-  msyear: '',
-  classroomCode: '',
-  password: '',
-  confirmPassword: ''
+  firstName: "",
+  lastName: "",
+  email: "",
+  school: "",
+  msyear: "",
+  classroomCode: "",
+  password: "",
+  confirmPassword: "",
 });
 
 const errorMessage = ref("");
@@ -181,7 +175,7 @@ const handleSubmit = async () => {
   }
 
   if (formData.password.length < 8) {
-    errorMessage.value = 'Password must be at least 8 characters long';
+    errorMessage.value = "Password must be at least 8 characters long";
     return;
   }
 
@@ -189,13 +183,13 @@ const handleSubmit = async () => {
 
   try {
     // TODO: Implement actual registration logic with Supabase Auth
-    console.log('Registration data:', {
+    console.log("Registration data:", {
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,
       school: formData.school,
       msyear: formData.msyear || null,
-      classroomCode: formData.classroomCode || null
+      classroomCode: formData.classroomCode || null,
     });
 
     // Simulate API call
@@ -205,7 +199,7 @@ const handleSubmit = async () => {
     // navigateTo('/login');
 
     alert(
-      "Registration successful! Please check your email to verify your account."
+      "Registration successful! Please check your email to verify your account.",
     );
   } catch (error) {
     console.error("Registration error:", error);
