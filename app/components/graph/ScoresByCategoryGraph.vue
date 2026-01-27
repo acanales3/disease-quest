@@ -95,13 +95,13 @@ async function getData(): Promise<{
   // DATABASE MOCK SCORES NEED TO BE REMOVED
   return {
     categories: [
-      { label: "History Taking and Synthesis", score: 55 },
-      { label: "Physical Exam Interpretation", score: 85 },
-      { label: "Differential Diagnosis Formulation", score: 62 },
-      { label: "Diagnostic Tests", score: 72 },
-      { label: "Management Reasoning", score: 68 },
-      { label: "Communication and Empathy", score: 76 },
-      { label: "Reflection and Metacognition", score: 80 },
+      { label: "History Taking and Synthesis", score: 0 },
+      { label: "Physical Exam Interpretation", score: 0 },
+      { label: "Differential Diagnosis Formulation", score: 0 },
+      { label: "Diagnostic Tests", score: 0 },
+      { label: "Management Reasoning", score: 0 },
+      { label: "Communication and Empathy", score: 0 },
+      { label: "Reflection and Metacognition", score: 0 },
     ],
     cases: [
       { id: "case-a", name: "Case A" },
