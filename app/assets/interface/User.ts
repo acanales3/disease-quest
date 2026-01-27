@@ -1,8 +1,10 @@
 export interface User {
   id: string;
-  first_name?: string;
-  last_name?: string;
-  username?: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  name?: string;
   school?: string;
-  token: "ADMIN" | "STUDENT" | "INSTRUCTOR";
+  role: "ADMIN" | "INSTRUCTOR" | "STUDENT";
+  created_at?: string;
 }
