@@ -84,7 +84,7 @@ function onCancel() {
 
 function resetForm() {
   form.value = {
-    title: "",
+    name: "",
     code: "",
     section: "",
     term: "",
