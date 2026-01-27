@@ -11,48 +11,27 @@ import {
 const router = useRouter();
 const route = useRoute();
 
-// Define steps with slugs
 const steps = [
-  {
-    step: 1,
-    title: "Introduction",
-    description: "Read Up on Your Case",
-    icon: BookOpen,
-    slug: "introduction",
-  },
-  {
-    step: 2,
-    title: "Mentor Conversation",
-    description: "Speak with your mentor",
-    icon: MessageCircleDashed,
-    slug: "mentor",
-  },
-  {
-    step: 3,
-    title: "Patient Conversation",
-    description: "Speak with your Patient",
-    icon: MessageCircleMore,
-    slug: "patient",
-  },
-  {
-    step: 4,
-    title: "Feedback and Evaluation",
-    description: "Receive your Feedback",
-    icon: BookLock,
-    slug: "evaluation",
-  },
+  { step: 1, title: "Introduction", description: "Read Up on Your Case", icon: BookOpen, slug: "introduction" },
+  { step: 2, title: "Mentor Conversation", description: "Speak with your mentor", icon: MessageCircleDashed, slug: "mentor" },
+  { step: 3, title: "Patient Conversation", description: "Speak with your Patient", icon: MessageCircleMore, slug: "patient" },
+  { step: 4, title: "Feedback and Evaluation", description: "Receive your Feedback", icon: BookLock, slug: "evaluation" },
 ];
 
-// Get current step from route
+// Get caseId from route
+const caseId = computed(() => route.params.caseId as string);
+
+// Compute current step index
 const currentStepIndex = computed(() => {
-  const segment = route.path.split("/")[2];
+  const segment = route.path.split("/")[3]; // segment 3 = step
   const index = steps.findIndex((s) => s.slug === segment);
   return index >= 0 ? index : 0;
 });
 
-// Navigate to step
+// Navigate to a step (include caseId)
 const goToStep = (slug: string) => {
-  router.push(`/case/${slug}`);
+  if (!caseId.value) return;
+  router.push(`/case/${caseId.value}/${slug}`);
 };
 </script>
 
@@ -68,11 +47,7 @@ const goToStep = (slug: string) => {
         <!-- Step Indicator -->
         <div
           class="flex items-center justify-center w-10 h-10 rounded-full transition-colors"
-          :class="
-            index <= currentStepIndex
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted'
-          "
+          :class="index <= currentStepIndex ? 'bg-primary text-primary-foreground' : 'bg-muted'"
         >
           <component :is="step.icon" class="w-5 h-5" />
         </div>
@@ -86,19 +61,11 @@ const goToStep = (slug: string) => {
 
         <!-- Labels -->
         <div class="flex flex-col items-center mt-2">
-          <div
-            class="text-xs font-medium"
-            :class="
-              index <= currentStepIndex
-                ? 'text-primary'
-                : 'text-muted-foreground'
-            "
-          >
+          <div class="text-xs font-medium"
+               :class="index <= currentStepIndex ? 'text-primary' : 'text-muted-foreground'">
             {{ step.title }}
           </div>
-          <div class="text-[11px] text-muted-foreground">
-            {{ step.description }}
-          </div>
+          <div class="text-[11px] text-muted-foreground">{{ step.description }}</div>
         </div>
       </div>
     </div>
