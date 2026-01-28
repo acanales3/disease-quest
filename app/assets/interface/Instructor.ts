@@ -1,16 +1,16 @@
-interface Instructor {
-  id: number;
+export interface Instructor {
+  id: string;
   name: string;
   email: string;
   school: string;
   classroom: number;
-  status: "active" | "deactived";
+  status: "active" | "deactivated";
   // action column still needed
 }
 
 export const instructors: Instructor[] = [
   {
-    id: 0,
+    id: "0",
     name: "Professor 0",
     email: "prof0@tcu.edu",
     school: "Texas Christian University",
@@ -18,7 +18,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 1,
+    id: "1",
     name: "Professor 1",
     email: "prof1@tcu.edu",
     school: "Texas Christian University",
@@ -26,15 +26,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 2,
+    id: "2",
     name: "Professor 2",
     email: "prof2@tcu.edu",
     school: "Texas Christian University",
     classroom: 2,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 3,
+    id: "3",
     name: "Professor 3",
     email: "prof3@tcu.edu",
     school: "Texas Christian University",
@@ -42,7 +42,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 4,
+    id: "4",
     name: "Professor 4",
     email: "prof4@tcu.edu",
     school: "Texas Christian University",
@@ -50,15 +50,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 5,
+    id: "5",
     name: "Professor 5",
     email: "prof5@tcu.edu",
     school: "Texas Christian University",
     classroom: 5,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 6,
+    id: "6",
     name: "Professor 6",
     email: "prof6@tcu.edu",
     school: "Texas Christian University",
@@ -66,7 +66,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 7,
+    id: "7",
     name: "Professor 7",
     email: "prof7@tcu.edu",
     school: "Texas Christian University",
@@ -74,15 +74,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 8,
+    id: "8",
     name: "Professor 8",
     email: "prof8@tcu.edu",
     school: "Texas Christian University",
     classroom: 8,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 9,
+    id: "9",
     name: "Professor 9",
     email: "prof9@tcu.edu",
     school: "Texas Christian University",
@@ -90,7 +90,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 10,
+    id: "10",
     name: "Professor 10",
     email: "prof10@tcu.edu",
     school: "Texas Christian University",
@@ -98,15 +98,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 11,
+    id: "11",
     name: "Professor 11",
     email: "prof11@tcu.edu",
     school: "Texas Christian University",
     classroom: 11,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 12,
+    id: "12",
     name: "Professor 12",
     email: "prof12@tcu.edu",
     school: "Texas Christian University",
@@ -114,7 +114,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 13,
+    id: "13",
     name: "Professor 13",
     email: "prof13@tcu.edu",
     school: "Texas Christian University",
@@ -122,15 +122,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 14,
+    id: "14",
     name: "Professor 14",
     email: "prof14@tcu.edu",
     school: "Texas Christian University",
     classroom: 14,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 15,
+    id: "15",
     name: "Professor 15",
     email: "prof15@tcu.edu",
     school: "Texas Christian University",
@@ -138,7 +138,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 16,
+    id: "16",
     name: "Professor 16",
     email: "prof16@tcu.edu",
     school: "Texas Christian University",
@@ -146,15 +146,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 17,
+    id: "17",
     name: "Professor 17",
     email: "prof17@tcu.edu",
     school: "Texas Christian University",
     classroom: 17,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 18,
+    id: "18",
     name: "Professor 18",
     email: "prof18@tcu.edu",
     school: "Texas Christian University",
@@ -162,7 +162,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 19,
+    id: "19",
     name: "Professor 19",
     email: "prof19@tcu.edu",
     school: "Texas Christian University",
@@ -170,15 +170,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 20,
+    id: "20",
     name: "Professor 20",
     email: "prof20@tcu.edu",
     school: "Texas Christian University",
     classroom: 20,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 21,
+    id: "21",
     name: "Professor 21",
     email: "prof21@tcu.edu",
     school: "Texas Christian University",
@@ -186,7 +186,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 22,
+    id: "22",
     name: "Professor 22",
     email: "prof22@tcu.edu",
     school: "Texas Christian University",
@@ -194,15 +194,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 23,
+    id: "23",
     name: "Professor 23",
     email: "prof23@tcu.edu",
     school: "Texas Christian University",
     classroom: 23,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 24,
+    id: "24",
     name: "Professor 24",
     email: "prof24@tcu.edu",
     school: "Texas Christian University",
@@ -210,7 +210,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 25,
+    id: "25",
     name: "Professor 25",
     email: "prof25@tcu.edu",
     school: "Texas Christian University",
@@ -218,15 +218,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 26,
+    id: "26",
     name: "Professor 26",
     email: "prof26@tcu.edu",
     school: "Texas Christian University",
     classroom: 26,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 27,
+    id: "27",
     name: "Professor 27",
     email: "prof27@tcu.edu",
     school: "Texas Christian University",
@@ -234,7 +234,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 28,
+    id: "28",
     name: "Professor 28",
     email: "prof28@tcu.edu",
     school: "Texas Christian University",
@@ -242,15 +242,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 29,
+    id: "29",
     name: "Professor 29",
     email: "prof29@tcu.edu",
     school: "Texas Christian University",
     classroom: 29,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 30,
+    id: "30",
     name: "Professor 30",
     email: "prof30@tcu.edu",
     school: "Texas Christian University",
@@ -258,7 +258,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 31,
+    id: "31",
     name: "Professor 31",
     email: "prof31@tcu.edu",
     school: "Texas Christian University",
@@ -266,15 +266,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 32,
+    id: "32",
     name: "Professor 32",
     email: "prof32@tcu.edu",
     school: "Texas Christian University",
     classroom: 32,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 33,
+    id: "33",
     name: "Professor 33",
     email: "prof33@tcu.edu",
     school: "Texas Christian University",
@@ -282,7 +282,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 34,
+    id: "34",
     name: "Professor 34",
     email: "prof34@tcu.edu",
     school: "Texas Christian University",
@@ -290,15 +290,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 35,
+    id: "35",
     name: "Professor 35",
     email: "prof35@tcu.edu",
     school: "Texas Christian University",
     classroom: 35,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 36,
+    id: "36",
     name: "Professor 36",
     email: "prof36@tcu.edu",
     school: "Texas Christian University",
@@ -306,7 +306,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 37,
+    id: "37",
     name: "Professor 37",
     email: "prof37@tcu.edu",
     school: "Texas Christian University",
@@ -314,15 +314,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 38,
+    id: "38",
     name: "Professor 38",
     email: "prof38@tcu.edu",
     school: "Texas Christian University",
     classroom: 38,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 39,
+    id: "39",
     name: "Professor 39",
     email: "prof39@tcu.edu",
     school: "Texas Christian University",
@@ -330,7 +330,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 40,
+    id: "40",
     name: "Professor 40",
     email: "prof40@tcu.edu",
     school: "Texas Christian University",
@@ -338,15 +338,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 41,
+    id: "41",
     name: "Professor 41",
     email: "prof41@tcu.edu",
     school: "Texas Christian University",
     classroom: 41,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 42,
+    id: "42",
     name: "Professor 42",
     email: "prof42@tcu.edu",
     school: "Texas Christian University",
@@ -354,7 +354,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 43,
+    id: "43",
     name: "Professor 43",
     email: "prof43@tcu.edu",
     school: "Texas Christian University",
@@ -362,15 +362,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 44,
+    id: "44",
     name: "Professor 44",
     email: "prof44@tcu.edu",
     school: "Texas Christian University",
     classroom: 44,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 45,
+    id: "45",
     name: "Professor 45",
     email: "prof45@tcu.edu",
     school: "Texas Christian University",
@@ -378,7 +378,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 46,
+    id: "46",
     name: "Professor 46",
     email: "prof46@tcu.edu",
     school: "Texas Christian University",
@@ -386,15 +386,15 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 47,
+    id: "47",
     name: "Professor 47",
     email: "prof47@tcu.edu",
     school: "Texas Christian University",
     classroom: 47,
-    status: "deactived",
+    status: "deactivated",
   },
   {
-    id: 48,
+    id: "48",
     name: "Professor 48",
     email: "prof48@tcu.edu",
     school: "Texas Christian University",
@@ -402,7 +402,7 @@ export const instructors: Instructor[] = [
     status: "active",
   },
   {
-    id: 49,
+    id: "49",
     name: "Professor 49",
     email: "prof49@tcu.edu",
     school: "Texas Christian University",

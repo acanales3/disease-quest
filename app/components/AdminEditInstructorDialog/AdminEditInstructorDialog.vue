@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ref, watch, computed } from 'vue';
 
 import type { Instructor } from '~/assets/interface/Instructor';
+import { useInstructors } from '@/composables/useInstructors';
+import { assignInstructor } from '@/composables/useClassrooms';
 
 const props = defineProps<{ show: boolean; data: Instructor }>();
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'save', instructor: Instructor): void;
 }>();
+
+const { updateInstructor } = useInstructors();
+const { assignInstructor } = useClassroms();
+
+const originalClassroom = ref<number | null>(null);
 
 // reactive form data
 const form = ref<Instructor>({
@@ -24,6 +32,7 @@ const errors = ref({
   school: '',
 });
 
+// Validate form fields
 watch(
   form,
   (val) => {
@@ -65,9 +74,10 @@ const isInvalid = computed(() => {
 watch(
   () => props.data,
   (newData) => {
-    if (newData) {
-      form.value = { ...newData };
-    }
+    if (!newData) return
+
+    form.value = { ...newData };
+    originalClassroom.value = newData.classroom ?? null;
   },
   { immediate: true },
 );
@@ -78,9 +88,26 @@ const handleOpenChange = (value: boolean) => {
 };
 
 // handle save
-const handleSave = () => {
-  emit('save', { ...form.value });
-  emit('close');
+const handleSave = async () => {
+  if (isInvalid.value) return;
+
+  try {
+    await updateInstructor(form.value.id.toString(), {
+      name: form.value.name,
+      email: form.value.email,
+      school: form.value.school,
+      status: form.value.status,
+    });
+
+    if (originalClassroom.value !== null && form.value.classroom !== originalClassroom.value) {
+      await assignInstructor(form.value.classroom, form.value.id);
+    }
+
+    //emit('save', updated);
+    emit('close');
+  } catch (err) {
+    console.error("Failed to updated instructor:", err);
+  }
 };
 </script>
 
