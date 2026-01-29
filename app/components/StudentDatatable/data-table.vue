@@ -12,6 +12,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from "~/components/ui/dropdown-menu";
 
 import {
@@ -39,6 +40,8 @@ import {
   TableRow,
 } from "~/components/ui/table";
 
+import FilterDialog from "@/components/FilterDialog/FilterDialog.vue";
+
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -47,6 +50,29 @@ const props = defineProps<{
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
+
+// Custom filter function for array-based filters
+const arrayIncludes = (row: any, columnId: string, filterValue: any) => {
+  if (
+    !filterValue ||
+    (Array.isArray(filterValue) && filterValue.length === 0)
+  ) {
+    return true;
+  }
+
+  const cellValue = row.getValue(columnId);
+
+  // If filterValue is an array, check if cellValue is in the array
+  if (Array.isArray(filterValue)) {
+    // Convert both to strings for comparison (handles numbers and strings)
+    return filterValue.includes(String(cellValue));
+  }
+
+  // Otherwise use default string matching
+  return String(cellValue)
+    .toLowerCase()
+    .includes(String(filterValue).toLowerCase());
+};
 
 const table = useVueTable({
   get data() {
@@ -64,6 +90,7 @@ const table = useVueTable({
   onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
   onColumnVisibilityChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnVisibility),
+  globalFilterFn: arrayIncludes,
   state: {
     get sorting() {
       return sorting.value;
@@ -78,12 +105,46 @@ const table = useVueTable({
 });
 
 const hideableColumns = computed(() =>
-  table.getAllColumns().filter((column) => column.getCanHide())
+  table.getAllColumns().filter((column) => column.getCanHide()),
 );
 
+// Handle filter application - EXACT same as email search bar
+const handleApplyFilters = (filters: any) => {
+  console.log("Applying filters:", filters);
+
+  // Apply string filters using the exact same method as the email search bar
+  table.getColumn("name")?.setFilterValue(filters.name || undefined);
+  table.getColumn("nickname")?.setFilterValue(filters.nickname || undefined);
+  table.getColumn("email")?.setFilterValue(filters.email || undefined);
+  table.getColumn("school")?.setFilterValue(filters.school || undefined);
+
+  // For arrays, pass the array directly (will be handled by custom filter function)
+  // msyear and classroom are numbers in the data, but we're filtering with string arrays
+  table
+    .getColumn("msyear")
+    ?.setFilterValue(
+      filters.msyear && filters.msyear.length > 0 ? filters.msyear : undefined,
+    );
+  table
+    .getColumn("classroom")
+    ?.setFilterValue(
+      filters.classroom && filters.classroom.length > 0
+        ? filters.classroom
+        : undefined,
+    );
+  table
+    .getColumn("status")
+    ?.setFilterValue(
+      filters.status && filters.status.length > 0 ? filters.status : undefined,
+    );
+
+  console.log("Column filters after apply:", columnFilters.value);
+};
 </script>
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden">
+  <div
+    class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden"
+  >
     <!-- Top bar: label left, search & column menu right -->
     <div class="flex items-center justify-between py-4">
       <!-- Left: label -->
@@ -91,11 +152,9 @@ const hideableColumns = computed(() =>
 
       <!-- Right: search input + dropdowns -->
       <div class="flex items-center space-x-4">
-        <div
-          class="flex items-center justify-center w-8 h-8 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
-        >
-          <Icon name="lets-icons:filter" />
-        </div>
+        <!-- Filter Dialog component -->
+        <FilterDialog @apply-filters="handleApplyFilters" />
+
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
           placeholder="Search by Email"
@@ -146,7 +205,9 @@ const hideableColumns = computed(() =>
               :key="column.id"
               class="capitalize"
               :modelValue="column.getIsVisible()"
-              @update:modelValue="(value: boolean) => column.toggleVisibility(!!value)"
+              @update:modelValue="
+                (value: boolean) => column.toggleVisibility(!!value)
+              "
             >
               {{ column.id }}
             </DropdownMenuCheckboxItem>
