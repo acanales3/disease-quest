@@ -62,13 +62,10 @@ const arrayIncludes = (row: any, columnId: string, filterValue: any) => {
 
   const cellValue = row.getValue(columnId);
 
-  // If filterValue is an array, check if cellValue is in the array
   if (Array.isArray(filterValue)) {
-    // Convert both to strings for comparison (handles numbers and strings)
     return filterValue.includes(String(cellValue));
   }
 
-  // Otherwise use default string matching
   return String(cellValue)
     .toLowerCase()
     .includes(String(filterValue).toLowerCase());
@@ -108,17 +105,16 @@ const hideableColumns = computed(() =>
   table.getAllColumns().filter((column) => column.getCanHide()),
 );
 
-// Handle filter application - EXACT same as email search bar
+// Handle filter application
 const handleApplyFilters = (filters: any) => {
   console.log("Applying filters:", filters);
 
-  // Apply string filters using the exact same method as the email search bar
   table.getColumn("name")?.setFilterValue(filters.name || undefined);
   table.getColumn("nickname")?.setFilterValue(filters.nickname || undefined);
   table.getColumn("email")?.setFilterValue(filters.email || undefined);
   table.getColumn("school")?.setFilterValue(filters.school || undefined);
 
-  // For arrays, pass the array directly (will be handled by custom filter function)
+  // For arrays, pass the array directly
   // msyear and classroom are numbers in the data, but we're filtering with string arrays
   table
     .getColumn("msyear")
