@@ -11,3 +11,4 @@ export interface Classroom {
   // action column still needed
 }
 
+export const classrooms: Classroom[] = [];
