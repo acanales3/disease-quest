@@ -27,49 +27,66 @@ interface FilterCriteria {
   status: string[];
 }
 
-interface NameFields {
-  firstName: string;
-  lastName: string;
-}
-
 const isOpen = ref(false);
 
 const msyearOptions = ["1", "2", "3", "4"];
 const classroomOptions = ["0", "1", "2"];
 const statusOptions = ["registered", "unregistered"];
 
-const tempFilters = ref<FilterCriteria & NameFields>({
+// Temporary filters - uses firstName and lastName for UI
+const tempFilters = ref({
+  firstName: "",
+  lastName: "",
+  email: "",
+  school: "",
+  msyear: [] as string[],
+  classroom: [] as string[],
+  status: [] as string[],
+});
+
+// Saved filters - stores the combined name
+const savedFilters = ref({
   firstName: "",
   lastName: "",
   name: "",
   email: "",
   school: "",
-  msyear: [],
-  classroom: [],
-  status: [],
+  msyear: [] as string[],
+  classroom: [] as string[],
+  status: [] as string[],
 });
 
-const savedFilters = ref<FilterCriteria & NameFields>({
-  firstName: "",
-  lastName: "",
-  name: "",
-  email: "",
-  school: "",
-  msyear: [],
-  classroom: [],
-  status: [],
-});
+const toggleMsyear = (year: string) => {
+  const index = tempFilters.value.msyear.indexOf(year);
+  if (index === -1) {
+    tempFilters.value.msyear.push(year);
+  } else {
+    tempFilters.value.msyear.splice(index, 1);
+  }
+};
 
-const toggleArrayValue = (arr: string[], value: string) => {
-  const index = arr.indexOf(value);
-  index === -1 ? arr.push(value) : arr.splice(index, 1);
+const toggleClassroom = (classroom: string) => {
+  const index = tempFilters.value.classroom.indexOf(classroom);
+  if (index === -1) {
+    tempFilters.value.classroom.push(classroom);
+  } else {
+    tempFilters.value.classroom.splice(index, 1);
+  }
+};
+
+const toggleStatus = (status: string) => {
+  const index = tempFilters.value.status.indexOf(status);
+  if (index === -1) {
+    tempFilters.value.status.push(status);
+  } else {
+    tempFilters.value.status.splice(index, 1);
+  }
 };
 
 const resetFilters = () => {
   tempFilters.value = {
     firstName: "",
     lastName: "",
-    name: "",
     email: "",
     school: "",
     msyear: [],
@@ -79,28 +96,61 @@ const resetFilters = () => {
 };
 
 const saveFilters = () => {
+  // Combine firstName and lastName into name
   const combinedName =
     `${tempFilters.value.firstName} ${tempFilters.value.lastName}`.trim();
 
   savedFilters.value = {
-    ...tempFilters.value,
+    firstName: tempFilters.value.firstName,
+    lastName: tempFilters.value.lastName,
     name: combinedName,
+    email: tempFilters.value.email,
+    school: tempFilters.value.school,
     msyear: [...tempFilters.value.msyear],
     classroom: [...tempFilters.value.classroom],
     status: [...tempFilters.value.status],
   };
 
-  emit("apply-filters", savedFilters.value);
+  // Emit the filter criteria with combined name
+  const filterCriteria: FilterCriteria = {
+    name: combinedName,
+    email: savedFilters.value.email,
+    school: savedFilters.value.school,
+    msyear: [...savedFilters.value.msyear],
+    classroom: [...savedFilters.value.classroom],
+    status: [...savedFilters.value.status],
+  };
+
+  console.log("Emitting filters:", filterCriteria);
+  emit("apply-filters", filterCriteria);
   isOpen.value = false;
 };
 
 const cancelFilters = () => {
-  tempFilters.value = { ...savedFilters.value };
+  tempFilters.value = {
+    firstName: savedFilters.value.firstName,
+    lastName: savedFilters.value.lastName,
+    email: savedFilters.value.email,
+    school: savedFilters.value.school,
+    msyear: [...savedFilters.value.msyear],
+    classroom: [...savedFilters.value.classroom],
+    status: [...savedFilters.value.status],
+  };
   isOpen.value = false;
 };
 
 const onOpenChange = (open: boolean) => {
-  if (open) tempFilters.value = { ...savedFilters.value };
+  if (open) {
+    tempFilters.value = {
+      firstName: savedFilters.value.firstName,
+      lastName: savedFilters.value.lastName,
+      email: savedFilters.value.email,
+      school: savedFilters.value.school,
+      msyear: [...savedFilters.value.msyear],
+      classroom: [...savedFilters.value.classroom],
+      status: [...savedFilters.value.status],
+    };
+  }
   isOpen.value = open;
 };
 </script>
@@ -124,39 +174,32 @@ const onOpenChange = (open: boolean) => {
         </DialogDescription>
       </DialogHeader>
 
-      <!-- TWO COLUMN LAYOUT -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
         <!-- LEFT COLUMN -->
         <div class="flex flex-col gap-5">
           <div class="flex flex-col gap-1.5">
-            <Label for="firstName" class="mb-1">First Name</Label>
+            <Label>First Name</Label>
             <Input
-              id="firstName"
               v-model="tempFilters.firstName"
               placeholder="Enter first name"
             />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <Label for="lastName" class="mb-1">Last Name</Label>
+            <Label>Last Name</Label>
             <Input
-              id="lastName"
               v-model="tempFilters.lastName"
               placeholder="Enter last name"
             />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <Label for="email" class="mb-1">Email</Label>
-            <Input
-              id="email"
-              v-model="tempFilters.email"
-              placeholder="Enter email"
-            />
+            <Label>Email</Label>
+            <Input v-model="tempFilters.email" placeholder="Enter email" />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <Label class="mb-1">Status</Label>
+            <Label>Status</Label>
             <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
                 v-for="statusOption in statusOptions"
@@ -165,11 +208,23 @@ const onOpenChange = (open: boolean) => {
               >
                 <input
                   type="checkbox"
+                  :id="`status-${statusOption}`"
                   :checked="tempFilters.status.includes(statusOption)"
-                  @change="toggleArrayValue(tempFilters.status, statusOption)"
+                  @change="toggleStatus(statusOption)"
                   class="w-4 h-4 cursor-pointer"
                 />
-                <span class="text-sm capitalize">{{ statusOption }}</span>
+                <label
+                  :for="`status-${statusOption}`"
+                  class="capitalize text-sm cursor-pointer"
+                >
+                  {{ statusOption }}
+                </label>
+              </div>
+              <div
+                v-if="tempFilters.status.length === 0"
+                class="text-xs text-gray-400"
+              >
+                No status selected
               </div>
             </div>
           </div>
@@ -178,16 +233,12 @@ const onOpenChange = (open: boolean) => {
         <!-- RIGHT COLUMN -->
         <div class="flex flex-col gap-5">
           <div class="flex flex-col gap-1.5">
-            <Label for="school" class="mb-1">School</Label>
-            <Input
-              id="school"
-              v-model="tempFilters.school"
-              placeholder="Enter school"
-            />
+            <Label>School</Label>
+            <Input v-model="tempFilters.school" placeholder="Enter school" />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <Label class="mb-1">MS Year</Label>
+            <Label>MS Year</Label>
             <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
                 v-for="year in msyearOptions"
@@ -196,20 +247,27 @@ const onOpenChange = (open: boolean) => {
               >
                 <input
                   type="checkbox"
+                  :id="`msyear-${year}`"
                   :checked="tempFilters.msyear.includes(year)"
-                  @change="toggleArrayValue(tempFilters.msyear, year)"
+                  @change="toggleMsyear(year)"
                   class="w-4 h-4 cursor-pointer"
                 />
-                <span class="text-sm">Year {{ year }}</span>
+                <label :for="`msyear-${year}`" class="text-sm cursor-pointer">
+                  Year {{ year }}
+                </label>
+              </div>
+              <div
+                v-if="tempFilters.msyear.length === 0"
+                class="text-xs text-gray-400"
+              >
+                No years selected
               </div>
             </div>
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <Label class="mb-1">Classroom</Label>
-            <div
-              class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50 max-h-48 overflow-y-auto"
-            >
+            <Label>Classroom</Label>
+            <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
                 v-for="classroom in classroomOptions"
                 :key="classroom"
@@ -217,18 +275,29 @@ const onOpenChange = (open: boolean) => {
               >
                 <input
                   type="checkbox"
+                  :id="`classroom-${classroom}`"
                   :checked="tempFilters.classroom.includes(classroom)"
-                  @change="toggleArrayValue(tempFilters.classroom, classroom)"
+                  @change="toggleClassroom(classroom)"
                   class="w-4 h-4 cursor-pointer"
                 />
-                <span class="text-sm">Example Classroom {{ classroom }}</span>
+                <label
+                  :for="`classroom-${classroom}`"
+                  class="text-sm cursor-pointer"
+                >
+                  Example Classroom {{ classroom }}
+                </label>
+              </div>
+              <div
+                v-if="tempFilters.classroom.length === 0"
+                class="text-xs text-gray-400"
+              >
+                No classrooms selected
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- FOOTER -->
       <DialogFooter class="w-full flex items-center">
         <Button
           variant="outline"

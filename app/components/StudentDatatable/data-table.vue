@@ -52,7 +52,7 @@ const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
 
 // Custom filter function for array-based filters
-const arrayIncludes = (row: any, columnId: string, filterValue: any) => {
+const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
   if (
     !filterValue ||
     (Array.isArray(filterValue) && filterValue.length === 0)
@@ -62,21 +62,40 @@ const arrayIncludes = (row: any, columnId: string, filterValue: any) => {
 
   const cellValue = row.getValue(columnId);
 
+  // For array filters, check if cellValue is in the array
   if (Array.isArray(filterValue)) {
+    // Convert cellValue to string for comparison
     return filterValue.includes(String(cellValue));
   }
 
-  return String(cellValue)
-    .toLowerCase()
-    .includes(String(filterValue).toLowerCase());
+  // Fallback for non-array filters (shouldn't happen with this function)
+  return true;
 };
+
+// Modify columns to add filterFn for status, msyear, and classroom
+const modifiedColumns = computed(() => {
+  return props.columns.map((col: any) => {
+    // Add array filter function to status, msyear, and classroom columns
+    if (
+      col.accessorKey === "status" ||
+      col.accessorKey === "msyear" ||
+      col.accessorKey === "classroom"
+    ) {
+      return {
+        ...col,
+        filterFn: arrayFilterFn,
+      };
+    }
+    return col;
+  });
+});
 
 const table = useVueTable({
   get data() {
     return props.data;
   },
   get columns() {
-    return props.columns;
+    return modifiedColumns.value;
   },
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
@@ -87,7 +106,6 @@ const table = useVueTable({
   onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
   onColumnVisibilityChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnVisibility),
-  globalFilterFn: arrayIncludes,
   state: {
     get sorting() {
       return sorting.value;
@@ -107,20 +125,18 @@ const hideableColumns = computed(() =>
 
 // Handle filter application
 const handleApplyFilters = (filters: any) => {
-  console.log("Applying filters:", filters);
-
+  // Apply string filters
   table.getColumn("name")?.setFilterValue(filters.name || undefined);
-  table.getColumn("nickname")?.setFilterValue(filters.nickname || undefined);
   table.getColumn("email")?.setFilterValue(filters.email || undefined);
   table.getColumn("school")?.setFilterValue(filters.school || undefined);
 
-  // For arrays, pass the array directly
-  // msyear and classroom are numbers in the data, but we're filtering with string arrays
+  // Apply array filters
   table
     .getColumn("msyear")
     ?.setFilterValue(
       filters.msyear && filters.msyear.length > 0 ? filters.msyear : undefined,
     );
+
   table
     .getColumn("classroom")
     ?.setFilterValue(
@@ -128,13 +144,12 @@ const handleApplyFilters = (filters: any) => {
         ? filters.classroom
         : undefined,
     );
+
   table
     .getColumn("status")
     ?.setFilterValue(
       filters.status && filters.status.length > 0 ? filters.status : undefined,
     );
-
-  console.log("Column filters after apply:", columnFilters.value);
 };
 </script>
 <template>
