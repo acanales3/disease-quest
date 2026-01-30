@@ -28,6 +28,12 @@
       v-model:open="isCreateModalOpen" 
       @created="handleClassroomCreated"
     />
+
+    <DeleteClassroomModal
+      v-model:open="isDeleteModalOpen"
+      :classroom="classroomToDelete"
+      @confirm="handleDeleteConfirm"
+    />
   </div>
 </template>
 
@@ -41,15 +47,30 @@ import TotalCount from '../../ui/TotalCount.vue'
 import { Button } from '../../ui/button'
 import { Icon } from '#components'
 import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModal.vue'
+import DeleteClassroomModal from '../../DeleteClassroomModal/DeleteClassroomModal.vue'
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
+const isDeleteModalOpen = ref(false);
+const classroomToDelete = ref<Classroom | null>(null);
 
 const visibleColumns = computed(() => {
-  return getColumns('admin');
+  return getColumns('admin', {
+    onDelete: handleDeleteClick,
+  });
 });
 
+function handleDeleteClick(classroom: Classroom) {
+  classroomToDelete.value = classroom;
+  isDeleteModalOpen.value = true;
+}
 
+function handleDeleteConfirm(classroom: Classroom) {
+  // Remove the classroom from the data array
+  data.value = data.value.filter(c => c.id !== classroom.id);
+  classroomToDelete.value = null;
+  console.log('Classroom deleted:', classroom);
+}
 
 async function getData(): Promise<Classroom[]> {
   // Fetch data from your API here.

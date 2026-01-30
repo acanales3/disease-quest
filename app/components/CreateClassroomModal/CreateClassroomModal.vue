@@ -30,7 +30,7 @@ type Step = typeof STEPS[keyof typeof STEPS];
 const step = ref<Step>(STEPS.FORM);
 
 const form = ref({
-  title: "",
+  name: "",
   code: "",
   section: "",
   term: "",
@@ -41,7 +41,7 @@ const form = ref({
 type FormField = keyof typeof form.value;
 
 const fields: Array<{ id: FormField; label: string; placeholder: string }> = [
-  { id: "title", label: "Course Title", placeholder: "DiseaseQuest 101" },
+  { id: "name", label: "Course Title", placeholder: "DiseaseQuest 101" },
   { id: "code", label: "Course Code", placeholder: "BIOL 10123" },
   { id: "section", label: "Section", placeholder: "001" },
   { id: "term", label: "Term", placeholder: "Fall 2025" },
@@ -84,7 +84,7 @@ function onCancel() {
 
 function resetForm() {
   form.value = {
-    title: "",
+    name: "",
     code: "",
     section: "",
     term: "",

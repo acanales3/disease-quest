@@ -150,14 +150,17 @@
 
 <script setup lang="ts">
 import { ref, reactive } from "vue";
+import { useSupabaseClient } from "#imports";
+import { useRouter } from "vue-router";
+
+const supabase = useSupabaseClient();
+const router = useRouter();
 
 const formData = reactive({
   firstName: "",
   lastName: "",
   email: "",
   school: "",
-  msyear: "",
-  classroomCode: "",
   password: "",
   confirmPassword: "",
 });
@@ -168,12 +171,11 @@ const isSubmitting = ref(false);
 const handleSubmit = async () => {
   errorMessage.value = "";
 
-  // Validation
+  // Validate passwords
   if (formData.password !== formData.confirmPassword) {
     errorMessage.value = "Passwords do not match";
     return;
   }
-
   if (formData.password.length < 8) {
     errorMessage.value = "Password must be at least 8 characters long";
     return;
@@ -182,28 +184,31 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
 
   try {
-    // TODO: Implement actual registration logic with Supabase Auth
-    console.log("Registration data:", {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
+    // Supabase sign up with metadata
+    const { error } = await supabase.auth.signUp({
       email: formData.email,
-      school: formData.school,
-      msyear: formData.msyear || null,
-      classroomCode: formData.classroomCode || null,
+      password: formData.password,
+      options: {
+        data: {
+          first_name: formData.firstName || "Unknown",
+          last_name: formData.lastName || "Unknown",
+          school: formData.school || "Unknown",
+          role: "STUDENT", // FIX LATER THIS IS DEFAULT
+        },
+      },
     });
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Redirect to login or dashboard after successful registration
-    // navigateTo('/login');
+    if (error) throw error;
 
     alert(
       "Registration successful! Please check your email to verify your account.",
     );
-  } catch (error) {
-    console.error("Registration error:", error);
-    errorMessage.value = "Registration failed. Please try again.";
+
+    router.push("/login");
+  } catch (err: any) {
+    console.error(err);
+    errorMessage.value =
+      err.message || "Registration failed. Please try again.";
   } finally {
     isSubmitting.value = false;
   }
@@ -211,5 +216,5 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-/* Additional styles if needed */
+/* Optional additional styles */
 </style>

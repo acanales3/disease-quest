@@ -100,7 +100,21 @@ const studentData = ref<Student[]>([]);
 const studentColumns = computed(() => getStudentColumns("admin"));
 
 async function getStudents(): Promise<Student[]> {
-  return student;
+  try {
+    const data = await $fetch(`/api/classrooms/${classroomId}/students`);
+    return data.map((s: any) => ({
+      id: s.id as unknown as number, // Cast to number to satisfy interface, though it's a UUID string
+      name: s.name,
+      email: s.email,
+      school: classroom?.school || "", 
+      msyear: s.msyear,
+      classroom: classroomId,
+      status: s.status,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch students:", error);
+    return [];
+  }
 }
 
 /* ===== CASES ===== */
