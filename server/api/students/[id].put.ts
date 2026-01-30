@@ -81,5 +81,21 @@ export default defineEventHandler(async (event) => {
         })
     }
 
+    // update classroom_students table
+    const { error: classroomStudentUpdateError } = await client
+        .from('classroom_students')
+        // @ts-ignore
+        .update({
+            classroom_id: body.classroom_id
+        } as any)
+        .eq('student_id', id)
+
+    if (classroomStudentUpdateError) {
+        throw createError({
+            statusCode: 500,
+            message: `Error updating classroom student details: ${classroomStudentUpdateError.message}`,
+        })
+    }
+
     return { success: true }
 })
