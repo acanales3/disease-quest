@@ -48,10 +48,10 @@ async function getData(): Promise<Student[]> {
 const saveStudentEdits = async (updated: Student) => {
   try {
     // Update backend
-    /* await $fetch(`/api/students/${updated.id}`, {
+    await $fetch(`/api/students/${updated.id}`, {
       method: "PUT",
       body: updated
-    }); */
+    });
 
     // Update local ref array
     // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place 
