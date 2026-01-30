@@ -75,9 +75,9 @@ const { login, customUser, user } = useSupabaseAuth();
 // auto-redirect if already logged in AND we have a custom user
 watchEffect(() => {
   if (user.value && customUser.value) {
-    // simple null-safe access
-    if (customUser.value.token) {
-      router.push(`/${customUser.value.token.toLowerCase()}/dashboard`);
+    // Use role instead of token
+    if (customUser.value.role) {
+      router.push(`/${customUser.value.role.toLowerCase()}/dashboard`);
     }
   }
 });
@@ -88,7 +88,7 @@ const handleLogin = async () => {
 
   const { error: loginErr, customUser: profile } = await login(
     email.value,
-    password.value
+    password.value,
   );
 
   if (loginErr) {
@@ -97,8 +97,8 @@ const handleLogin = async () => {
     return;
   }
 
-  // null check for token (manually need to add in DB for now need to change later)
-  if (!profile?.token) {
+  // Check for role instead of token
+  if (!profile?.role) {
     error.value = "No profile found for user.";
     isLoading.value = false;
     return;
@@ -106,8 +106,8 @@ const handleLogin = async () => {
 
   console.log("Logged in:", profile);
 
-  // proper redirect by token
-  router.push(`/${profile.token.toLowerCase()}/dashboard`);
+  // Redirect by role (ADMIN -> /admin/dashboard, STUDENT -> /student/dashboard)
+  router.push(`/${profile.role.toLowerCase()}/dashboard`);
 
   isLoading.value = false;
 };
