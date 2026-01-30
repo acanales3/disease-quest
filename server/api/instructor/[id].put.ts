@@ -1,6 +1,5 @@
 import { serverSupabaseClient } from '#supabase/server';
 import { Database, TablesUpdate } from '@/assets/types/supabase';
-import { stringify } from 'postcss';
 
 type UserUpdate = TablesUpdate<'users'>
 type InstructorUpdate = TablesUpdate<'instructors'>
