@@ -50,7 +50,7 @@ const getButtonText = () => {
       <DropdownMenuSeparator />
 
       <DropdownMenuItem>
-        <NuxtLink :to="`/case/introduction`">
+        <NuxtLink :to="`/case/${props.caseData.id}/introduction`">
           {{ getButtonText() }}
         </NuxtLink>
       </DropdownMenuItem>

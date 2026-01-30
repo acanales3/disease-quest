@@ -10,24 +10,29 @@ type CaseStep = (typeof steps)[number];
 
 const route = useRoute();
 
-// Compute current index from route
+// Get caseId from route
+const caseId = computed(() => route.params.caseId as string);
+
+// Compute current step from route
+const currentStep = computed(() => route.path.split("/")[3] as CaseStep);
+
+// Current step index
 const currentIndex = computed(() => {
-  const segment = route.path.split("/")[2];
   return steps.indexOf(
-    steps.includes(segment as CaseStep) ? (segment as CaseStep) : "introduction"
+    steps.includes(currentStep.value) ? currentStep.value : "introduction"
   );
 });
 
-// Compute previous and next routes, with /admin/cases as fallback
-// NEED TO BE FIXED BASED ON THE USER TOKEN - DEFAULT RIGHT NOW
+// Previous / Next routes (include caseId)
 const previousRoute = computed(() =>
   currentIndex.value > 0
-    ? `/case/${steps[currentIndex.value - 1]}`
+    ? `/case/${caseId.value}/${steps[currentIndex.value - 1]}`
     : "/admin/cases"
 );
+
 const nextRoute = computed(() =>
   currentIndex.value < steps.length - 1
-    ? `/case/${steps[currentIndex.value + 1]}`
+    ? `/case/${caseId.value}/${steps[currentIndex.value + 1]}`
     : "/admin/cases"
 );
 </script>
