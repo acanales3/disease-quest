@@ -12,6 +12,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from "~/components/ui/dropdown-menu";
 
 import {
@@ -39,6 +40,8 @@ import {
   TableRow,
 } from "~/components/ui/table";
 
+import FilterDialog from "@/components/FilterDialog/FilterDialog.vue";
+
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -48,12 +51,51 @@ const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
 
+// Custom filter function for array-based filters
+const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
+  if (
+    !filterValue ||
+    (Array.isArray(filterValue) && filterValue.length === 0)
+  ) {
+    return true;
+  }
+
+  const cellValue = row.getValue(columnId);
+
+  // For array filters, check if cellValue is in the array
+  if (Array.isArray(filterValue)) {
+    // Convert cellValue to string for comparison
+    return filterValue.includes(String(cellValue));
+  }
+
+  // Fallback for non-array filters (shouldn't happen with this function)
+  return true;
+};
+
+// Modify columns to add filterFn for status, msyear, and classroom
+const modifiedColumns = computed(() => {
+  return props.columns.map((col: any) => {
+    // Add array filter function to status, msyear, and classroom columns
+    if (
+      col.accessorKey === "status" ||
+      col.accessorKey === "msyear" ||
+      col.accessorKey === "classroom"
+    ) {
+      return {
+        ...col,
+        filterFn: arrayFilterFn,
+      };
+    }
+    return col;
+  });
+});
+
 const table = useVueTable({
   get data() {
     return props.data;
   },
   get columns() {
-    return props.columns;
+    return modifiedColumns.value;
   },
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
@@ -78,12 +120,42 @@ const table = useVueTable({
 });
 
 const hideableColumns = computed(() =>
-  table.getAllColumns().filter((column) => column.getCanHide())
+  table.getAllColumns().filter((column) => column.getCanHide()),
 );
 
+// Handle filter application
+const handleApplyFilters = (filters: any) => {
+  // Apply string filters
+  table.getColumn("name")?.setFilterValue(filters.name || undefined);
+  table.getColumn("email")?.setFilterValue(filters.email || undefined);
+  table.getColumn("school")?.setFilterValue(filters.school || undefined);
+
+  // Apply array filters
+  table
+    .getColumn("msyear")
+    ?.setFilterValue(
+      filters.msyear && filters.msyear.length > 0 ? filters.msyear : undefined,
+    );
+
+  table
+    .getColumn("classroom")
+    ?.setFilterValue(
+      filters.classroom && filters.classroom.length > 0
+        ? filters.classroom
+        : undefined,
+    );
+
+  table
+    .getColumn("status")
+    ?.setFilterValue(
+      filters.status && filters.status.length > 0 ? filters.status : undefined,
+    );
+};
 </script>
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden">
+  <div
+    class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden"
+  >
     <!-- Top bar: label left, search & column menu right -->
     <div class="flex items-center justify-between py-4">
       <!-- Left: label -->
@@ -91,11 +163,9 @@ const hideableColumns = computed(() =>
 
       <!-- Right: search input + dropdowns -->
       <div class="flex items-center space-x-4">
-        <div
-          class="flex items-center justify-center w-8 h-8 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
-        >
-          <Icon name="lets-icons:filter" />
-        </div>
+        <!-- Filter Dialog component -->
+        <FilterDialog @apply-filters="handleApplyFilters" />
+
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
           placeholder="Search by Email"
@@ -146,7 +216,9 @@ const hideableColumns = computed(() =>
               :key="column.id"
               class="capitalize"
               :modelValue="column.getIsVisible()"
-              @update:modelValue="(value: boolean) => column.toggleVisibility(!!value)"
+              @update:modelValue="
+                (value: boolean) => column.toggleVisibility(!!value)
+              "
             >
               {{ column.id }}
             </DropdownMenuCheckboxItem>
