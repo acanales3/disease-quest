@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (body.school) {
-    query = query.ilike('user.school', `%${body.school}%`)
+    query = query.ilike('users.school', `%${body.school}%`)
   }
 
   if (body.msyear !== undefined) {
