@@ -33,7 +33,6 @@
 
 <script setup lang="ts">
 import { getColumns } from "../../ClassroomDatatable/columns";
-import { classrooms } from "../../../assets/interface/Classroom";
 import type { Classroom } from '../../ClassroomDatatable/columns'
 import { onMounted, ref, computed } from 'vue'
 import DataTable from '../../ClassroomDatatable/data-table.vue'
@@ -44,28 +43,35 @@ import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModa
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
+const isLoading = ref(false);
 
 const visibleColumns = computed(() => {
   return getColumns('admin');
 });
 
-
-
-async function getData(): Promise<Classroom[]> {
-  // Fetch data from your API here.
-  return classrooms;
+async function fetchClassrooms() {
+  isLoading.value = true;
+  try {
+    const classrooms = await $fetch<Classroom[]>('/api/classroom');
+    data.value = classrooms;
+  } catch (error) {
+    console.error('Failed to fetch classrooms:', error);
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 function openCreateModal() {
   isCreateModalOpen.value = true;
 }
 
-function handleClassroomCreated(classroom: any) {
+async function handleClassroomCreated(classroom: any) {
   console.log('Classroom created:', classroom);
-  // data.value = await getData();
+  // Refresh the list after creating a new classroom
+  await fetchClassrooms();
 }
 
 onMounted(async () => {
-  data.value = await getData();
+  await fetchClassrooms();
 });
 </script>
