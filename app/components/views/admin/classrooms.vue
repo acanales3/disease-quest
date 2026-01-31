@@ -39,7 +39,6 @@
 
 <script setup lang="ts">
 import { getColumns } from "../../ClassroomDatatable/columns";
-import { classrooms } from "../../../assets/interface/Classroom";
 import type { Classroom } from '../../ClassroomDatatable/columns'
 import { onMounted, ref, computed } from 'vue'
 import DataTable from '../../ClassroomDatatable/data-table.vue'
@@ -51,8 +50,7 @@ import DeleteClassroomModal from '../../DeleteClassroomModal/DeleteClassroomModa
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
-const isDeleteModalOpen = ref(false);
-const classroomToDelete = ref<Classroom | null>(null);
+const isLoading = ref(false);
 
 const visibleColumns = computed(() => {
   return getColumns('admin', {
@@ -60,33 +58,29 @@ const visibleColumns = computed(() => {
   });
 });
 
-function handleDeleteClick(classroom: Classroom) {
-  classroomToDelete.value = classroom;
-  isDeleteModalOpen.value = true;
-}
-
-function handleDeleteConfirm(classroom: Classroom) {
-  // Remove the classroom from the data array
-  data.value = data.value.filter(c => c.id !== classroom.id);
-  classroomToDelete.value = null;
-  console.log('Classroom deleted:', classroom);
-}
-
-async function getData(): Promise<Classroom[]> {
-  // Fetch data from your API here.
-  return classrooms;
+async function fetchClassrooms() {
+  isLoading.value = true;
+  try {
+    const classrooms = await $fetch<Classroom[]>('/api/classroom');
+    data.value = classrooms;
+  } catch (error) {
+    console.error('Failed to fetch classrooms:', error);
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 function openCreateModal() {
   isCreateModalOpen.value = true;
 }
 
-function handleClassroomCreated(classroom: any) {
+async function handleClassroomCreated(classroom: any) {
   console.log('Classroom created:', classroom);
-  // data.value = await getData();
+  // Refresh the list after creating a new classroom
+  await fetchClassrooms();
 }
 
 onMounted(async () => {
-  data.value = await getData();
+  await fetchClassrooms();
 });
 </script>
