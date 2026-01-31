@@ -15,7 +15,11 @@ export interface Classroom {
   status: "active" | "inactive";
 } 
 
-export function getColumns(role: string): ColumnDef<Classroom>[] {
+export interface ColumnOptions {
+  onDelete?: (classroom: Classroom) => void;
+}
+
+export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Classroom>[] {
   return [
   {
     accessorKey: "id",
@@ -156,6 +160,7 @@ export function getColumns(role: string): ColumnDef<Classroom>[] {
         h(DropdownAction, { 
           classroom,
           role,
+          onDelete: options?.onDelete,
         })
       );
     },

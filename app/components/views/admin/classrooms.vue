@@ -28,6 +28,12 @@
       v-model:open="isCreateModalOpen" 
       @created="handleClassroomCreated"
     />
+
+    <DeleteClassroomModal
+      v-model:open="isDeleteModalOpen"
+      :classroom="classroomToDelete"
+      @confirm="handleDeleteConfirm"
+    />
   </div>
 </template>
 
@@ -40,13 +46,16 @@ import TotalCount from '../../ui/TotalCount.vue'
 import { Button } from '../../ui/button'
 import { Icon } from '#components'
 import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModal.vue'
+import DeleteClassroomModal from '../../DeleteClassroomModal/DeleteClassroomModal.vue'
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
 const isLoading = ref(false);
 
 const visibleColumns = computed(() => {
-  return getColumns('admin');
+  return getColumns('admin', {
+    onDelete: handleDeleteClick,
+  });
 });
 
 async function fetchClassrooms() {

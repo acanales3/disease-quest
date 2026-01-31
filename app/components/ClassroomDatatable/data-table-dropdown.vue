@@ -17,6 +17,14 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+const emit = defineEmits<{
+  'delete': [classroom: Classroom];
+}>();
+
+function handleDelete() {
+  emit('delete', props.classroom);
+}
 </script>
 
 <template>
@@ -31,7 +39,13 @@ const props = defineProps<Props>();
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Edit</DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
+      <DropdownMenuItem 
+        v-if="props.role === 'admin'" 
+        class="text-red-600 focus:text-red-600 focus:bg-red-50"
+        @click="handleDelete"
+      >
+        Delete
+      </DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">View Analytics</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
         <NuxtLink 
