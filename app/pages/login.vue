@@ -1,14 +1,11 @@
 <template>
-    <views-login />
+  <views-login />
 </template>
 
 <script setup>
 definePageMeta({
-    layout: 'none'
-})
-
+  layout: false, // Changed from 'none' to false (Nuxt 3 standard)
+});
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

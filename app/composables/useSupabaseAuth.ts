@@ -18,8 +18,16 @@ export default function useSupabaseAuth() {
 
     if (error) return { error, customUser: null };
 
+    // Ensure we have a user ID before fetching profile
+    if (!data.user?.id) {
+      return {
+        error: { message: "No user ID returned from login" },
+        customUser: null,
+      };
+    }
+
     const { data: profile, error: profileError } = await getUserProfile(
-      data.user.id
+      data.user.id,
     );
 
     if (profileError) {
@@ -32,16 +40,85 @@ export default function useSupabaseAuth() {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
     customUser.value = null;
+
+    if (error) {
+      console.error("Logout error:", error);
+      return { error };
+    }
+
+    return { error: null };
   };
 
-  // user is the auth service user that is handeled by supabase
+  /**
+   * Fetch the current user's profile from database
+   * Useful for getting latest user data or initializing customUser
+   */
+  const fetchCustomUser = async () => {
+    // First check if user ref has a value
+    if (!user.value?.id) {
+      // If not, get it from session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user?.id) {
+        console.log("No user ID available");
+        customUser.value = null;
+        return null;
+      }
+
+      // Use session user ID
+      const { data: profile, error } = await getUserProfile(session.user.id);
+
+      if (error || !profile) {
+        console.error("Error fetching custom user:", error);
+        customUser.value = null;
+        return null;
+      }
+
+      customUser.value = profile as User;
+      return profile as User;
+    }
+
+    // Use user ref ID if available
+    const { data: profile, error } = await getUserProfile(user.value.id);
+
+    if (error || !profile) {
+      console.error("Error fetching custom user:", error);
+      customUser.value = null;
+      return null;
+    }
+
+    customUser.value = profile as User;
+    return profile as User;
+  };
+
+  /**
+   * Check if user has a specific role
+   */
+  const hasRole = (role: string): boolean => {
+    if (!customUser.value) return false;
+    return customUser.value.role === role;
+  };
+
+  /**
+   * Check if user is authenticated with a valid profile
+   */
+  const isAuthenticated = (): boolean => {
+    return !!(user.value && customUser.value && customUser.value.role);
+  };
+
+  // user is the auth service user that is handled by supabase
   // customUser is our custom user from our interface that we make
   return {
     user,
     customUser,
     login,
     logout,
+    fetchCustomUser,
+    hasRole,
+    isAuthenticated,
   };
 }

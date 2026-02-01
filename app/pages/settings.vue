@@ -1,9 +1,9 @@
 <template>
-    <views-settings />
+  <views-settings />
 </template>
 
 <script setup>
+definePageMeta({});
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
