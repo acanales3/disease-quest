@@ -10,7 +10,7 @@ export interface Instructor {
   email: string;
   school: string;
   classroom: number;
-  status: "active" | "deactived";
+  status: "active" | "deactivated";
   // action column still needed
 }
 
