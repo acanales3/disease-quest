@@ -1,3 +1,11 @@
+/*
+This file is a copy of the supabase database schema, any changes to the schema in supabase will require a regeneration of this file.
+GENERATED USING: npx supabase gen types typescript --project-id PROJECT_ID > app/assets/types/supabase.ts
+You will need to be logged into your supabase account via 'npx supabase login' to regenerate.
+THIS COMMENT WILL BE DELETED ON REGENERATION SO PLEASE COPY IT AND REPASTE IT I DON'T FEEL LIKE WRITING A SCRIPT TO PREPEND A COMMENT
+*/
+
+
 export type Json =
   | string
   | number

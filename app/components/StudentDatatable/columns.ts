@@ -6,6 +6,10 @@ import { Button } from "~/components/ui/button";
 
 export interface Student {
   id: number;
+  
+   // UUID from Supabase: students.user_id (FK - users.id).
+   // Using numeric id for datatable display; userId" for API operations.
+  userId?: string;
   name: string;
   email: string;
   school: string;
@@ -15,7 +19,11 @@ export interface Student {
   // action column still needed
 }
 
-export function getColumns(role: string): ColumnDef<Student>[] {
+export interface ColumnOptions {
+  onDelete?: (student: Student) => void;
+}
+
+export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Student>[] {
   return [
   {
     accessorKey: "id",
@@ -120,6 +128,7 @@ export function getColumns(role: string): ColumnDef<Student>[] {
         h(DropdownAction, { 
           student,
           role,
+          onDelete: options?.onDelete,
         })
       );
     },

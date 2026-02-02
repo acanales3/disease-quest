@@ -4,7 +4,10 @@ export default defineEventHandler(async (event) => {
     const user = await serverSupabaseUser(event)
     const client = await serverSupabaseClient(event)
 
-    if (!user) {
+    // @ts-ignore
+    const userId = user.id || user.sub
+
+    if (!userId) {
         throw createError({
             statusCode: 401,
             message: 'Unauthorized',
@@ -25,7 +28,7 @@ export default defineEventHandler(async (event) => {
     const { data: userProfile, error: profileError } = await client
         .from('users')
         .select('role')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single() as { data: { role: string } | null, error: any }
 
     if (profileError || !userProfile) {
