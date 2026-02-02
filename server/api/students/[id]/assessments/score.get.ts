@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const { studentId } = event.context.params as { studentId: string }
   const queryParams = getQuery(event)
   const caseId = queryParams.case_id ? Number(queryParams.case_id) : undefined
-  const classroomId = queryParams.classroom_id ? Number(queryParams.classroomId) : undefined
+  const classroomId = queryParams.classroom_id ? Number(queryParams.classroom_id) : undefined
 
   // build the query
   let query = supabase
