@@ -61,6 +61,7 @@
           <li>Admin: fakeadmin@gmail.com</li>
           <li>Instructor: fakeinstructor@gmail.com</li>
           <li>Student: fakestudent@gmail.com</li>
+          <li>Password: password</li>
         </ul>
       </div>
     </div>

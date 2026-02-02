@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[rgb(175,103,240)] to-white"
+    class="min-h-screen flex flex-col items-center justify-center bg-linear-to-b from-[rgb(175,103,240)] to-white"
   >
     <!-- Icon and Title -->
     <div class="flex items-center space-x-3 mb-8">
@@ -8,61 +8,24 @@
         <Icon name="healthicons:autoimmune-disease-outline" class="text-6xl" />
       </div>
       <h1 class="text-4xl font-bold text-white drop-shadow-lg">
-        Login to DiseaseQuest
+        Welcome to DiseaseQuest
       </h1>
     </div>
 
-    <!-- Login Form -->
-    <div class="w-full max-w-md">
-      <form @submit.prevent="handleLogin" class="space-y-4">
-        <div>
-          <label for="email" class="block text-sm font-medium text-white"
-            >Email</label
-          >
-          <input
-            v-model="email"
-            type="email"
-            id="email"
-            required
-            class="mt-1 p-2 bg-white border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
-          />
-        </div>
-
-        <div>
-          <label for="password" class="block text-sm font-medium text-white"
-            >Password</label
-          >
-          <input
-            v-model="password"
-            type="password"
-            id="password"
-            required
-            class="mt-1 p-2 bg-white border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500"
-          />
-        </div>
-
-        <div v-if="error" class="text-red-500 text-sm bg-red-50 p-3 rounded-md">
-          {{ error }}
-        </div>
-
-        <button
-          type="submit"
-          class="w-full bg-purple-600 text-white p-2 rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="isLoading"
-        >
-          {{ isLoading ? "Logging in..." : "Login" }}
-        </button>
-      </form>
-
-      <!-- Test Accounts Info (REMOVE IN PRODUCTION) -->
-      <div class="mt-6 p-4 bg-white/20 rounded-md text-white text-sm">
-        <p class="font-semibold mb-2">Test Accounts:</p>
-        <ul class="space-y-1 text-xs">
-          <li>Admin: admin@test.com</li>
-          <li>Instructor: instructor@test.com</li>
-          <li>Student: student@test.com</li>
-        </ul>
-      </div>
+    <!-- Buttons -->
+    <div class="flex space-x-6">
+      <NuxtLink
+        to="/login"
+        class="px-8 py-3 bg-white text-[#AF67F0] font-semibold rounded-2xl shadow-md hover:bg-[#f2e6ff] transition-all duration-300"
+      >
+        Login
+      </NuxtLink>
+      <NuxtLink
+        to="/register"
+        class="px-8 py-3 bg-[#AF67F0] text-white font-semibold rounded-2xl shadow-md hover:bg-[#9c4be8] transition-all duration-300"
+      >
+        Register
+      </NuxtLink>
     </div>
   </div>
 </template>
