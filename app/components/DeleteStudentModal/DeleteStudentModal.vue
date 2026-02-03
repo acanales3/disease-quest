@@ -42,7 +42,7 @@ watch(
   }
 );
 
-const canDelete = computed(() => confirmation.value.trim().toUpperCase() === "DELETE");
+const canDelete = computed(() => confirmation.value.trim().toUpperCase() === "REMOVE");
 const isBusy = computed(() => props.state.status === "loading");
 
 function onCancel() {
@@ -59,9 +59,9 @@ function onConfirm() {
   <Dialog :open="open" @update:open="(value) => emit('update:open', value)">
     <DialogContent class="max-w-lg">
       <DialogHeader class="text-center">
-        <DialogTitle class="text-red-600 text-center">Delete Student</DialogTitle>
+        <DialogTitle class="text-red-600 text-center">Remove Student from Classroom</DialogTitle>
         <DialogDescription class="text-left">
-          This will permanently delete the student and their associated data. This action cannot be undone.
+          This will remove the student from the classroom, but keep them in the students table. This action can be reversed by re-adding them to a classroom.
         </DialogDescription>
       </DialogHeader>
 
@@ -79,12 +79,12 @@ function onConfirm() {
 
         <div class="mt-4 space-y-2">
           <p class="text-sm text-gray-600">
-            Type <span class="font-semibold">DELETE</span> to confirm.
+            Type <span class="font-semibold">REMOVE</span> to confirm.
           </p>
           <Input
             v-model="confirmation"
             :disabled="isBusy"
-            placeholder="Type DELETE to confirm"
+            placeholder="Type REMOVE to confirm"
             class="bg-gray-100"
           />
         </div>
@@ -106,7 +106,7 @@ function onConfirm() {
           :disabled="!student || !canDelete || isBusy"
           @click="onConfirm"
         >
-          {{ isBusy ? "Deleting..." : "Delete Student" }}
+          {{ isBusy ? "Removing..." : "Remove Student" }}
         </Button>
       </DialogFooter>
     </DialogContent>

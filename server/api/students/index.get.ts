@@ -1,7 +1,6 @@
 import { serverSupabaseClient } from "#supabase/server";
 
 export default defineEventHandler(async (event) => {
-  
   const supabase = (await serverSupabaseClient(event)) as any;
 
   const { data, error } = await supabase
@@ -12,17 +11,19 @@ export default defineEventHandler(async (event) => {
       nickname,
       msyear,
       status,
-      users (
+      users:users!inner (
         first_name,
         last_name,
         email,
-        school
+        school,
+        role
       ),
       classroom_students (
         classroom_id
       )
     `
     )
+    .eq("users.role", "STUDENT")
     .order("user_id", { ascending: true });
 
   if (error) {
@@ -46,9 +47,10 @@ export default defineEventHandler(async (event) => {
     return {
       // Keep numeric id for the UI datatable (row number)
       id: idx + 1,
-      // Keep UUID for backend operations (delete)
+      // Keep UUID for backend operations
       userId: row.user_id,
       name,
+      nickname: row?.nickname ?? "",
       email: row?.users?.email ?? "",
       school: row?.users?.school ?? "",
       msyear: row?.msyear ?? 0,

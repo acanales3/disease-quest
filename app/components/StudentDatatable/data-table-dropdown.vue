@@ -21,6 +21,7 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   delete: [student: Student];
+  removeFromClassroom: [student: Student];
 }>();
 
 function onEdit() {
@@ -29,6 +30,10 @@ function onEdit() {
 
 function onDelete() {
   emit('delete', props.student);
+}
+
+function onRemoveFromClassroom() {
+  emit("removeFromClassroom", props.student);
 }
 
 </script>
@@ -46,13 +51,12 @@ function onDelete() {
       <DropdownMenuSeparator />
       <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
       <DropdownMenuItem
-        v-if="props.role === 'admin'"
+        v-if="props.role === 'admin' || props.role === 'instructor'"
         class="text-red-600 focus:text-red-600 focus:bg-red-50"
-        @click="onDelete"
+        @click="onRemoveFromClassroom"
       >
-        Delete
+        Remove from Classroom
       </DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Remove from Classroom</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
