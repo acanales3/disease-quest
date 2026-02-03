@@ -35,7 +35,15 @@ import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditIns
 import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue";
 
 // Empty instructor data
-const data = ref<Instructor[]>([]);
+const { data, pending, error } = await useFetch<Instructor[]>('/api/instructors', {
+  default: () => [],
+})
+
+watchEffect(() => {
+  console.log('🧠 instructors data:', data.value)
+  console.log('⏳ pending:', pending.value)
+  console.log('💥 error:', error.value)
+})
 
 // Columns for the table
 const visibleColumns = computed(() => getColumns("admin"));
