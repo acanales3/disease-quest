@@ -11,6 +11,7 @@ export interface Student {
    // Using numeric id for datatable display; userId" for API operations.
   userId?: string;
   name: string;
+  nickname?: string;
   email: string;
   school: string;
   msyear: number;
@@ -21,6 +22,7 @@ export interface Student {
 
 export interface ColumnOptions {
   onDelete?: (student: Student) => void;
+  onRemoveFromClassroom?: (student: Student) => void;
 }
 
 export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Student>[] {
@@ -129,6 +131,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Stu
           student,
           role,
           onDelete: options?.onDelete,
+          onRemoveFromClassroom: options?.onRemoveFromClassroom,
         })
       );
     },
