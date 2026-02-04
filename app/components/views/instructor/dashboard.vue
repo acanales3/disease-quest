@@ -66,11 +66,6 @@ const user = {
   name: "Instructor",
 };
 
-async function getData(): Promise<Classroom[]> {
-  // Fetch data from your API here.
-  return classrooms;
-}
-
 const data = ref<Classroom[]>([]);
 
 const visibleColumns = computed(() => {
@@ -89,6 +84,15 @@ const visibleColumns = computed(() => {
     return key ? columnsToShow.includes(String(key)) : false;
   });
 });
+
+async function getData(): Promise<Classroom[]> {
+  try {
+    return await $fetch<Classroom[]>('/api/classrooms')
+  } catch (error) {
+    console.error('Failed to fetch classrooms:', error)
+    return []
+  }
+}
 
 onMounted(async () => {
   data.value = await getData();
