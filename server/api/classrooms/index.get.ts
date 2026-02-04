@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
     const client = await serverSupabaseClient(event)
 
     // @ts-ignore
-    const userId = user.id || user.sub
+    const userId = user?.id || (user as any)?.sub
 
     if (!userId) {
         throw createError({
@@ -34,7 +34,16 @@ export default defineEventHandler(async (event) => {
         id: c.id,
         name: c.name,
         code: c.code,
-        instructor: c.instructor?.user?.name || 'Unknown',
+        instructor: (() => {
+            const u = c.instructor?.user
+            if (!u) return 'Unknown'
+            const byName = typeof u.name === 'string' ? u.name.trim() : ''
+            if (byName) return byName
+            const first = typeof u.first_name === 'string' ? u.first_name.trim() : ''
+            const last = typeof u.last_name === 'string' ? u.last_name.trim() : ''
+            const combined = `${first} ${last}`.trim()
+            return combined || 'Unknown'
+        })(),
         school: c.school,
         section: c.section,
         startDate: c.start_date,
@@ -46,7 +55,7 @@ export default defineEventHandler(async (event) => {
         *,
         instructor:instructors (
             user:users (
-                name
+                *
             )
         )
     `
