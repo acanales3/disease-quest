@@ -1,8 +1,12 @@
 <template>
-  <div class="flex flex-col w-full">
+  <div class="flex flex-col w-full space-y-4">
     <!-- Instructor Count & Instructor Invite -->
     <div class="flex justify-center gap-4">
-      <TotalCount icon="hugeicons:teacher" :count="data.length" label="Total Instructors" />
+      <TotalCount
+        icon="hugeicons:teacher"
+        :count="data.length"
+        label="Total Instructors"
+      />
       <InviteDialog dialog-type="instructor" />
     </div>
 
@@ -22,21 +26,17 @@
 </template>
 
 <script setup lang="ts">
-import type { Instructor } from "../../InstructorDatatable/columns";
-import { onMounted, ref, computed } from "vue";
-import { getColumns } from "../../InstructorDatatable/columns";
+import { ref, computed, onMounted } from "vue";
 import DataTable from "../../InstructorDatatable/data-table.vue";
+import { getColumns, type Instructor } from "../../InstructorDatatable/columns";
 import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
-
-import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor"
-import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue"
+import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
+import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue";
 
 const data = ref<Instructor[]>([]);
 
-const visibleColumns = computed(() => {
-  return getColumns('admin');
-});
+const visibleColumns = computed(() => getColumns("admin"));
 
 async function getData(): Promise<Instructor[]> {
   try {
@@ -62,14 +62,11 @@ const saveInstructorEdits = async (updated: {
   status: "active" | "deactivated";
 }) => {
   try {
-    // Update backend (existing endpoint is singular)
     await $fetch(`/api/instructor/${updated.id}`, {
       method: "PUT",
       body: updated,
     });
 
-    // Update local ref array
-    // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place.
     const fullName = `${updated.first_name} ${updated.last_name}`.trim();
     data.value = data.value.map((instructor) =>
       instructor.userId === updated.id
@@ -86,7 +83,6 @@ const saveInstructorEdits = async (updated: {
         : instructor
     );
 
-    // Close modal
     modalBus.closeEdit();
   } catch (error) {
     console.error("Error updating instructor: ", error);

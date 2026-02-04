@@ -56,7 +56,6 @@ const data = ref<Student[]>([]);
 const count = ref<number>(0);
 const isDeleteModalOpen = ref(false);
 const studentToDelete = ref<Student | null>(null);
-const deletedIds = ref<number[]>([]);
 
 const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
 
@@ -69,7 +68,7 @@ const deleteState = ref<
 
 const visibleColumns = computed(() => {
   return getColumns('admin', {
-    onDelete: handleDeleteClick,
+    onRemoveFromClassroom: handleDeleteClick,
   });
 });
 
@@ -84,23 +83,17 @@ function handleDeleteClick(s: Student) {
 }
 
 async function fetchStudents(): Promise<Student[]> {
-  // Backend not integrated yet so need toattempt API first, fallback to mock.
+  // Prefer backend API, fallback to mock.
   try {
-    // Prefer singular endpoint if it exists
-    return await $fetch<Student[]>("/api/student");
+    return await $fetch<Student[]>("/api/students");
   } catch {
-    // Fallback to endpoint (if backend uses it) or even our static mock data
-    try {
-      return await $fetch<Student[]>("/api/students");
-    } catch {
-      return student as unknown as Student[];
-    }
+    return student as unknown as Student[];
   }
 }
 
 async function refreshStudents() {
   const students = await fetchStudents();
-  data.value = students.filter((s) => !deletedIds.value.includes(s.id));
+  data.value = students;
 }
 
 async function handleDeleteConfirm(s: Student) {
@@ -110,9 +103,7 @@ async function handleDeleteConfirm(s: Student) {
   try {
     // Real DB key is UUID (students.user_id). Numeric id being used for display only.
     if (!s.userId) {
-      
-      deletedIds.value = [...deletedIds.value, s.id];
-      const msg = "Student deleted - backend expects a UUID userId.";
+      const msg = "Remove-from-classroom failed: backend expects a UUID userId.";
       deleteState.value = { status: "success", message: msg };
       pageMessage.value = { type: "success", text: msg };
       await refreshStudents();
@@ -121,17 +112,25 @@ async function handleDeleteConfirm(s: Student) {
       return;
     }
 
-    await $fetch(`/api/student/${s.userId}`, { method: "DELETE" });
+    if (!s.classroom) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Student is not assigned to a classroom.",
+      });
+    }
 
-    deletedIds.value = [...deletedIds.value, s.id];
-    deleteState.value = { status: "success", message: "Student deleted successfully." };
-    pageMessage.value = { type: "success", text: "Student deleted successfully." };
+    await $fetch(`/api/students/${s.userId}`, {
+      method: "DELETE" as any,
+      query: { classroomId: s.classroom },
+    });
+
+    deleteState.value = { status: "success", message: "Student removed from classroom successfully." };
+    pageMessage.value = { type: "success", text: "Student removed from classroom successfully." };
 
     await refreshStudents();
     isDeleteModalOpen.value = false;
     studentToDelete.value = null;
   } catch (error: any) {
-    // If the backend endpoint isn't implemented yet, it returns "Page not found - /api/student/{id}"
     const statusCode = error?.statusCode ?? error?.data?.statusCode
     const statusMessage = error?.statusMessage ?? error?.data?.statusMessage
 
@@ -139,9 +138,8 @@ async function handleDeleteConfirm(s: Student) {
       statusCode === 404 || (typeof statusMessage === "string" && statusMessage.includes("Page not found"))
 
     if (isMissingEndpoint) {
-      // Backend not integrated yet so need to simulate delete so UI can still be tested.
-      deletedIds.value = [...deletedIds.value, s.id];
-      const msg = "Delete API not available yet (simulated delete for UI testing)."
+      // Backend not integrated yet so need to simulate so UI can still be tested.
+      const msg = "Remove-from-classroom API not available yet (simulated for UI testing)."
       deleteState.value = { status: "success", message: msg };
       pageMessage.value = { type: "success", text: msg };
 
@@ -154,7 +152,7 @@ async function handleDeleteConfirm(s: Student) {
     const msg =
       error?.data?.message ||
       statusMessage ||
-      "Failed to delete student.";
+      "Failed to remove student from classroom.";
     deleteState.value = { status: "error", message: msg };
     pageMessage.value = { type: "error", text: msg };
   }
@@ -162,8 +160,11 @@ async function handleDeleteConfirm(s: Student) {
 
 const saveStudentEdits = async (updated: Student) => {
   try {
+    if (!updated.userId) {
+      throw new Error("Missing userId for student update.");
+    }
     // Update backend
-    await $fetch(`/api/students/${updated.id}`, {
+    await $fetch(`/api/students/${updated.userId}`, {
       method: "PUT",
       body: updated
     });

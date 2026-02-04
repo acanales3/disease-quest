@@ -74,10 +74,15 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { mapCategoryAverages } from "./mapAssessmentScores";
 
 type Category = { label: string; score: number };
 type CaseItem = { id: string; name: string };
 type ClassroomItem = { id: string; name: string };
+
+const props = defineProps<{
+  studentId: string
+}>()
 
 const categories = ref<Category[]>([]);
 const cases = ref<CaseItem[]>([]);
@@ -85,6 +90,31 @@ const classroomsList = ref<ClassroomItem[]>([]);
 
 const selectedCase = ref<CaseItem | null>(null);
 const selectedClassroom = ref<ClassroomItem | null>(null);
+
+async function fetchScores() {
+  const query: Record<string, any> = {}
+
+  if (selectedCase.value) query.case_id = selectedCase.value.id
+  if (selectedClassroom.value) query.classroom_id = selectedClassroom.value.id
+
+  const rows = await $fetch<any[]>(
+    `/api/students/${props.studentId}/assessment-scores`,
+    { query }
+  )
+
+  categories.value = mapCategoryAverages(rows)
+}
+
+async function fetchFilters() {
+  cases.value = await $fetch(`/api/student/[id]/cases`)
+  classroomsList.value = await $fetch(`/api/student/[id]/classrooms`)
+
+  selectedCase.value = cases.value[0] ?? null
+  selectedClassroom.value = classroomsList.value[0] ?? null
+}
+
+// UNCOMMENT WHEN FETCH FILTERS IS IMPLEMENTED
+// watch([selectedCase, selectedClassroom], fetchScores)
 
 async function getData(): Promise<{
   categories: Category[];
@@ -116,6 +146,14 @@ async function getData(): Promise<{
   };
 }
 
+// UNCOMMENT WHEN FETCH FILTERS IS COMPLETED
+// onMounted(async () => {
+//   await fetchFilters()
+//   await fetchScores()
+// })
+
+
+// REMOVE AND REPLACE WITH ABOVE onMounted WHEN fetchFilters IS COMPLETED
 onMounted(async () => {
   const d = await getData();
   categories.value = d.categories;
