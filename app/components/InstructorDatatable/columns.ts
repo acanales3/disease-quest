@@ -6,6 +6,11 @@ import { Button } from "~/components/ui/button";
 
 export interface Instructor {
   id: number;
+  // UUID for backend operations (edit/delete)
+  userId: string;
+  // Keep split names for edit form
+  first_name: string;
+  last_name: string;
   name: string;
   email: string;
   school: string;

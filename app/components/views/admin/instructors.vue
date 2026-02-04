@@ -26,7 +26,6 @@ import type { Instructor } from "../../InstructorDatatable/columns";
 import { onMounted, ref, computed } from "vue";
 import { getColumns } from "../../InstructorDatatable/columns";
 import DataTable from "../../InstructorDatatable/data-table.vue";
-import { instructors } from "../../../assets/interface/Instructor";
 import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 
@@ -40,27 +39,57 @@ const visibleColumns = computed(() => {
 });
 
 async function getData(): Promise<Instructor[]> {
-  // Fetch data from your API here.
-  return instructors;
+  try {
+    return await $fetch<Instructor[]>("/api/instructor");
+  } catch {
+    // Support older naming if present.
+    try {
+      return await $fetch<Instructor[]>("/api/instructors");
+    } catch (error) {
+      console.error("Failed to fetch instructors:", error);
+      return [];
+    }
+  }
 }
 
-const saveInstructorEdits = async (updated: Instructor) => {
+const saveInstructorEdits = async (updated: {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  school: string;
+  classroom: number | null;
+  status: "active" | "deactivated";
+}) => {
   try {
-    // Update backend
-    /* await $fetch(`/api/instructors/${updated.id}`, {
+    // Update backend (existing endpoint is singular)
+    await $fetch(`/api/instructor/${updated.id}`, {
       method: "PUT",
-      body: updated
-    }); */
+      body: updated,
+    });
 
     // Update local ref array
     // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place.
-    data.value = data.value.map(instructor => instructor.id === updated.id ? { ...updated } : instructor);
+    const fullName = `${updated.first_name} ${updated.last_name}`.trim();
+    data.value = data.value.map((instructor) =>
+      instructor.userId === updated.id
+        ? {
+            ...instructor,
+            first_name: updated.first_name,
+            last_name: updated.last_name,
+            name: fullName || instructor.name,
+            email: updated.email,
+            school: updated.school,
+            classroom: updated.classroom ?? instructor.classroom,
+            status: updated.status,
+          }
+        : instructor
+    );
 
     // Close modal
     modalBus.closeEdit();
   } catch (error) {
     console.error("Error updating instructor: ", error);
-    useToast().error("Failed to update instructor. Please try again.");
   }
 };
 
