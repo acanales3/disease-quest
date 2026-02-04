@@ -63,8 +63,12 @@ const visibleColumns = computed(() => {
 });
 
 async function getData(): Promise<Classroom[]> {
-  // Fetch data from your API here.
-  return classrooms;
+  try {
+    return await $fetch<Classroom[]>('/api/classrooms')
+  } catch (error) {
+    console.error('Failed to fetch classrooms:', error)
+    return []
+  }
 }
 
 function openCreateModal() {

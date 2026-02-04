@@ -4,7 +4,8 @@
 
 <script setup>
 definePageMeta({
-  layout: 'instructor'
-})
-
+  layout: "instructor",
+  middleware: ["role"],
+  role: "INSTRUCTOR",
+});
 </script>
