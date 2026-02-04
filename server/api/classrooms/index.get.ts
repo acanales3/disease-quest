@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
         const { data: classrooms, error } = await client
             .from('classrooms')
             .select(selectQuery)
-            .order('created_at', { ascending: false })
+            .order('id', { ascending: true })
 
         if (error) {
             throw createError({
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
             .from('classrooms')
             .select(selectQuery)
             .eq('instructor_id', userId)
-            .order('created_at', { ascending: false })
+            .order('id', { ascending: true })
 
         if (error) {
             throw createError({
@@ -110,6 +110,7 @@ export default defineEventHandler(async (event) => {
             .map(e => e.classrooms)
             .filter(Boolean)
             .map(mapClassroom)
+            .sort((a, b) => a.id - b.id)
     }
 
     // If no role matches (or other roles), return empty list or 403.
