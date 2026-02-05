@@ -18,7 +18,7 @@
     <!-- Instructor Edit Modal -->
     <AdminEditInstructorDialog
       :show="modalBus.openEditModal"
-      :data="editFormData"
+      :data="modalBus.editData"
       @close="modalBus.closeEdit()"
       @save="saveInstructorEdits as any"
     />
@@ -33,45 +33,25 @@ import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
 import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue";
-import type { InstructorEdit } from "~/assets/interface/InstructorEdit";
 
 // Empty instructor data
 const { data, pending, error } = await useFetch<Instructor[]>('/api/instructors', {
   default: () => [],
 })
 
-watchEffect(() => {
-  console.log('🧠 instructors data:', data.value)
-  console.log('⏳ pending:', pending.value)
-  console.log('💥 error:', error.value)
-})
-
 // Columns for the table
 const visibleColumns = computed(() => getColumns("admin"));
 
-const editFormData = computed<InstructorEdit | null>(() => {
-  if (!modalBus.editData) return null;
-
-  const i = modalBus.editData;
-
-  return {
-    id: i.id,
-    first_name: i.first_name,
-    last_name: i.last_name,
-    email: i.email,
-    school: i.school,
-    classroom: i.classroom,
-    status: i.status as 'active' | 'deactivated',
-  };
-});
-
 // No-op save function just updates the local array safely
-const saveInstructorEdits = async (instructor: InstructorEdit) => {
+const saveInstructorEdits = async (instructor: Instructor) => {
+  const [first_name, ...rest] = instructor.name.split(' ')
+  const last_name = rest.join(' ')
+
   await $fetch(`/api/instructors/${instructor.id}`, {
     method: 'PUT',
     body: {
-      first_name: instructor.first_name,
-      last_name: instructor.last_name, 
+      first_name: first_name,
+      last_name: last_name, 
       email: instructor.email,
       school: instructor.school,
       status: instructor.status
@@ -79,17 +59,7 @@ const saveInstructorEdits = async (instructor: InstructorEdit) => {
   })
 
   data.value = data.value.map((i) =>
-    i.id === instructor.id
-    ? {
-      ...i,
-      first_name: instructor.first_name,
-      last_name: instructor.last_name,
-      name: `${instructor.first_name} ${instructor.last_name}`,
-      email: instructor.email,
-      school: instructor.school,
-      status: instructor.status
-    }
-    : i,
+    i.id === instructor.id ? instructor : i,
   )
   modalBus.closeEdit();
 };

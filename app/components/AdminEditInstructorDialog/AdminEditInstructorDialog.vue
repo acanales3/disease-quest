@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ref, watch, computed } from 'vue';
-import type { InstructorEdit } from '~/assets/interface/InstructorEdit';
+import type { Instructor } from '@/assets/interface/Instructor';
 
-const props = defineProps<{ show: boolean; data: InstructorEdit | null }>();
+const props = defineProps<{ show: boolean; data: Instructor | null }>();
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'save', instructor: InstructorEdit): void;
+  (e: 'save', instructor: Instructor): void;
 }>();
 
 // reactive form data
-const form = ref<InstructorEdit>({
+const form = ref({
   id: '',
   first_name: '',
   last_name: '',
@@ -32,7 +32,16 @@ watch(
   () => props.data,
   (newData) => {
     if (!newData) return
-    form.value = { ...newData };
+    const nameParts = newData.name.trim().split(/\s+/);
+    form.value = {
+      id: newData.id,
+      first_name: nameParts[0] ?? '',
+      last_name: nameParts.slice(1).join(' ') ?? '',
+      email: newData.email,
+      school: newData.school,
+      classroom: newData.classroom,
+      status: newData.status,
+    }
   },
   { immediate: true },
 );
@@ -85,8 +94,14 @@ const handleOpenChange = (value: boolean) => {
 const handleSave = async () => {
   if (isInvalid.value) return;
 
-  const updated = { ...form.value }
-  emit('save', updated);
+  emit('save', {
+    id: form.value.id,
+    name: `${form.value.first_name} ${form.value.last_name}`.trim(),
+    email: form.value.email,
+    school: form.value.school,
+    classroom: form.value.classroom ?? 0,
+    status: form.value.status,
+  });
   emit('close');
 };
 </script>

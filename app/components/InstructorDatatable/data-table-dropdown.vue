@@ -22,8 +22,7 @@ const props = defineProps<Props>();
 function onEdit() {
   modalBus.openEdit({
     id: props.instructor.id,
-    first_name: props.instructor.first_name,
-    last_name: props.instructor.last_name,
+    name: props.instructor.name,
     email: props.instructor.email,
     school: props.instructor.school,
     classroom: props.instructor.classroom,

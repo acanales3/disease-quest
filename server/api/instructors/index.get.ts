@@ -28,8 +28,6 @@ export default defineEventHandler(async (event) => {
       status,
       user:users (
         id,
-        first_name,
-        last_name,
         name,
         email,
         school
@@ -47,8 +45,6 @@ export default defineEventHandler(async (event) => {
   // Normalize for table
   return data.map((row) => ({
     id: row.user.id,
-    first_name: row.user.first_name,
-    last_name: row.user.last_name,
     name: row.user.name,
     email: row.user.email,
     school: row.user.school,
