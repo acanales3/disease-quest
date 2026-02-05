@@ -2,7 +2,6 @@ import { serverSupabaseClient } from '#supabase/server'
 import { Database } from '@/assets/types/supabase'
 
 export default defineEventHandler(async (event) => {
-  console.log('/api/instructors HIT')
   const supabase = await serverSupabaseClient<Database>(event)
 
   // Auth
@@ -29,6 +28,8 @@ export default defineEventHandler(async (event) => {
       status,
       user:users (
         id,
+        first_name,
+        last_name,
         name,
         email,
         school
@@ -38,8 +39,6 @@ export default defineEventHandler(async (event) => {
       )
     `)
 
-  console.log('instructors raw data:', data)
-  console.log('instructors error:', error)
 
   if (error) {
     throw createError({ statusCode: 500, statusMessage: error.message })
@@ -48,6 +47,8 @@ export default defineEventHandler(async (event) => {
   // Normalize for table
   return data.map((row) => ({
     id: row.user.id,
+    first_name: row.user.first_name,
+    last_name: row.user.last_name,
     name: row.user.name,
     email: row.user.email,
     school: row.user.school,

@@ -18,7 +18,7 @@
     <!-- Instructor Edit Modal -->
     <AdminEditInstructorDialog
       :show="modalBus.openEditModal"
-      :data="modalBus.editData"
+      :data="editFormData"
       @close="modalBus.closeEdit()"
       @save="saveInstructorEdits as any"
     />
@@ -33,6 +33,7 @@ import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
 import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue";
+import type { InstructorEdit } from "~/assets/interface/InstructorEdit";
 
 // Empty instructor data
 const { data, pending, error } = await useFetch<Instructor[]>('/api/instructors', {
@@ -48,11 +49,48 @@ watchEffect(() => {
 // Columns for the table
 const visibleColumns = computed(() => getColumns("admin"));
 
+const editFormData = computed<InstructorEdit | null>(() => {
+  if (!modalBus.editData) return null;
+
+  const i = modalBus.editData;
+
+  return {
+    id: i.id,
+    first_name: i.first_name,
+    last_name: i.last_name,
+    email: i.email,
+    school: i.school,
+    classroom: i.classroom,
+    status: i.status as 'active' | 'deactivated',
+  };
+});
+
 // No-op save function just updates the local array safely
-const saveInstructorEdits = async (instructor: Instructor) => {
+const saveInstructorEdits = async (instructor: InstructorEdit) => {
+  await $fetch(`/api/instructors/${instructor.id}`, {
+    method: 'PUT',
+    body: {
+      first_name: instructor.first_name,
+      last_name: instructor.last_name, 
+      email: instructor.email,
+      school: instructor.school,
+      status: instructor.status
+    },
+  })
+
   data.value = data.value.map((i) =>
-    i.id === instructor.id ? { ...instructor } : i,
-  );
+    i.id === instructor.id
+    ? {
+      ...i,
+      first_name: instructor.first_name,
+      last_name: instructor.last_name,
+      name: `${instructor.first_name} ${instructor.last_name}`,
+      email: instructor.email,
+      school: instructor.school,
+      status: instructor.status
+    }
+    : i,
+  )
   modalBus.closeEdit();
 };
 </script>

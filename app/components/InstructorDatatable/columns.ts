@@ -5,7 +5,9 @@ import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 
 export interface Instructor {
-  id: number;
+  id: string;
+  first_name: string;
+  last_name: string;
   name: string;
   email: string;
   school: string;
@@ -25,7 +27,7 @@ export function getColumns(role: string): ColumnDef<Instructor>[] {
       return h(
         "div",
         { class: "text-center font-normal text-gray-600" },
-        id.toString()
+        id != null ? String(id) : '-'
       );
     },
   },
@@ -66,7 +68,7 @@ export function getColumns(role: string): ColumnDef<Instructor>[] {
       return h(
         "div",
         { class: "text-center font-normal text-gray-600" },
-        school
+        school ?? '-'
       );
     },
   },
@@ -79,7 +81,7 @@ export function getColumns(role: string): ColumnDef<Instructor>[] {
       return h(
         "div",
         { class: "text-center font-normal text-gray-600" },
-        room.toString()
+        room != null ? String(room) : '-'
       );
     },
   },

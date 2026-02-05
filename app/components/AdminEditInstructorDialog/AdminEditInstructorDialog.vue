@@ -1,25 +1,16 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ref, watch, computed } from 'vue';
+import type { InstructorEdit } from '~/assets/interface/InstructorEdit';
 
-interface InstructorEditForm {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  school: string;
-  classroom: number | null;
-  status: 'active' | 'deactivated';
-}
-
-const props = defineProps<{ show: boolean; data: InstructorEditForm | null }>();
+const props = defineProps<{ show: boolean; data: InstructorEdit | null }>();
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'save', instructor: InstructorEditForm): void;
+  (e: 'save', instructor: InstructorEdit): void;
 }>();
 
 // reactive form data
-const form = ref<InstructorEditForm>({
+const form = ref<InstructorEdit>({
   id: '',
   first_name: '',
   last_name: '',

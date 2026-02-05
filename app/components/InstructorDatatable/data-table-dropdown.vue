@@ -20,7 +20,15 @@ interface Props {
 const props = defineProps<Props>();
 
 function onEdit() {
-  modalBus.openEdit(props.instructor);
+  modalBus.openEdit({
+    id: props.instructor.id,
+    first_name: props.instructor.first_name,
+    last_name: props.instructor.last_name,
+    email: props.instructor.email,
+    school: props.instructor.school,
+    classroom: props.instructor.classroom,
+    status: props.instructor.status as 'active' | 'deactivated'
+  });
 }
 </script>
 
