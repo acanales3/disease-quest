@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "lucide-vue-next": "^0.552.0",
     "nuxt": "^4.2.0",
+    "pdfmake": "^0.3.3",
     "reka-ui": "^2.6.0",
     "shadcn-nuxt": "^2.3.2",
     "tailwind-merge": "^3.3.1",
