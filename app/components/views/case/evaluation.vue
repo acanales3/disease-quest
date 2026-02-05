@@ -23,6 +23,35 @@ const mockData: CaseScore[] = [
   { case: "Case 13", score: 80 },
 ];
 
+const reflectionData = {
+  studentName: "Student Name",
+  caseTitle: "Case 12",
+  completionDate: "Feb 5, 2026",
+  highest: { score: 96, category: "Management Reasoning" },
+  lowest: { score: 62, category: "History Taking and Synthesis" },
+  categories: [
+    { label: "History Taking and Synthesis", score: 0 },
+    { label: "Physical Exam Interpretation", score: 0 },
+    { label: "Differential Diagnosis Formulation", score: 0 },
+    { label: "Diagnostic Tests", score: 0 },
+    { label: "Management Reasoning", score: 0 },
+    { label: "Communication and Empathy", score: 0 },
+    { label: "Reflection and Metacognition", score: 0 },
+  ],
+  strengths: [
+    "Clear problem representation",
+    "Good prioritization of key findings",
+  ],
+  areasOfGrowth: [
+    "Ask more targeted ROS questions",
+    "Tighten the differential earlier",
+  ],
+  keyMistakes: [
+    "Ordered broad labs without justification",
+    "Missed a key red-flag symptom",
+  ],
+};
+
 const index: keyof CaseScore = "case";
 const categories: (keyof CaseScore)[] = ["score"];
 </script>
@@ -59,7 +88,14 @@ const categories: (keyof CaseScore)[] = ["score"];
       </div>
 
       <CaseTextArea />
-      <ReflectionDocumentButton />
+
+      <!-- ✅ Pull scores/date from DB, but keep these arrays from the local const -->
+      <ReflectionDocumentButton
+        :case-id="1"
+        :strengths="reflectionData.strengths"
+        :areas-of-growth="reflectionData.areasOfGrowth"
+        :key-mistakes="reflectionData.keyMistakes"
+      />
     </div>
   </div>
 </template>

@@ -19,6 +19,7 @@
     "@vueuse/core": "^14.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.19",
     "lucide-vue-next": "^0.552.0",
     "nuxt": "^4.2.0",
     "pdfmake": "^0.3.3",
@@ -30,6 +31,7 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@types/pdfmake": "^0.3.0",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.16",
