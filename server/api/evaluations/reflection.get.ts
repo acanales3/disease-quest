@@ -30,7 +30,6 @@ export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
   const authedClient = await serverSupabaseClient(event);
 
-  // @ts-ignore
   const userId: string | undefined = user?.id || user?.sub;
 
   if (!userId) {
@@ -85,7 +84,7 @@ export default defineEventHandler(async (event) => {
     created_at
   `;
 
-  // ✅ 1) Production behavior: get the evaluation for THIS user + case
+  // SCRUM-186 1) Production behavior: get the evaluation for THIS user + case
   const strictRes = (await authedClient
     .from("evaluations")
     .select(selectEval)
@@ -105,7 +104,7 @@ export default defineEventHandler(async (event) => {
   let evaluation: EvaluationRow | null = strictRes.data;
   let studentName = userProfile.name || "";
 
-  // ✅ 2) DEV fallback: if you only have 1 test row and it belongs to a different student,
+  // SCRUM-186 DEV fallback: if you only have 1 test row and it belongs to a different student,
   // authed client can't read it due to RLS. Use service role on the server to prove the flow.
   if (!evaluation) {
     const config = useRuntimeConfig();

@@ -387,7 +387,6 @@ const buildDocDefinition = (d: ReflectionDocData): TDocumentDefinitions => {
       footerText: { fontSize: 9, color: "#9CA3AF" },
     },
 
-    // ✅ Use Roboto which is included in vfs_fonts
     defaultStyle: { font: "Roboto", fontSize: 10, color: "#111827" },
   };
 };
@@ -460,22 +459,9 @@ async function onViewPdf() {
   isLoading.value = true;
 
   const t0 = performance.now();
-  const log = (...args: any[]) => console.log("[ReflectionPDF]", ...args);
 
   try {
-    log("click start", { caseId: props.caseId });
-
-    // Check if vfs is loaded
-    log("pdfMake.vfs check:", {
-      vfsExists: !!(pdfMake as any).vfs,
-      vfsKeys: (pdfMake as any).vfs
-        ? Object.keys((pdfMake as any).vfs).length
-        : 0,
-      fontsConfigured: !!(pdfMake as any).fonts,
-    });
-
     // 1) Fetch API (timeout guarded)
-    log("fetch: start");
     const controller = new AbortController();
     const fetchTimeout = window.setTimeout(() => controller.abort(), 15000);
 
@@ -488,26 +474,13 @@ async function onViewPdf() {
     } finally {
       window.clearTimeout(fetchTimeout);
     }
-    log("fetch: done", api);
 
     // 2) Build doc definition
-    log("map+build dd: start");
     const data = toReflectionDocData(api);
     const dd = buildDocDefinition(data);
-    log("map+build dd: done", {
-      caseTitle: data.caseTitle,
-      studentName: data.studentName,
-      scoresCount: data.categories?.length,
-      strengthsCount: data.strengths?.length,
-      ddFont: dd.defaultStyle?.font,
-    });
 
     // 3) Create PDF and open directly (like the working example)
-    log("pdfmake: creating and opening PDF...");
     pdfMake.createPdf(dd).open();
-
-    log("pdfmake: open() called successfully");
-    log("done in ms", Math.round(performance.now() - t0));
   } catch (e: any) {
     const msg =
       e?.name === "AbortError"
@@ -520,7 +493,6 @@ async function onViewPdf() {
     console.error("[ReflectionPDF] error", e);
   } finally {
     isLoading.value = false;
-    log("finally -> isLoading=false");
   }
 }
 </script>

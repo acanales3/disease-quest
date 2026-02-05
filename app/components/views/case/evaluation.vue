@@ -89,7 +89,8 @@ const categories: (keyof CaseScore)[] = ["score"];
 
       <CaseTextArea />
 
-      <!-- ✅ Pull scores/date from DB, but keep these arrays from the local const -->
+      <!-- Pull scores/date from DB, but keep these arrays from the local const -->
+      <!-- Change later: SCRUM-186 Pull scores/date from DB, but keep these arrays from the local const -->
       <ReflectionDocumentButton
         :case-id="1"
         :strengths="reflectionData.strengths"
