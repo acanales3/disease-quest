@@ -6,16 +6,9 @@
         {{ classroom.name }}
       </h1>
 
-      <div class="grid grid-cols-2 gap-y-6 gap-x-10 max-w-4xl mx-auto text-gray-700">
-        <div>
-          <div class="font-semibold">Subject</div>
-          <div>{{ classroom.code }}</div>
-        </div>
-
-        <div>
-          <div class="font-semibold">MS Year</div>
-          <div>{{ classroom.msyear ?? "N/A" }}</div>
-        </div>
+      <div class="text-gray-700">
+        <div class="font-semibold">Subject</div>
+        <div>{{ classroom.code }}</div>
       </div>
     </div>
 
