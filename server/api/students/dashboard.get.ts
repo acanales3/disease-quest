@@ -1,33 +1,16 @@
 import { serverSupabaseClient } from '#supabase/server'
-import type { Database } from '@/assets/types/supabase'
-
-type ClassroomCaseRow = {
-  classroom_id: number
-  cases: {
-    id: number
-    name: string
-    description: string | null
-  } | null
-  classrooms: {
-    name: string
-  } | null
-}
+import type { Database, Tables } from '@/assets/types/supabase'
+import type { Case } from '@/components/CaseDatatable/columns'
 
 export default defineEventHandler(async (event) => {
-  const studentId = event.context.params?.studentId
-  //const supabase = await serverSupabaseClient<Database>(event) // TYPE SAFE
-  const supabase = await serverSupabaseClient(event) as any // NOT TYPE SAFE
+  const supabase = await serverSupabaseClient<Database>(event)
+  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!studentId) {
+  if (!user) {
     throw createError({ statusCode: 400, statusMessage: 'Student ID required' })
   }
 
-  // Auth
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user || user.id !== studentId) {
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
-  }
+  const studentId = user.id
 
   // User name
   const { data: userRow } = await supabase
@@ -47,26 +30,30 @@ export default defineEventHandler(async (event) => {
       user: { name: userRow?.name },
       stats: null,
       cases: [],
-      message: 'No classroom enrollment found',
     }
   }
 
   const classroomIds = classrooms.map(c => c.classroom_id)
 
   // // Available cases
-  const { data: classroomCases } = await supabase
+  const { data: classroomCases, error: classroomError } = await supabase
     .from('classroom_cases')
     .select(`
-      classroom_id
-      cases (
+      classroom_id,
+      cases:case_id (
         id,
         name,
         description
       ),
-      classrooms (
-        name
+      classrooms:classroom_id (
+        code
       )
     `) .in('classroom_id', classroomIds)
+
+
+  if (classroomError) {
+    throw createError({ statusCode: 500, statusMessage: classroomError.message })
+  }
 
   // Case data
   const { data: studentCases, error } = await supabase
@@ -74,7 +61,7 @@ export default defineEventHandler(async (event) => {
     .select(`
       case_id,
       started_at,
-      completed_at,
+      completed_at
     `).eq('student_id', studentId)
 
   if (error) {
@@ -86,12 +73,12 @@ export default defineEventHandler(async (event) => {
   )
 
   // Merge data
-  const cases = classroomCases.map(row => {
+  const cases: Case[] = classroomCases.filter(row => row.cases).map(row => {
     const c = row.cases!
     const progress = progressMap.get(c.id)
 
-    let status: 'not started' | 'in progress' | 'completed' = 'not started'
-    let completionDate = null
+    let status: Case['status'] = 'not started'
+    let completionDate: string | null = null
 
     if (progress) {
       if (progress.completed_at) {
@@ -105,10 +92,29 @@ export default defineEventHandler(async (event) => {
      return {
       id: c.id,
       name: c.name,
-      description: c.description,
-      classroom: row.classrooms?.name ?? null,
-      completionDate,
+      description: c.description ?? '',
+      classroom: row.classrooms?.code ?? '',
+      completionDate: completionDate ? completionDate : '-',
       status,
      }
   })
+
+  const total = cases.length
+
+  const completed = cases.filter(c => c.status === 'completed').length
+  const inProgress = cases.filter(c => c.status === 'in progress').length
+  const notStarted = cases.filter(c => c.status === 'not started').length
+
+  const stats = {
+    total,
+    completedPercent: total === 0 ? 0 : Math.round((completed / total) * 100),
+    inProgress,
+    notStartedPercent: total === 0 ? 0 : Math.round((notStarted / total) * 100)
+  }
+
+  return {
+    user: { name: userRow?.name ?? null },
+    stats,
+    cases,
+  }
 })
