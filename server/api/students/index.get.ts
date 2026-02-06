@@ -70,7 +70,7 @@ export default defineEventHandler(async (event) => {
       `
       )
       .eq("users.role", "STUDENT")
-      .eq("classroom_students.classrooms.instructor_id", user.id)
+      .eq("classroom_students.classrooms.instructor_id", userId)
       .order("user_id", { ascending: true });
   } else if (role === "ADMIN") {
     // For admins, fetch all students (restore original query shape)
@@ -109,7 +109,7 @@ export default defineEventHandler(async (event) => {
   if (error) {
     throw createError({
       statusCode: 500,
-      statusMessage: "Failed to fetch students",
+      statusMessage: "Failed to fetch students: " + error.message,
       data: { details: error.message },
     });
   }
