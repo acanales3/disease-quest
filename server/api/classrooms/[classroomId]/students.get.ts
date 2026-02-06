@@ -72,9 +72,9 @@ export default defineEventHandler(async (event) => {
         nickname,
         msyear,
         status,
-        user:users (
+              user:users (
             email,
-            raw_user_meta_data
+            school
         )
       )
     `)
@@ -87,13 +87,16 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    return students.map((record: any) => {
+    const filtered = students.filter((record: any) => record.student)
+
+    return filtered.map((record: any) => {
         const s = record.student
         const userData = s.user || {}
         return {
             id: s.user_id,
             name: s.nickname,
             email: userData.email,
+            school: userData.school || '',
             msyear: s.msyear,
             status: s.status
         }
