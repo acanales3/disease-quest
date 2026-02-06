@@ -1,4 +1,8 @@
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
+import {
+    serverSupabaseUser,
+    serverSupabaseClient,
+    serverSupabaseServiceRole,
+} from '#supabase/server'
 
 const PASSWORD_REQUIREMENTS = {
     minLength: 8,
@@ -48,6 +52,7 @@ export default defineEventHandler(async (event) => {
     try {
         const user = await serverSupabaseUser(event)
         const client = await serverSupabaseClient(event)
+        const adminClient = await serverSupabaseServiceRole(event)
 
         const userId = user?.id || user?.sub
 
@@ -156,7 +161,7 @@ export default defineEventHandler(async (event) => {
 
         try {
             const { error: updateError } =
-                await client.auth.admin.updateUserById(userId, {
+                await adminClient.auth.admin.updateUserById(userId, {
                     password: newPassword,
                 })
 
@@ -184,15 +189,15 @@ export default defineEventHandler(async (event) => {
                 },
             })
         }
-        // invalidate other sessions
+        // invalidate all sessions (including current)
         try {
-            const { error: signOutError } = await client.auth.signOut({
-                scope: 'others',
+            const { error: signOutError } = await adminClient.auth.signOut({
+                scope: 'global',
             })
 
             if (signOutError) {
                 console.warn(
-                    'Warning: Could not sign out other sessions:',
+                    'Warning: Could not sign out sessions:',
                     signOutError,
                 )
             }
