@@ -85,7 +85,6 @@ export default defineEventHandler(async (event) => {
     }
 
     // update classroom if provided
-    // We assume a student can only be in one classroom at a time based on the UI logic (single classroom input)
     if (typeof body.classroom !== 'undefined') {
         const classroomId = Number(body.classroom)
 
