@@ -38,7 +38,12 @@ export default defineEventHandler(async (event) => {
     .select('id, name, code, instructor_id')
     .eq('id', classroomId)
     .single()) as {
-    data: { id: number; name: string; code: string; instructor_id: string } | null
+    data: {
+      id: number
+      name: string
+      code: string
+      instructor_id: string
+    } | null
     error: any
   }
 

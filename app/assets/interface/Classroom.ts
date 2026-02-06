@@ -8,6 +8,7 @@ export interface Classroom {
   startDate: string;
   endDate: string;
   status: "active" | "inactive";
+  msyear?: number | null;
   // action column still needed
 }
 
