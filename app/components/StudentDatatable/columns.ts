@@ -61,19 +61,6 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Stu
       ),
   },
   {
-    accessorKey: "school",
-    header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "School"),
-    cell: ({ row }) => {
-      const school = row.getValue("school") as string;
-      return h(
-        "div",
-        { class: "text-center font-normal text-gray-600" },
-        school
-      );
-    },
-  },
-  {
     accessorKey: "classroom",
     header: () =>
       h("div", { class: "text-center font-normal text-black" }, "Classroom"),
@@ -92,10 +79,11 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Stu
       h("div", { class: "text-center font-normal text-black" }, "MS-Year"),
     cell: ({ row }) => {
       const msyear = row.getValue("msyear") as number;
+      const display = msyear ? msyear.toString() : "N/A";
       return h(
         "div",
         { class: "text-center font-normal text-gray-600" },
-        msyear.toString()
+        display
       );
     },
   },
