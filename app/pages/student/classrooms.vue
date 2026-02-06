@@ -1,10 +1,11 @@
 <template>
-  <views-student-classrooms/>
+  <views-student-classrooms />
 </template>
 
 <script setup>
 definePageMeta({
-  layout: 'student'
-})
-
+  layout: "student",
+  middleware: ["role"],
+  role: "STUDENT",
+});
 </script>

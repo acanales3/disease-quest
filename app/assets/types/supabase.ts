@@ -68,38 +68,51 @@ export type Database = {
       }
       cases: {
         Row: {
-          classroom_id: number | null
-          completion_date: string | null
           created_at: string | null
           description: string | null
           id: number
           name: string
-          start_date: string | null
-          status: Database["public"]["Enums"]["case_status"]
         }
         Insert: {
-          classroom_id?: number | null
-          completion_date?: string | null
           created_at?: string | null
           description?: string | null
           id?: never
           name: string
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["case_status"]
         }
         Update: {
-          classroom_id?: number | null
-          completion_date?: string | null
           created_at?: string | null
           description?: string | null
           id?: never
           name?: string
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["case_status"]
+        }
+        Relationships: []
+      }
+      classroom_cases: {
+        Row: {
+          case_id: number | null
+          classroom_id: number | null
+          id: number
+        }
+        Insert: {
+          case_id?: number | null
+          classroom_id?: number | null
+          id?: number
+        }
+        Update: {
+          case_id?: number | null
+          classroom_id?: number | null
+          id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "cases_classroom_id_fkey"
+            foreignKeyName: "classroom_cases_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classroom_cases_classroom_id_fkey"
             columns: ["classroom_id"]
             isOneToOne: false
             referencedRelation: "classrooms"
@@ -269,6 +282,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          created_by: string
+          custom_message: string | null
+          email: string
+          expires_at: string
+          id: string
+          registration_link: string
+          role: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          created_by: string
+          custom_message?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          registration_link: string
+          role: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          created_by?: string
+          custom_message?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          registration_link?: string
+          role?: string
+          status?: string
+        }
+        Relationships: []
       }
       leaderboard_entries: {
         Row: {

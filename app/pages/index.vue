@@ -30,6 +30,78 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup lang="ts">
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import useSupabaseAuth from "~/composables/useSupabaseAuth";
 
-<style scoped></style>
+const email = ref("");
+const password = ref("");
+const error = ref("");
+const isLoading = ref(false);
+
+const router = useRouter();
+const supabase = useSupabaseClient();
+const { login } = useSupabaseAuth();
+
+// Check if already logged in on mount
+onMounted(async () => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (session?.user) {
+    console.log("User already logged in, fetching profile...");
+
+    // Get user profile to determine role
+    const { getUserProfile } = useUsers();
+    const { data: profile } = await getUserProfile(session.user.id);
+
+    if (profile?.role) {
+      console.log("Already logged in, redirecting to dashboard");
+      router.push(`/${profile.role.toLowerCase()}/dashboard`);
+    }
+  }
+});
+
+const handleLogin = async () => {
+  error.value = "";
+  isLoading.value = true;
+
+  try {
+    const { error: loginErr, customUser: profile } = await login(
+      email.value,
+      password.value,
+    );
+
+    if (loginErr) {
+      error.value = loginErr.message;
+      isLoading.value = false;
+      return;
+    }
+
+    if (!profile?.role) {
+      error.value = "No profile found for user. Please contact support.";
+      isLoading.value = false;
+      return;
+    }
+
+    console.log("Login successful:", {
+      userId: profile.id,
+      role: profile.role,
+      email: profile.email,
+    });
+
+    // Redirect by role
+    const targetPath = `/${profile.role.toLowerCase()}/dashboard`;
+    console.log("Redirecting to:", targetPath);
+
+    // Use window.location for a hard redirect to ensure middleware runs
+    window.location.href = targetPath;
+  } catch (err) {
+    console.error("Login error:", err);
+    error.value = "An unexpected error occurred. Please try again.";
+    isLoading.value = false;
+  }
+};
+</script>

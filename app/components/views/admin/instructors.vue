@@ -1,8 +1,12 @@
 <template>
-  <div class="flex flex-col w-full">
+  <div class="flex flex-col w-full space-y-4">
     <!-- Instructor Count & Instructor Invite -->
     <div class="flex justify-center gap-4">
-      <TotalCount icon="hugeicons:teacher" :count="data.length" label="Total Instructors" />
+      <TotalCount
+        icon="hugeicons:teacher"
+        :count="data.length"
+        label="Total Instructors"
+      />
       <InviteDialog dialog-type="instructor" />
     </div>
 
@@ -16,55 +20,47 @@
       :show="modalBus.openEditModal"
       :data="modalBus.editData"
       @close="modalBus.closeEdit()"
-      @save="saveInstructorEdits"
+      @save="saveInstructorEdits as any"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Instructor } from "../../InstructorDatatable/columns";
-import { onMounted, ref, computed } from "vue";
-import { getColumns } from "../../InstructorDatatable/columns";
+import { ref, computed } from "vue";
 import DataTable from "../../InstructorDatatable/data-table.vue";
-import { instructors } from "../../../assets/interface/Instructor";
+import { getColumns, type Instructor } from "../../InstructorDatatable/columns";
 import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
+import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
+import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue";
 
-import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor"
-import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue"
+// Empty instructor data
+const { data, pending, error } = await useFetch<Instructor[]>('/api/instructors', {
+  default: () => [],
+})
 
-const data = ref<Instructor[]>([]);
+// Columns for the table
+const visibleColumns = computed(() => getColumns("admin"));
 
-const visibleColumns = computed(() => {
-  return getColumns('admin');
-});
+// No-op save function just updates the local array safely
+const saveInstructorEdits = async (instructor: Instructor) => {
+  const [first_name, ...rest] = instructor.name.split(' ')
+  const last_name = rest.join(' ')
 
-async function getData(): Promise<Instructor[]> {
-  // Fetch data from your API here.
-  return instructors;
-}
+  await $fetch(`/api/instructors/${instructor.id}`, {
+    method: 'PUT',
+    body: {
+      first_name: first_name,
+      last_name: last_name, 
+      email: instructor.email,
+      school: instructor.school,
+      status: instructor.status
+    },
+  })
 
-const saveInstructorEdits = async (updated: Instructor) => {
-  try {
-    // Update backend
-    /* await $fetch(`/api/instructors/${updated.id}`, {
-      method: "PUT",
-      body: updated
-    }); */
-
-    // Update local ref array
-    // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place.
-    data.value = data.value.map(instructor => instructor.id === updated.id ? { ...updated } : instructor);
-
-    // Close modal
-    modalBus.closeEdit();
-  } catch (error) {
-    console.error("Error updating instructor: ", error);
-    useToast().error("Failed to update instructor. Please try again.");
-  }
+  data.value = data.value.map((i) =>
+    i.id === instructor.id ? instructor : i,
+  )
+  modalBus.closeEdit();
 };
-
-onMounted(async () => {
-  data.value = await getData();
-});
 </script>

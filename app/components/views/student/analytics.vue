@@ -1,6 +1,6 @@
 <template>
     <div class="w-full">
-        <ClassroomScores class="mb-8"/>
+        <ClassroomScores class="mb-8" v-if="user" :student-id="user.id"/>
         <AssessmentCategoryScoreGraph
         :data="mockData"
         :index="index"
@@ -13,6 +13,8 @@
 import ClassroomScores from '../../graph/ScoresByCategoryGraph.vue'
 import AssessmentCategoryScoreGraph from '@/components/AssessmentCategoryScoreGraph/graph.vue'
 import type { CaseScore } from '@/components/AssessmentCategoryScoreGraph/types'
+
+const user = useSupabaseUser()
 
 const mockData: CaseScore[] = [
   { case: 'Case 1', score: 85 },
