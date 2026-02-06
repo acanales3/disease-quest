@@ -35,16 +35,32 @@ import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditIns
 import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue";
 
 // Empty instructor data
-const data = ref<Instructor[]>([]);
+const { data, pending, error } = await useFetch<Instructor[]>('/api/instructors', {
+  default: () => [],
+})
 
 // Columns for the table
 const visibleColumns = computed(() => getColumns("admin"));
 
 // No-op save function just updates the local array safely
 const saveInstructorEdits = async (instructor: Instructor) => {
+  const [first_name, ...rest] = instructor.name.split(' ')
+  const last_name = rest.join(' ')
+
+  await $fetch(`/api/instructors/${instructor.id}`, {
+    method: 'PUT',
+    body: {
+      first_name: first_name,
+      last_name: last_name, 
+      email: instructor.email,
+      school: instructor.school,
+      status: instructor.status
+    },
+  })
+
   data.value = data.value.map((i) =>
-    i.id === instructor.id ? { ...instructor } : i,
-  );
+    i.id === instructor.id ? instructor : i,
+  )
   modalBus.closeEdit();
 };
 </script>
