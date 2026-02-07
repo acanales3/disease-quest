@@ -2,7 +2,7 @@ import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
     const user = await serverSupabaseUser(event)
-    const client = await serverSupabaseClient(event)
+    const client = (await serverSupabaseClient(event)) as any
 
     // @ts-ignore
     const userId = user.id || user.sub
@@ -65,41 +65,50 @@ export default defineEventHandler(async (event) => {
 
     // fetch roster
     const { data: students, error: studentsError } = await client
-        .from('classroom_students')
-        .select(`
-      student:students (
-        user_id,
-        nickname,
-        msyear,
-        status,
-        users:users!inner (
-            email,
-            school
-        )
+        .from("students")
+        .select(
+            `
+      user_id,
+      nickname,
+      msyear,
+      status,
+      users:users!inner (
+        first_name,
+        last_name,
+        email,
+        school,
+        role
+      ),
+      classroom_students (
+        classroom_id
       )
-    `)
-        .eq('classroom_id', classroomId)
+    `
+        )
+        .eq("users.role", "STUDENT")
+        .eq("classroom_students.classroom_id", classroomId)
+        .order("user_id", { ascending: true });
+
 
     if (studentsError) {
-        console.error('Roster fetch error:', studentsError)
         throw createError({
             statusCode: 500,
             message: studentsError.message,
         })
     }
 
-    const filtered = students.filter((record: any) => record.student)
+    return (students ?? []).map((row: any) => {
+        const userData = row.users || {}
+        const first = userData.first_name ?? ""
+        const last = userData.last_name ?? ""
+        const name = `${first} ${last}`.trim() || row.nickname || "Unknown"
 
-    return filtered.map((record: any) => {
-        const s = record.student
-        const userData = s.users || {}
         return {
-            id: s.user_id,
-            name: s.nickname,
+            id: row.user_id,
+            name: name,
             email: userData.email,
             school: userData.school || '',
-            msyear: s.msyear,
-            status: s.status
+            msyear: row.msyear,
+            status: row.status
         }
     })
 })
