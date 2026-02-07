@@ -15,6 +15,7 @@ import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditIns
 interface Props {
   instructor: Instructor;
   role: string;
+  onDelete?: (instructor: Instructor) => void; 
 }
 
 const props = defineProps<Props>();
@@ -26,9 +27,18 @@ function onEdit() {
     email: props.instructor.email,
     school: props.instructor.school,
     classroom: props.instructor.classroom,
-    status: props.instructor.status as 'active' | 'deactivated'
+    status: props.instructor.status as "active" | "deactivated",
   });
 }
+
+function onDeleteClick() {
+  // This does NOT delete. It just tells the parent to open the modal.
+  console.log("DROPDOWN DELETE CLICKED", props.instructor.id, !!props.onDelete);
+  props.onDelete?.(props.instructor);
+}
+
+
+
 </script>
 
 <template>
@@ -39,11 +49,15 @@ function onEdit() {
         <MoreHorizontal class="w-4 h-4" />
       </Button>
     </DropdownMenuTrigger>
+
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
+
+      <DropdownMenuItem v-if="props.role === 'admin'" @click="onDeleteClick">
+        Delete
+      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
