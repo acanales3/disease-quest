@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
         .from('classrooms')
         .select('id, instructor_id')
         .eq('id', classroomId)
-        .single()
+        .single() as { data: { id: any, instructor_id: string } | null, error: any }
 
     if (classroomError || !classroom) {
         throw createError({
@@ -72,7 +72,7 @@ export default defineEventHandler(async (event) => {
         nickname,
         msyear,
         status,
-              user:users (
+        users:users!inner (
             email,
             school
         )
@@ -81,6 +81,7 @@ export default defineEventHandler(async (event) => {
         .eq('classroom_id', classroomId)
 
     if (studentsError) {
+        console.error('Roster fetch error:', studentsError)
         throw createError({
             statusCode: 500,
             message: studentsError.message,
@@ -91,7 +92,7 @@ export default defineEventHandler(async (event) => {
 
     return filtered.map((record: any) => {
         const s = record.student
-        const userData = s.user || {}
+        const userData = s.users || {}
         return {
             id: s.user_id,
             name: s.nickname,
