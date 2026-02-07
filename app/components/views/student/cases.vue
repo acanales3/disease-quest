@@ -28,10 +28,9 @@
 
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
-import { onMounted, ref, computed } from "vue";
+import { ref, computed, watchEffect } from "vue";
 import { getColumns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
-import { cases } from "~/assets/interface/Case";
 import TotalCount from "../../ui/TotalCount.vue";
 
 const data = ref<Case[]>([]);
@@ -42,6 +41,15 @@ const visibleColumns = computed(() => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
+});
+
+// API call
+const { data: apiData } = await useFetch<Case[]>("/api/cases/available", {
+  default: () => [],
+});
+
+watchEffect(() => {
+  data.value = apiData.value ?? [];
 });
 
 // Calculate statistics
@@ -65,14 +73,5 @@ const completionPercentage = computed(() => {
 const notStartedPercentage = computed(() => {
   if (data.value.length === 0) return 0;
   return Math.round((notStartedCount.value / data.value.length) * 100);
-});
-
-async function getData(): Promise<Case[]> {
-  // Fetch data from your API here.
-  return cases;
-}
-
-onMounted(async () => {
-  data.value = await getData();
 });
 </script>

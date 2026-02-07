@@ -25,4 +25,19 @@ export default defineNuxtConfig({
   supabase: {
     redirect: false,
   },
+  /**
+   * ✅ Server-side private key access
+   * - SUPABASE_SERVICE_KEY stays server-only (never exposed to client)
+   * - public.supabase.url is safe to expose
+   */
+  runtimeConfig: {
+    supabase: {
+      serviceKey: process.env.SUPABASE_SERVICE_KEY,
+    },
+    public: {
+      supabase: {
+        url: process.env.SUPABASE_URL,
+      },
+    },
+  },
 });

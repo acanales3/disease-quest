@@ -2,6 +2,7 @@ import { serverSupabaseClient } from '#supabase/server'
 import { Database } from '@/assets/types/supabase'
 
 export default defineEventHandler(async (event) => {
+    console.log('/api/insturctors/[insturctorId] HIT')
     const instructorId = event.context.params?.instructorId
 
     if (!instructorId) {

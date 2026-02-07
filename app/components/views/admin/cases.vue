@@ -9,39 +9,54 @@
       />
       <CreateCaseDialog />
     </div>
-    
-    <!-- Cases Table -->
+
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <!-- Cases Table -->
+      <DataTable  :columns="visibleColumns" :data="data" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
-import { onMounted, ref, computed } from "vue";
+import { computed, watchEffect, ref } from "vue";
 import { getColumns } from "@/components/CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
-import { cases} from "~/assets/interface/Case"
 import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue";
 import TotalCount from "../../../components/ui/TotalCount.vue";
 
-const data = ref<Case[]>([]);
-
 const visibleColumns = computed(() => {
-  const columnsToShow = ['id', 'name', 'description', 'actions'];
-  return getColumns('admin').filter(column => {
-    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
+  const columnsToShow = ["id", "name", "description", "actions"];
+  return getColumns("admin").filter((column) => {
+    const key =
+      "id" in column
+        ? column.id
+        : "accessorKey" in column
+          ? column.accessorKey
+          : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
 });
 
-async function getData(): Promise<Case[]> {
-  // Fetch data from your API here.
-  return cases;
-}
+// Call your API
+const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
+  "/api/cases/available",
+  { default: () => [] }
+);
 
-onMounted(async () => {
-  data.value = await getData();
+// Adapt into your existing `data` ref
+const data = ref<Case[]>([]);
+watchEffect(() => {
+  data.value = apiData.value ?? [];
+});
+
+const errorMessage = computed(() => {
+  const e: any = error.value;
+  if (!e) return "";
+  // Nuxt useFetch errors often have statusCode/statusMessage
+  if (e.statusCode === 401) return "You are not logged in.";
+  if (e.statusCode === 403) return "You do not have permission to view cases.";
+  if (e.statusCode === 400) return e.statusMessage || "Bad request.";
+  return e.statusMessage || e.message || "Unknown error.";
 });
 </script>

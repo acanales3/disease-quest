@@ -84,5 +84,41 @@ export default defineEventHandler(async (event) => {
         })
     }
 
+    // update classroom if provided
+    if (typeof body.classroom !== 'undefined') {
+        const classroomId = Number(body.classroom)
+
+        // First, remove existing classroom associations
+        const { error: deleteError } = await client
+            .from('classroom_students')
+            .delete()
+            .eq('student_id', id)
+
+        if (deleteError) {
+            throw createError({
+                statusCode: 500,
+                message: `Error removing student from previous classroom: ${deleteError.message}`,
+            })
+        }
+
+        // try to add the new association
+        if (classroomId >= 0) {
+            const { error: insertError } = await client
+                .from('classroom_students')
+                // @ts-ignore
+                .insert({
+                    classroom_id: classroomId,
+                    student_id: id
+                } as any)
+
+            if (insertError) {
+                throw createError({
+                    statusCode: 500,
+                    message: `Error assigning student to classroom ${classroomId}: ${insertError.message}`,
+                })
+            }
+        }
+    }
+
     return { success: true }
 })

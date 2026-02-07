@@ -20,11 +20,9 @@
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
 import type { Classroom } from "~/assets/interface/Classroom";
-import { onMounted, ref, computed } from "vue";
+import { computed, ref, watchEffect } from "vue";
 import { getColumns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
-import { cases} from "~/assets/interface/Case"
-import { classrooms } from "~/assets/interface/Classroom"
 import TotalCount from "~/components/ui/TotalCount.vue";
 import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue";
 
@@ -32,19 +30,30 @@ const casesData = ref<Case[]>([]);
 const classroomsData = ref<Classroom[]>([]);
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ['id', 'name', 'description', 'actions'];
-  return getColumns('instructor').filter(column => {
-    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
+  const columnsToShow = ["id", "name", "description", "actions"];
+  return getColumns("instructor").filter((column) => {
+    const key =
+      "id" in column
+        ? column.id
+        : "accessorKey" in column
+          ? column.accessorKey
+          : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
 });
 
-async function getData(): Promise<[Case[], Classroom[]]> {
-  // Fetch data from your API here.
-  return [cases, classrooms];
-}
+// API calls
+const { data: casesApi } = await useFetch<Case[]>("/api/cases/available", {
+  default: () => [],
+});
 
-onMounted(async () => {
-  [casesData.value, classroomsData.value] = await getData();
+const { data: classroomsApi } = await useFetch<Classroom[]>("/api/classrooms", {
+  default: () => [],
+});
+
+// bind into your existing refs
+watchEffect(() => {
+  casesData.value = casesApi.value ?? [];
+  classroomsData.value = classroomsApi.value ?? [];
 });
 </script>
