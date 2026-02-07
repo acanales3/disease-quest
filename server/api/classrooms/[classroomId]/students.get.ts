@@ -1,8 +1,9 @@
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
+import { serverSupabaseUser, serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
     const user = await serverSupabaseUser(event)
-    const client = (await serverSupabaseClient(event)) as any
+    // Use Service Role to match index.get.ts and bypass RLS for instructor/admin queries
+    const client = serverSupabaseServiceRole(event)
 
     // @ts-ignore
     const userId = user.id || user.sub
@@ -79,7 +80,7 @@ export default defineEventHandler(async (event) => {
         school,
         role
       ),
-      classroom_students (
+      classroom_students!inner (
         classroom_id
       )
     `
