@@ -17,6 +17,7 @@
 <script setup>
 const links = [
   { label: 'Dashboard', to: '/admin/dashboard', icon: 'iconamoon:home-light' },
+  { label: 'Administrators', to: '/admin/admins', icon: 'eos-icons-admin' },
   { label: 'Instructors', to: '/admin/instructors', icon: 'hugeicons:teacher' },
   { label: 'Students', to: '/admin/students', icon: 'hugeicons:students' },
   { label: 'Classrooms', to: '/admin/classrooms', icon: 'simple-icons:googleclassroom' },
