@@ -22,8 +22,9 @@ interface Props {
 const props = defineProps<Props>();
 
 function onEdit() {
+  // IMPORTANT: use UUID for backend ops; your API uses userId
   modalBus.openEdit({
-    id: props.admin.id,
+    id: props.admin.userId,
     name: props.admin.name,
     email: props.admin.email,
     school: props.admin.school,
@@ -50,11 +51,11 @@ function onDeleteClick() {
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
 
-      <DropdownMenuItem v-if="role === 'admin'" @click="onEdit">
+      <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">
         Edit
       </DropdownMenuItem>
 
-      <DropdownMenuItem v-if="role === 'admin'" @click="onDeleteClick">
+      <DropdownMenuItem v-if="props.role === 'admin'" @click="onDeleteClick">
         Delete
       </DropdownMenuItem>
     </DropdownMenuContent>

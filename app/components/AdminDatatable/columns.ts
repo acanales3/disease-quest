@@ -1,10 +1,11 @@
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h } from "vue";
 import { ArrowUpDown } from "lucide-vue-next";
+import DropdownAction from "./data-table-dropdown.vue";
 
 export interface Administrator {
-  id: number; //row number
-  userId: string; // UUID kept for backend ops
+  id: number; // row number (UI only)
+  userId: string; // UUID for backend ops
   name: string;
   email: string;
   school: string;
@@ -13,30 +14,33 @@ export interface Administrator {
 }
 
 export function getColumns(
-  role: string
+  role: string,
+  handlers?: {
+    onDelete?: (admin: Administrator) => void;
+  }
 ): ColumnDef<Administrator>[] {
   return [
     {
       accessorKey: "id",
       header: () =>
         h("div", { class: "text-center font-normal text-black" }, "No"),
-      cell: ({ row }) => {
-        const id = row.getValue("id") as number;
-        return h(
+      cell: ({ row }) =>
+        h(
           "div",
           { class: "text-center font-normal text-gray-600" },
-          id != null ? String(id) : "-"
-        );
-      },
+          String(row.getValue("id") ?? "-")
+        ),
     },
     {
       accessorKey: "name",
       header: () =>
         h("div", { class: "text-center font-normal text-black" }, "Name"),
-      cell: ({ row }) => {
-        const name = row.getValue("name") as string;
-        return h("div", { class: "text-center font-normal text-gray-600" }, name);
-      },
+      cell: ({ row }) =>
+        h(
+          "div",
+          { class: "text-center font-normal text-gray-600" },
+          row.getValue("name")
+        ),
     },
     {
       accessorKey: "email",
@@ -61,27 +65,23 @@ export function getColumns(
       accessorKey: "school",
       header: () =>
         h("div", { class: "text-center font-normal text-black" }, "School"),
-      cell: ({ row }) => {
-        const school = row.getValue("school") as string;
-        return h(
+      cell: ({ row }) =>
+        h(
           "div",
           { class: "text-center font-normal text-gray-600" },
-          school ?? "-"
-        );
-      },
+          row.getValue("school") ?? "-"
+        ),
     },
     {
       accessorKey: "classroom",
       header: () =>
         h("div", { class: "text-center font-normal text-black" }, "Classroom"),
-      cell: ({ row }) => {
-        const room = row.getValue("classroom") as number;
-        return h(
+      cell: ({ row }) =>
+        h(
           "div",
           { class: "text-center font-normal text-gray-600" },
-          room != null ? String(room) : "-"
-        );
-      },
+          String(row.getValue("classroom") ?? "-")
+        ),
     },
     {
       accessorKey: "status",
@@ -95,12 +95,28 @@ export function getColumns(
           "span",
           {
             class: `mx-auto px-2 py-1 rounded text-xs font-medium ${
-              isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+              isActive
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
             }`,
           },
           isActive ? "Active" : "Deactivated"
         );
       },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) =>
+        h(
+          "div",
+          { class: "relative flex justify-center" },
+          h(DropdownAction as any, {
+            admin: row.original,
+            role,
+            onDelete: handlers?.onDelete,
+          })
+        ),
     },
   ];
 }
