@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import DataTable from "../../InstructorDatatable/data-table.vue";
-import { getColumns, type Instructor } from "../../InstructorDatatable/columns";
+import { getColumns, type Instructor } from "@/components/InstructorDatatable/columns";
 import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";

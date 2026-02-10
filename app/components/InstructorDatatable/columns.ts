@@ -17,17 +17,15 @@ export interface Instructor {
 export function getColumns(role: string): ColumnDef<Instructor>[] {
   return [
   {
-    accessorKey: "id",
+    id: "index",
     header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "No"),
-    cell: ({ row }) => {
-      const id = row.getValue("id") as number;
-      return h(
+      h("div", { class: "text-center font-normal text-black" }, "Number"),
+    cell: ({ row }) =>
+      h(
         "div",
         { class: "text-center font-normal text-gray-600" },
-        id != null ? String(id) : '-'
-      );
-    },
+        String(row.index + 1)
+      ),
   },
   {
     accessorKey: "name",
