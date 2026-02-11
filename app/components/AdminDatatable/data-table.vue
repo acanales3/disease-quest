@@ -169,7 +169,6 @@ const hideableColumns = computed(() =>
               :data-state="row.getIsSelected() ? 'selected' : undefined"
               :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
             >
-              <!-- ✅ Match Instructor table sizing -->
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
