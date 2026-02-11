@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full space-y-4">
+  <div class="flex flex-col w-full">
     <!-- Administrator Count & Invite -->
     <div class="flex justify-center gap-4">
       <TotalCount
@@ -78,7 +78,6 @@ function handleDeleteClick(admin: Administrator) {
 function handleDeleteConfirm(admin: Administrator) {
   console.log("CONFIRM DELETE (next step API):", admin);
 
-  // close modal for now
   isDeleteModalOpen.value = false;
   adminToDelete.value = null;
 }

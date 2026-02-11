@@ -169,11 +169,11 @@ const hideableColumns = computed(() =>
               :data-state="row.getIsSelected() ? 'selected' : undefined"
               :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
             >
-              <!-- ✅ FIX: make body rows taller via cell padding + min height -->
+              <!-- ✅ Match Instructor table sizing -->
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
-                class="text-center px-4 py-3 align-middle"
+                class="text-center"
               >
                 <FlexRender
                   :render="cell.column.columnDef.cell"

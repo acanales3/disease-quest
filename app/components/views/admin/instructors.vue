@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full space-y-4">
+  <div class="flex flex-col w-full">
     <!-- Instructor Count & Instructor Invite -->
     <div class="flex justify-center gap-4">
       <TotalCount
@@ -14,9 +14,11 @@
     <div v-if="pageMessage" class="w-full py-2">
       <div
         class="rounded-md border px-4 py-3 text-sm"
-        :class="pageMessage.type === 'success'
-          ? 'border-green-200 bg-green-50 text-green-800'
-          : 'border-red-200 bg-red-50 text-red-700'"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
       >
         {{ pageMessage.text }}
       </div>
@@ -67,9 +69,7 @@ const instructorToDelete = ref<Instructor | null>(null);
 const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
 
 function handleDeleteClick(instructor: Instructor) {
-  // Clear old message when starting a new delete
   pageMessage.value = null;
-
   instructorToDelete.value = instructor;
   isDeleteModalOpen.value = true;
 }
@@ -82,11 +82,9 @@ async function handleDeleteConfirm(instructor: Instructor) {
       method: "DELETE",
     });
 
-    // Remove from table immediately
     data.value = data.value.filter((i) => i.id !== instructor.id);
     instructorToDelete.value = null;
 
-    // Show success banner
     pageMessage.value = {
       type: "success",
       text: res?.message || "Instructor deleted successfully.",
@@ -94,7 +92,6 @@ async function handleDeleteConfirm(instructor: Instructor) {
   } catch (err: any) {
     console.error("Failed to delete instructor:", err?.data || err);
 
-    // Show error banner
     pageMessage.value = {
       type: "error",
       text:
