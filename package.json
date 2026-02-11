@@ -1,0 +1,40 @@
+{
+  "name": "disease-quest",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/icon": "^2.1.0",
+    "@nuxtjs/supabase": "^2.0.1",
+    "@tailwindcss/vite": "^4.1.16",
+    "@tanstack/vue-table": "^8.21.3",
+    "@unovis/ts": "^1.6.1",
+    "@unovis/vue": "^1.6.1",
+    "@vueuse/core": "^14.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.552.0",
+    "nuxt": "^4.2.0",
+    "openai": "^6.18.0",
+    "pdf-parse": "^2.4.5",
+    "reka-ui": "^2.6.0",
+    "shadcn-nuxt": "^2.3.2",
+    "tailwind-merge": "^3.3.1",
+    "tw-animate-css": "^1.4.0",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@types/pdf-parse": "^1.1.5",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16",
+    "typescript": "^5.9.3"
+  }
+}
