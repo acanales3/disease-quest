@@ -9,36 +9,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import type { Instructor } from "./columns";
-import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
+
+import type { Administrator } from "./columns";
+import { modalBus } from "@/components/AdminEditAdminDialog/modalBusEditAdmin";
 
 interface Props {
-  instructor: Instructor;
+  admin: Administrator;
   role: string;
-  onDelete?: (instructor: Instructor) => void; 
+  onDelete?: (admin: Administrator) => void;
 }
 
 const props = defineProps<Props>();
 
 function onEdit() {
-  modalBus.openEdit({
-    id: props.instructor.id,
-    name: props.instructor.name,
-    email: props.instructor.email,
-    school: props.instructor.school,
-    classroom: props.instructor.classroom,
-    status: props.instructor.status as "active" | "deactivated",
-  });
+  modalBus.openEdit(props.admin);
 }
 
 function onDeleteClick() {
-  // This does NOT delete. It just tells the parent to open the modal.
-  console.log("DROPDOWN DELETE CLICKED", props.instructor.id, !!props.onDelete);
-  props.onDelete?.(props.instructor);
+  props.onDelete?.(props.admin);
 }
-
-
-
 </script>
 
 <template>
@@ -53,7 +42,10 @@ function onDeleteClick() {
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
+
+      <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">
+        Edit
+      </DropdownMenuItem>
 
       <DropdownMenuItem v-if="props.role === 'admin'" @click="onDeleteClick">
         Delete

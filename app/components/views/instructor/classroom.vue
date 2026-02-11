@@ -88,7 +88,7 @@ async function getStudents(): Promise<Student[]> {
       id: s.id as unknown as number, // Cast to number to satisfy interface, though it's a UUID string
       name: s.name,
       email: s.email,
-      school: classroom?.school || "", 
+      school: s.school || "", 
       msyear: s.msyear,
       classroom: classroomId,
       status: s.status,
