@@ -21,7 +21,7 @@ export function getColumns(
   {
     id: "index",
     header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "Number"),
+      h("div", { class: "text-center font-normal text-black" }, "No"),
     cell: ({ row }) =>
       h(
         "div",
