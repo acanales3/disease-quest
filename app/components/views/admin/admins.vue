@@ -15,7 +15,7 @@
       <div
         class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
       >
-        {{ error }}
+        {{ (error as any)?.message ?? String(error) }}
       </div>
     </div>
 
@@ -24,12 +24,19 @@
       <DataTable :columns="visibleColumns" :data="data" />
     </div>
 
-    <!-- ✅ Edit Admin Modal (Instructor pattern: modalBus drives it) -->
+    <!-- Edit Admin Modal (modalBus drives it) -->
     <AdminEditAdminDialog
       :show="modalBus.openEditModal"
       :data="modalBus.editData"
       @close="modalBus.closeEdit()"
-      @save="saveAdminEdits as any"
+      @save="saveAdminEdits"
+    />
+
+    <!-- Delete Admin Modal -->
+    <DeleteAdminModal
+      v-model:open="isDeleteModalOpen"
+      :admin="adminToDelete"
+      @confirm="handleDeleteConfirm"
     />
   </div>
 </template>
@@ -44,21 +51,42 @@ import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 import AdminEditAdminDialog from "@/components/AdminEditAdminDialog/AdminEditAdminDialog.vue";
 import { modalBus } from "@/components/AdminEditAdminDialog/modalBusEditAdmin";
 
+import DeleteAdminModal from "@/components/DeleteAdminModal/DeleteAdminModal.vue";
+
 // Fetch administrators
 const { data, pending, error } = await useFetch<Administrator[]>("/api/admins", {
   default: () => [],
 });
 
-// FRONTEND-only for now: when dialog saves, update local table and close
+// Frontend-only for now: when dialog saves, update local table and close
 const saveAdminEdits = async (admin: Administrator) => {
   data.value = data.value.map((a) => (a.userId === admin.userId ? admin : a));
   modalBus.closeEdit();
 };
 
-// Columns: only onDelete forwarded (Edit is handled inside dropdown via modalBus)
+// Delete modal state
+const isDeleteModalOpen = ref(false);
+const adminToDelete = ref<Administrator | null>(null);
+
+// Called from dropdown "Delete"
+function handleDeleteClick(admin: Administrator) {
+  adminToDelete.value = admin;
+  isDeleteModalOpen.value = true;
+}
+
+// Frontend-only confirm (API later)
+function handleDeleteConfirm(admin: Administrator) {
+  console.log("CONFIRM DELETE (next step API):", admin);
+
+  // close modal for now
+  isDeleteModalOpen.value = false;
+  adminToDelete.value = null;
+}
+
+// Columns: onDelete opens delete modal (Edit handled inside dropdown via modalBus)
 const visibleColumns = computed(() =>
   getColumns("admin", {
-    onDelete: (admin) => console.log("DELETE clicked (next step):", admin),
+    onDelete: handleDeleteClick,
   })
 );
 </script>

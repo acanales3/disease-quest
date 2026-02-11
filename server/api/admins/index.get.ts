@@ -18,12 +18,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Allow if users.role is ADMIN OR user exists in admins table
-  const { data: profile, error: profileError } = await client
+  // ✅ Explicitly type the profile result to avoid "never"
+  const { data: profile, error: profileError } = (await client
     .from("users")
     .select("role")
     .eq("id", userId)
-    .single();
+    .single()) as { data: { role: string | null } | null; error: any };
 
   if (profileError) {
     throw createError({
@@ -46,7 +46,8 @@ export default defineEventHandler(async (event) => {
     if (adminCheckError) {
       throw createError({
         statusCode: 500,
-        statusMessage: "Failed to check admin access: " + adminCheckError.message,
+        statusMessage:
+          "Failed to check admin access: " + adminCheckError.message,
         data: { details: adminCheckError.message },
       });
     }
@@ -96,13 +97,11 @@ export default defineEventHandler(async (event) => {
     const name = fullName || u?.name || "Unknown";
 
     return {
-      id: idx + 1,          // ✅ shows 1,2,3... in table
-      userId: row.user_id,  // ✅ keep UUID for edit/delete later
+      id: idx + 1, // UI row number
+      userId: row.user_id, // UUID for backend ops later
       name,
       email: u?.email ?? "",
       school: u?.school ?? "",
-      classroom: 0,
-      status: "active" as const,
     };
   });
 

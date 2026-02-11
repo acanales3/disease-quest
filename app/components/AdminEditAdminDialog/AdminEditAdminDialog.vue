@@ -22,8 +22,6 @@ const form = ref({
   last_name: "",
   email: "",
   school: "",
-  classroom: 0 as number,
-  status: "active" as "active" | "deactivated",
 });
 
 const errors = ref({
@@ -44,8 +42,6 @@ watch(
         last_name: "",
         email: "",
         school: "",
-        classroom: 0,
-        status: "active",
       };
       return;
     }
@@ -53,13 +49,11 @@ watch(
     const nameParts = (newData.name ?? "").trim().split(/\s+/);
 
     form.value = {
-      userId: newData.userId, // ✅ UUID for backend ops later
+      userId: newData.userId, // UUID for backend ops later
       first_name: nameParts[0] ?? "",
       last_name: nameParts.slice(1).join(" ") ?? "",
       email: newData.email ?? "",
       school: newData.school ?? "",
-      classroom: newData.classroom ?? 0,
-      status: newData.status ?? "active",
     };
   },
   { immediate: true }
@@ -70,25 +64,31 @@ watch(
   form,
   (val) => {
     if (!val.first_name) errors.value.first_name = "First name is required";
-    else if (val.first_name.length > 50) errors.value.first_name = "First name cannot exceed 50 characters";
+    else if (val.first_name.length > 50)
+      errors.value.first_name = "First name cannot exceed 50 characters";
     else errors.value.first_name = "";
 
     if (!val.last_name) errors.value.last_name = "Last name is required";
-    else if (val.last_name.length > 50) errors.value.last_name = "Last name cannot exceed 50 characters";
+    else if (val.last_name.length > 50)
+      errors.value.last_name = "Last name cannot exceed 50 characters";
     else errors.value.last_name = "";
 
     if (!val.email) errors.value.email = "Email is required";
-    else if (!val.email.endsWith(".edu")) errors.value.email = "Email must be a .edu address";
+    else if (!val.email.endsWith(".edu"))
+      errors.value.email = "Email must be a .edu address";
     else errors.value.email = "";
 
     if (!val.school) errors.value.school = "School is required";
-    else if (val.school.length > 255) errors.value.school = "School name cannot exceed 255 characters";
+    else if (val.school.length > 255)
+      errors.value.school = "School name cannot exceed 255 characters";
     else errors.value.school = "";
   },
   { deep: true, immediate: true }
 );
 
-const isInvalid = computed(() => Object.values(errors.value).some((e) => e !== ""));
+const isInvalid = computed(() =>
+  Object.values(errors.value).some((e) => e !== "")
+);
 
 // Close handler (dialog open toggle)
 const handleOpenChange = (value: boolean) => {
@@ -100,14 +100,11 @@ const handleSave = async () => {
   if (isInvalid.value) return;
 
   emit("save", {
-    // keep row number if your table wants it (safe default)
-    id: props.data?.id ?? 0,
+    id: props.data?.id ?? 0, // keep row number for table stability
     userId: form.value.userId,
     name: `${form.value.first_name} ${form.value.last_name}`.trim(),
     email: form.value.email,
     school: form.value.school,
-    classroom: Number(form.value.classroom) || 0,
-    status: form.value.status,
   });
 
   emit("close");
@@ -177,24 +174,6 @@ const handleSave = async () => {
           <p v-if="errors.school" class="text-red-500 text-xs mt-1">
             {{ errors.school }}
           </p>
-        </label>
-
-        <label class="flex flex-col">
-          Classroom
-          <input
-            type="number"
-            v-model.number="form.classroom"
-            min="0"
-            class="p-2 border rounded"
-          />
-        </label>
-
-        <label class="flex flex-col">
-          Status
-          <select v-model="form.status" class="p-2 border rounded">
-            <option value="active">Active</option>
-            <option value="deactivated">Deactivated</option>
-          </select>
         </label>
       </div>
 

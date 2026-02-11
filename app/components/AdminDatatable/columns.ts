@@ -9,8 +9,6 @@ export interface Administrator {
   name: string;
   email: string;
   school: string;
-  classroom: number;
-  status: "active" | "deactivated";
 }
 
 export function getColumns(
@@ -71,38 +69,6 @@ export function getColumns(
           { class: "text-center font-normal text-gray-600" },
           row.getValue("school") ?? "-"
         ),
-    },
-    {
-      accessorKey: "classroom",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Classroom"),
-      cell: ({ row }) =>
-        h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          String(row.getValue("classroom") ?? "-")
-        ),
-    },
-    {
-      accessorKey: "status",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Status"),
-      cell: ({ row }) => {
-        const status = row.getValue("status") as Administrator["status"];
-        const isActive = status === "active";
-
-        return h(
-          "span",
-          {
-            class: `mx-auto px-2 py-1 rounded text-xs font-medium ${
-              isActive
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`,
-          },
-          isActive ? "Active" : "Deactivated"
-        );
-      },
     },
     {
       id: "actions",

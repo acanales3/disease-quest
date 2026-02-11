@@ -22,15 +22,7 @@ interface Props {
 const props = defineProps<Props>();
 
 function onEdit() {
-  // IMPORTANT: use UUID for backend ops; your API uses userId
-  modalBus.openEdit({
-    id: props.admin.userId,
-    name: props.admin.name,
-    email: props.admin.email,
-    school: props.admin.school,
-    classroom: props.admin.classroom,
-    status: props.admin.status as "active" | "deactivated",
-  });
+  modalBus.openEdit(props.admin);
 }
 
 function onDeleteClick() {
