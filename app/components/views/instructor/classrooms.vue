@@ -43,14 +43,14 @@
 
 <script setup lang="ts">
 import { getColumns } from "../../ClassroomDatatable/columns";
-import type { Classroom } from "../../ClassroomDatatable/columns";
-import { onMounted, ref, computed } from "vue";
-import DataTable from "../../ClassroomDatatable/data-table.vue";
-import TotalCount from "../../ui/TotalCount.vue";
-import { Button } from "../../ui/button";
-import { Icon } from "#components";
-import CreateClassroomModal from "../../CreateClassroomModal/CreateClassroomModal.vue";
-import EditClassroomModal from "../../EditClassroomModal/EditClassroomModal.vue";
+import type { Classroom } from '../../ClassroomDatatable/columns'
+import { onMounted, ref, computed } from 'vue'
+import DataTable from '../../ClassroomDatatable/data-table.vue'
+import TotalCount from '../../ui/TotalCount.vue'
+import { Button } from '../../ui/button'
+import { Icon } from '#components'
+import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModal.vue'
+import EditClassroomModal from '../../EditClassroomModal/EditClassroomModal.vue'
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
@@ -70,23 +70,18 @@ const visibleColumns = computed(() => {
   ];
   return getColumns("instructor", {
     onEdit: handleEditClassroom,
-  }).filter((column) => {
-    const key =
-      "id" in column
-        ? column.id
-        : "accessorKey" in column
-          ? column.accessorKey
-          : undefined;
+  }).filter(column => {
+    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
 });
 
 async function getData(): Promise<Classroom[]> {
   try {
-    return await $fetch<Classroom[]>("/api/classrooms");
+    return await $fetch<Classroom[]>('/api/classrooms')
   } catch (error) {
-    console.error("Failed to fetch classrooms:", error);
-    return [];
+    console.error('Failed to fetch classrooms:', error)
+    return []
   }
 }
 
@@ -100,7 +95,7 @@ function handleEditClassroom(classroom: Classroom) {
 }
 
 function handleClassroomCreated(classroom: any) {
-  console.log("Classroom created:", classroom);
+  console.log('Classroom created:', classroom);
   // data.value = await getData();
   
   // Will likely need to replace this once api is ready
