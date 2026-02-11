@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full space-y-4">
+  <div class="flex flex-col w-full">
     <!-- Instructor Count & Instructor Invite -->
     <div class="flex justify-center gap-4">
       <TotalCount
@@ -8,6 +8,20 @@
         label="Total Instructors"
       />
       <InviteDialog dialog-type="instructor" />
+    </div>
+
+    <!-- Success / Error banner -->
+    <div v-if="pageMessage" class="w-full py-2">
+      <div
+        class="rounded-md border px-4 py-3 text-sm"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
+      >
+        {{ pageMessage.text }}
+      </div>
     </div>
 
     <!-- Instructor Table -->
@@ -22,6 +36,13 @@
       @close="modalBus.closeEdit()"
       @save="saveInstructorEdits as any"
     />
+
+    <!-- Instructor Delete Modal -->
+    <DeleteInstructorModal
+      v-model:open="isDeleteModalOpen"
+      :instructor="instructorToDelete"
+      @confirm="handleDeleteConfirm"
+    />
   </div>
 </template>
 
@@ -33,34 +54,78 @@ import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
 import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue";
+import DeleteInstructorModal from "@/components/DeleteInstructorModal/DeleteInstructorModal.vue";
 
-// Empty instructor data
-const { data, pending, error } = await useFetch<Instructor[]>('/api/instructors', {
+// Fetch instructors
+const { data, pending, error } = await useFetch<Instructor[]>("/api/instructors", {
   default: () => [],
-})
+});
 
-// Columns for the table
-const visibleColumns = computed(() => getColumns("admin"));
+// Delete modal state
+const isDeleteModalOpen = ref(false);
+const instructorToDelete = ref<Instructor | null>(null);
 
-// No-op save function just updates the local array safely
+// page banner message
+const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
+
+function handleDeleteClick(instructor: Instructor) {
+  pageMessage.value = null;
+  instructorToDelete.value = instructor;
+  isDeleteModalOpen.value = true;
+}
+
+async function handleDeleteConfirm(instructor: Instructor) {
+  pageMessage.value = null;
+
+  try {
+    const res = await $fetch<any>(`/api/instructors/${instructor.id}`, {
+      method: "DELETE",
+    });
+
+    data.value = data.value.filter((i) => i.id !== instructor.id);
+    instructorToDelete.value = null;
+
+    pageMessage.value = {
+      type: "success",
+      text: res?.message || "Instructor deleted successfully.",
+    };
+  } catch (err: any) {
+    console.error("Failed to delete instructor:", err?.data || err);
+
+    pageMessage.value = {
+      type: "error",
+      text:
+        err?.data?.message ||
+        err?.message ||
+        "Failed to delete instructor. Please try again.",
+    };
+  }
+}
+
+// Pass onDelete into getColumns so dropdown can open modal
+const visibleColumns = computed(() =>
+  getColumns("admin", {
+    onDelete: handleDeleteClick,
+  })
+);
+
+// Existing edit save
 const saveInstructorEdits = async (instructor: Instructor) => {
-  const [first_name, ...rest] = instructor.name.split(' ')
-  const last_name = rest.join(' ')
+  const [first_name, ...rest] = instructor.name.split(" ");
+  const last_name = rest.join(" ");
 
   await $fetch(`/api/instructors/${instructor.id}`, {
-    method: 'PUT',
+    method: "PUT",
     body: {
-      first_name: first_name,
-      last_name: last_name, 
+      first_name,
+      last_name,
       email: instructor.email,
       school: instructor.school,
-      status: instructor.status
+      status: instructor.status,
     },
-  })
+  });
 
-  data.value = data.value.map((i) =>
-    i.id === instructor.id ? instructor : i,
-  )
+  data.value = data.value.map((i) => (i.id === instructor.id ? instructor : i));
   modalBus.closeEdit();
 };
 </script>
