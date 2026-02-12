@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,18 +8,65 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Icon } from "#components"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Icon } from "#components";
 
-type DialogType = "student" | "instructor" | "administrator"
+type DialogType = "student" | "instructor" | "administrator";
+
+import { ref } from "vue";
+import { useSupabaseClient } from "#imports";
+
+type Role = "STUDENT" | "INSTRUCTOR" | "ADMIN";
+
+const supabase = useSupabaseClient();
+
+const roleMap: Record<DialogType, Role> = {
+  student: "STUDENT",
+  instructor: "INSTRUCTOR",
+  administrator: "ADMIN",
+};
+
+const email = ref("");
+const customMessage = ref("");
+const sending = ref(false);
+const error = ref("");
+
+async function sendInvite() {
+  error.value = "";
+  sending.value = true;
+
+  const { data, error: fnErr } = await supabase.functions.invoke(
+    "send-invitation",
+    {
+      body: {
+        email: email.value,
+        role: roleMap[props.dialogType],
+        customMessage: customMessage.value,
+      },
+    },
+  );
+
+  sending.value = false;
+
+  if (fnErr) {
+    error.value = fnErr.message;
+    return;
+  }
+
+  // optionally show success toast + close dialog
+  console.log("Invite results:", data);
+}
 
 const props = defineProps<{
-  dialogType: DialogType
-}>()
+  dialogType: DialogType;
+}>();
 
-const config: Record<DialogType, { title: string; description: string; defaultEmail: string }> = {
+const config: Record<
+  DialogType,
+  { title: string; description: string; defaultEmail: string }
+> = {
   student: {
     title: "Students",
     description:
@@ -38,9 +85,9 @@ const config: Record<DialogType, { title: string; description: string; defaultEm
       "Enter the email addresses of the administrators you would like to invite to DiseaseQuest.",
     defaultEmail: "admin@tcu.edu",
   },
-}
+};
 
-const { title, description, defaultEmail } = config[props.dialogType]
+const { title, description, defaultEmail } = config[props.dialogType];
 </script>
 
 <template>
@@ -70,14 +117,16 @@ const { title, description, defaultEmail } = config[props.dialogType]
           <Label for="email" class="text-right">Email</Label>
           <Input
             :id="`${dialogType}-email`"
-            :default-value="defaultEmail"
+            v-model="email"
             class="col-span-3"
           />
         </div>
       </div>
 
       <DialogFooter>
-        <Button type="submit">Send registration email</Button>
+        <Button type="button" :disabled="sending" @click="sendInvite">
+          {{ sending ? "Sending..." : "Send registration email" }}
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
