@@ -68,8 +68,8 @@ async function getClassroom(): Promise<void> {
       id: idx + 1,
       name: s.name,
       email: s.email,
-      school: "",
-      msyear: typeof s.msyear === "number" ? s.msyear : 0,
+      school: s.school || "", 
+      msyear: s.msyear,
       classroom: classroomId,
       status: s.status,
     }));

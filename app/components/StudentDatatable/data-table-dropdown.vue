@@ -19,8 +19,21 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const emit = defineEmits<{
+  delete: [student: Student];
+  removeFromClassroom: [student: Student];
+}>();
+
 function onEdit() {
   modalBus.openEdit(props.student);
+}
+
+function onDelete() {
+  emit('delete', props.student);
+}
+
+function onRemoveFromClassroom() {
+  emit("removeFromClassroom", props.student);
 }
 
 </script>
@@ -37,8 +50,13 @@ function onEdit() {
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Remove from Classroom</DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="props.role === 'admin' || props.role === 'instructor'"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50"
+        @click="onRemoveFromClassroom"
+      >
+        Remove from Classroom
+      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

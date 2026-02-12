@@ -1,10 +1,14 @@
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
+import { serverSupabaseUser, serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
     const user = await serverSupabaseUser(event)
-    const client = await serverSupabaseClient(event)
+    // Use Service Role to match index.get.ts and bypass RLS for instructor/admin queries
+    const client = serverSupabaseServiceRole(event)
 
-    if (!user) {
+    // @ts-ignore
+    const userId = user.id || user.sub
+
+    if (!userId) {
         throw createError({
             statusCode: 401,
             message: 'Unauthorized',
@@ -24,7 +28,7 @@ export default defineEventHandler(async (event) => {
     const { data: userProfile, error: profileError } = await client
         .from('users')
         .select('role')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single() as { data: { role: string } | null, error: any }
 
     if (profileError || !userProfile) {
@@ -41,7 +45,7 @@ export default defineEventHandler(async (event) => {
         .from('classrooms')
         .select('id, instructor_id')
         .eq('id', classroomId)
-        .single()
+        .single() as { data: { id: any, instructor_id: string } | null, error: any }
 
     if (classroomError || !classroom) {
         throw createError({
@@ -50,7 +54,7 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    const isInstructorOfClass = classroom.instructor_id === user.id
+    const isInstructorOfClass = classroom.instructor_id === userId
     const isAdmin = role === 'ADMIN'
 
     if (!isAdmin && !isInstructorOfClass) {
@@ -62,20 +66,29 @@ export default defineEventHandler(async (event) => {
 
     // fetch roster
     const { data: students, error: studentsError } = await client
-        .from('classroom_students')
-        .select(`
-      student:students (
-        user_id,
-        nickname,
-        msyear,
-        status,
-        user:users (
-            email,
-            raw_user_meta_data
-        )
+        .from("students")
+        .select(
+            `
+      user_id,
+      nickname,
+      msyear,
+      status,
+      users:users!inner (
+        first_name,
+        last_name,
+        email,
+        school,
+        role
+      ),
+      classroom_students!inner (
+        classroom_id
       )
-    `)
-        .eq('classroom_id', classroomId)
+    `
+        )
+        .eq("users.role", "STUDENT")
+        .eq("classroom_students.classroom_id", classroomId)
+        .order("user_id", { ascending: true });
+
 
     if (studentsError) {
         throw createError({
@@ -84,15 +97,19 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    return students.map((record: any) => {
-        const s = record.student
-        const userData = s.user || {}
+    return (students ?? []).map((row: any) => {
+        const userData = row.users || {}
+        const first = userData.first_name ?? ""
+        const last = userData.last_name ?? ""
+        const name = `${first} ${last}`.trim() || row.nickname || "Unknown"
+
         return {
-            id: s.user_id,
-            name: s.nickname,
+            id: row.user_id,
+            name: name,
             email: userData.email,
-            msyear: s.msyear,
-            status: s.status
+            school: userData.school || '',
+            msyear: row.msyear,
+            status: row.status
         }
     })
 })

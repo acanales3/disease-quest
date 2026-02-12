@@ -6,7 +6,12 @@ import { Button } from "~/components/ui/button";
 
 export interface Student {
   id: number;
+
+  // UUID from Supabase: students.user_id (FK - users.id).
+  // Using numeric id for datatable display; userId" for API operations.
+  userId?: string;
   name: string;
+  nickname?: string;
   email: string;
   school: string;
   msyear: number;
@@ -15,28 +20,44 @@ export interface Student {
   // action column still needed
 }
 
-export function getColumns(role: string): ColumnDef<Student>[] {
+export interface ColumnOptions {
+  onDelete?: (student: Student) => void;
+  onRemoveFromClassroom?: (student: Student) => void;
+}
+
+export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Student>[] {
   return [
-  {
-    accessorKey: "id",
-    header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "No"),
-    cell: ({ row }) => {
-      const id = row.getValue("id") as number;
-      return h(
-        "div",
-        { class: "text-center font-normal text-gray-600" },
-        id.toString()
-      );
+    {
+      accessorKey: "id",
+      header: () =>
+        h("div", { class: "text-center font-normal text-black" }, "No"),
+      cell: ({ row }) => {
+        return h(
+          "div",
+          { class: "text-center font-normal text-gray-600" },
+          (row.index + 1).toString()
+        );
+      },
     },
-  },
-  {
-    accessorKey: "name",
-    header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "Name"),
-    cell: ({ row }) => {
-      const name = row.getValue("name") as string;
-      return h("div", { class: "text-center font-normal text-gray-600" }, name);
+    {
+      accessorKey: "name",
+      header: () =>
+        h("div", { class: "text-center font-normal text-black" }, "Name"),
+      cell: ({ row }) => {
+        const name = row.getValue("name") as string;
+        return h("div", { class: "text-center font-normal text-gray-600" }, name);
+      },
+    },
+    {
+      accessorKey: "email",
+      header: () =>
+        h("div", { class: "text-center font-normal text-black" }, "Email"),
+      cell: ({ row }) =>
+        h(
+          "div",
+          { class: "lowercase text-center font-normal text-gray-600" },
+          row.getValue("email")
+        ),
     },
   },
   {
@@ -75,42 +96,80 @@ export function getColumns(role: string): ColumnDef<Student>[] {
         { class: "text-center font-normal text-gray-600" },
         display
       );
+    {
+      accessorKey: "school",
+      header: () =>
+        h("div", { class: "text-center font-normal text-black" }, "School"),
+      cell: ({ row }) => {
+        const school = row.getValue("school") as string;
+        return h(
+          "div",
+          { class: "text-center font-normal text-gray-600" },
+          school
+        );
+      },
     },
-  },
-  {
-    accessorKey: "status",
-    header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "Status"),
-    cell: ({ row }) => {
-      const status = row.getValue("status") as Student["status"];
-      const isActive = status === "registered";
+    {
+      accessorKey: "classroom",
+      header: () =>
+        h("div", { class: "text-center font-normal text-black" }, "Classroom"),
+      cell: ({ row }) => {
+        const room = row.getValue("classroom") as number;
+        return h(
+          "div",
+          { class: "text-center font-normal text-gray-600" },
+          room.toString()
+        );
+      },
+    },
+    {
+      accessorKey: "msyear",
+      header: () =>
+        h("div", { class: "text-center font-normal text-black" }, "MS-Year"),
+      cell: ({ row }) => {
+        const msyear = row.getValue("msyear") as number | null;
+        return h(
+          "div",
+          { class: "text-center font-normal text-gray-600" },
+          msyear ? msyear.toString() : ""
+        );
+      },
+    },
+    {
+      accessorKey: "status",
+      header: () =>
+        h("div", { class: "text-center font-normal text-black" }, "Status"),
+      cell: ({ row }) => {
+        const status = row.getValue("status") as Student["status"];
+        const isActive = status === "registered";
 
-      return h(
-        "span",
-        {
-          class: `mx-auto px-2 py-1 rounded text-xs font-medium ${
-            isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-          }`,
-        },
-        isActive ? "Registered" : "Unregistered"
-      );
+        return h(
+          "span",
+          {
+            class: `mx-auto px-2 py-1 rounded text-xs font-medium ${isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+              }`,
+          },
+          isActive ? "Registered" : "Unregistered"
+        );
+      },
     },
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const student = row.original;
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const student = row.original;
 
-      return h(
-        "div",
-        { class: "relative flex justify-center" },
-        h(DropdownAction, { 
-          student,
-          role,
-        })
-      );
+        return h(
+          "div",
+          { class: "relative flex justify-center" },
+          h(DropdownAction, {
+            student,
+            role,
+            onDelete: options?.onDelete,
+            onRemoveFromClassroom: options?.onRemoveFromClassroom,
+          })
+        );
+      },
     },
-  },
-];
+  ];
 }
