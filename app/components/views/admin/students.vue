@@ -163,21 +163,45 @@ const saveStudentEdits = async (updated: Student) => {
     if (!updated.userId) {
       throw new Error("Missing userId for student update.");
     }
-    // Update backend
+
+    // Split name into first/last for the admin endpoint
+    const [first_name, ...rest] = (updated.name ?? "").split(" ");
+    const last_name = rest.join(" ");
+
+    // 1. Update user-level fields via the admin endpoint
+    await $fetch(`/api/admin/users/${updated.userId}`, {
+      method: "PUT",
+      body: {
+        first_name,
+        last_name,
+        email: updated.email,
+        school: updated.school,
+        status: updated.status,
+      },
+    });
+
+    // 2. Update student-specific fields (nickname, msyear, classroom)
+    //    via the existing student endpoint
     await $fetch(`/api/students/${updated.userId}`, {
       method: "PUT",
-      body: updated
+      body: updated,
     });
 
     // Update local ref array
-    // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place 
+    // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place
     data.value = data.value.map(student => student.id === updated.id ? { ...updated } : student);
 
     // Close modal
     modalBus.closeEdit();
-  } catch (error) {
-    console.error("Error updating student: ", error);
-    pageMessage.value = { type: "error", text: "Failed to update student. Please try again." };
+  } catch (error: any) {
+    console.error("Error updating student:", error?.data || error);
+    pageMessage.value = {
+      type: "error",
+      text:
+        error?.data?.statusMessage ||
+        error?.message ||
+        "Failed to update student. Please try again.",
+    };
   }
 };
 
