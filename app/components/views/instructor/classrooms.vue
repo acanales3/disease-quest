@@ -33,7 +33,11 @@
     </div>
 
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable
+        :columns="visibleColumns"
+        :data="data"
+        @edit="handleEditClassroom"
+      />
     </div>
 
     <CreateClassroomModal 
@@ -41,12 +45,17 @@
       @created="handleClassroomCreated"
       @cancel="handleCancel"
     />
+
+    <EditClassroomModal
+      v-model:open="isEditModalOpen"
+      :classroom="selectedClassroom"
+      @updated="handleClassroomUpdated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { getColumns } from "../../ClassroomDatatable/columns";
-import { classrooms } from "../../../assets/interface/Classroom";
 import type { Classroom } from '../../ClassroomDatatable/columns'
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -55,10 +64,13 @@ import TotalCount from '../../ui/TotalCount.vue'
 import { Button } from '../../ui/button'
 import { Icon } from '#components'
 import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModal.vue'
+import EditClassroomModal from '../../EditClassroomModal/EditClassroomModal.vue'
 
 const router = useRouter();
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
+const isEditModalOpen = ref(false);
+const selectedClassroom = ref<Classroom | null>(null);
 
 const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
 
@@ -73,7 +85,9 @@ const visibleColumns = computed(() => {
     "status",
     "actions",
   ];
-  return getColumns('instructor').filter(column => {
+  return getColumns("instructor", {
+    onEdit: handleEditClassroom,
+  }).filter(column => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
@@ -93,6 +107,11 @@ function openCreateModal() {
   isCreateModalOpen.value = true;
 }
 
+function handleEditClassroom(classroom: Classroom) {
+  selectedClassroom.value = classroom;
+  isEditModalOpen.value = true;
+}
+
 function handleClassroomCreated(response: { id: number; inviteCode: string; [key: string]: any }) {
   isCreateModalOpen.value = false;
 
@@ -106,6 +125,16 @@ function handleClassroomCreated(response: { id: number; inviteCode: string; [key
 function handleCancel() {
   // On cancel: stay on the current classrooms page (no submission)
   isCreateModalOpen.value = false;
+}
+
+function handleClassroomUpdated(updatedClassroom: Classroom) {
+  data.value = data.value.map((classroom) =>
+    String(classroom.id) === String(updatedClassroom.id)
+      ? { ...classroom, ...updatedClassroom }
+      : classroom
+  );
+  selectedClassroom.value = updatedClassroom;
+  isEditModalOpen.value = false;
 }
 
 onMounted(async () => {
