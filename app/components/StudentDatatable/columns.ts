@@ -59,43 +59,6 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Stu
           row.getValue("email")
         ),
     },
-  },
-  {
-    accessorKey: "email",
-    header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "Email"),
-    cell: ({ row }) =>
-      h(
-        "div",
-        { class: "lowercase text-center font-normal text-gray-600" },
-        row.getValue("email")
-      ),
-  },
-  {
-    accessorKey: "classroom",
-    header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "Classroom"),
-    cell: ({ row }) => {
-      const room = row.getValue("classroom") as number;
-      return h(
-        "div",
-        { class: "text-center font-normal text-gray-600" },
-        room.toString()
-      );
-    },
-  },
-  {
-    accessorKey: "msyear",
-    header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "MS-Year"),
-    cell: ({ row }) => {
-      const msyear = row.getValue("msyear") as number;
-      const display = msyear ? msyear.toString() : "N/A";
-      return h(
-        "div",
-        { class: "text-center font-normal text-gray-600" },
-        display
-      );
     {
       accessorKey: "school",
       header: () =>
