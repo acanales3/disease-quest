@@ -32,6 +32,7 @@
     <DeleteStudentModal
       v-model:open="isDeleteModalOpen"
       :student="studentToDelete"
+      :mode="deleteMode"
       :state="deleteState"
       @confirm="handleDeleteConfirm"
       @reset="resetDeleteState"
@@ -56,6 +57,7 @@ const data = ref<Student[]>([]);
 const count = ref<number>(0);
 const isDeleteModalOpen = ref(false);
 const studentToDelete = ref<Student | null>(null);
+const deleteMode = ref<"delete" | "unenroll">("delete");
 
 const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
 
@@ -68,7 +70,8 @@ const deleteState = ref<
 
 const visibleColumns = computed(() => {
   return getColumns('admin', {
-    onRemoveFromClassroom: handleDeleteClick,
+    onDelete: handleDeleteClick,
+    onRemoveFromClassroom: handleRemoveFromClassroomClick,
   });
 });
 
@@ -78,6 +81,14 @@ function resetDeleteState() {
 
 function handleDeleteClick(s: Student) {
   pageMessage.value = null;
+  deleteMode.value = "delete";
+  studentToDelete.value = s;
+  isDeleteModalOpen.value = true;
+}
+
+function handleRemoveFromClassroomClick(s: Student) {
+  pageMessage.value = null;
+  deleteMode.value = "unenroll";
   studentToDelete.value = s;
   isDeleteModalOpen.value = true;
 }
@@ -101,31 +112,31 @@ async function handleDeleteConfirm(s: Student) {
   pageMessage.value = null;
 
   try {
-    // Real DB key is UUID (students.user_id). Numeric id being used for display only.
+    // Real DB key is UUID (students.user_id). Numeric id is only for datatable display.
     if (!s.userId) {
-      const msg = "Remove-from-classroom failed: backend expects a UUID userId.";
-      deleteState.value = { status: "success", message: msg };
-      pageMessage.value = { type: "success", text: msg };
-      await refreshStudents();
-      isDeleteModalOpen.value = false;
-      studentToDelete.value = null;
-      return;
-    }
-
-    if (!s.classroom) {
       throw createError({
         statusCode: 400,
-        statusMessage: "Student is not assigned to a classroom.",
+        statusMessage: "Delete failed: missing student UUID (userId).",
+      });
+    }
+    if (deleteMode.value === "unenroll" && (!s.classroom || Number(s.classroom) <= 0)) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: "Student is not currently assigned to a classroom.",
       });
     }
 
     await $fetch(`/api/students/${s.userId}`, {
       method: "DELETE" as any,
-      query: { classroomId: s.classroom },
+      query: deleteMode.value === "unenroll" ? { classroomId: s.classroom } : undefined,
     });
 
-    deleteState.value = { status: "success", message: "Student removed from classroom successfully." };
-    pageMessage.value = { type: "success", text: "Student removed from classroom successfully." };
+    const successMessage =
+      deleteMode.value === "unenroll"
+        ? "Student removed from classroom successfully."
+        : "Student deleted successfully.";
+    deleteState.value = { status: "success", message: successMessage };
+    pageMessage.value = { type: "success", text: successMessage };
 
     await refreshStudents();
     isDeleteModalOpen.value = false;
@@ -135,11 +146,14 @@ async function handleDeleteConfirm(s: Student) {
     const statusMessage = error?.statusMessage ?? error?.data?.statusMessage
 
     const isMissingEndpoint =
-      statusCode === 404 || (typeof statusMessage === "string" && statusMessage.includes("Page not found"))
+      typeof statusMessage === "string" && statusMessage.includes("Page not found")
 
     if (isMissingEndpoint) {
       // Backend not integrated yet so need to simulate so UI can still be tested.
-      const msg = "Remove-from-classroom API not available yet (simulated for UI testing)."
+      const msg =
+        deleteMode.value === "unenroll"
+          ? "Remove-from-classroom API not available yet (simulated for UI testing)."
+          : "Delete-student API not available yet (simulated for UI testing)."
       deleteState.value = { status: "success", message: msg };
       pageMessage.value = { type: "success", text: msg };
 
@@ -152,7 +166,9 @@ async function handleDeleteConfirm(s: Student) {
     const msg =
       error?.data?.message ||
       statusMessage ||
-      "Failed to remove student from classroom.";
+      (deleteMode.value === "unenroll"
+        ? "Failed to remove student from classroom."
+        : "Failed to delete student.");
     deleteState.value = { status: "error", message: msg };
     pageMessage.value = { type: "error", text: msg };
   }
