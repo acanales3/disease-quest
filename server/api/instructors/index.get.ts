@@ -43,7 +43,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Normalize for table
-  return data.map((row) => ({
+  return data.map((row: any, idx: number) => ({
+    index: idx + 1,
     id: row.user.id,
     name: row.user.name,
     email: row.user.email,
