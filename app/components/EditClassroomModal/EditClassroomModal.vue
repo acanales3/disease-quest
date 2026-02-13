@@ -71,6 +71,9 @@ const dialogTitle = computed(() => {
         case STEPS.CONFIRM:
             return 'Confirm Changes'
         case STEPS.RESULT:
+            if (isLoading.value || !updateResult.value) {
+                return 'Updating Classroom...'
+            }
             return updateResult.value?.success
                 ? 'Update Successful'
                 : 'Update Failed'
@@ -88,6 +91,9 @@ const dialogDescription = computed(() => {
         case STEPS.CONFIRM:
             return 'Please review and confirm the changes below.'
         case STEPS.RESULT:
+            if (isLoading.value || !updateResult.value) {
+                return 'Applying your classroom changes...'
+            }
             return updateResult.value?.message || ''
         default:
             return ''
