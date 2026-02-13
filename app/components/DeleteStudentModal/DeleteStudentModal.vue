@@ -21,6 +21,7 @@ type DeleteState =
 const props = defineProps<{
   open: boolean;
   student: Student | null;
+  mode: "delete" | "unenroll";
   state: DeleteState;
 }>();
 
@@ -42,8 +43,23 @@ watch(
   }
 );
 
-const canDelete = computed(() => confirmation.value.trim().toUpperCase() === "REMOVE");
+const requiredToken = computed(() => (props.mode === "unenroll" ? "REMOVE" : "DELETE"));
+const canDelete = computed(
+  () => confirmation.value.trim().toUpperCase() === requiredToken.value
+);
 const isBusy = computed(() => props.state.status === "loading");
+const modalTitle = computed(() =>
+  props.mode === "unenroll" ? "Remove Student from Classroom" : "Delete Student"
+);
+const modalDescription = computed(() =>
+  props.mode === "unenroll"
+    ? "This will remove the student from the classroom, but keep their account and student profile. You can re-add them later."
+    : "This will permanently delete the student account and related student data. This action cannot be undone."
+);
+const confirmActionLabel = computed(() =>
+  props.mode === "unenroll" ? "Remove Student" : "Delete Student"
+);
+const loadingLabel = computed(() => (props.mode === "unenroll" ? "Removing..." : "Deleting..."));
 
 function onCancel() {
   emit("update:open", false);
@@ -59,9 +75,9 @@ function onConfirm() {
   <Dialog :open="open" @update:open="(value) => emit('update:open', value)">
     <DialogContent class="max-w-lg">
       <DialogHeader class="text-center">
-        <DialogTitle class="text-red-600 text-center">Remove Student from Classroom</DialogTitle>
+        <DialogTitle class="text-red-600 text-center">{{ modalTitle }}</DialogTitle>
         <DialogDescription class="text-left">
-          This will remove the student from the classroom, but keep them in the students table. This action can be reversed by re-adding them to a classroom.
+          {{ modalDescription }}
         </DialogDescription>
       </DialogHeader>
 
@@ -79,12 +95,12 @@ function onConfirm() {
 
         <div class="mt-4 space-y-2">
           <p class="text-sm text-gray-600">
-            Type <span class="font-semibold">REMOVE</span> to confirm.
+            Type <span class="font-semibold">{{ requiredToken }}</span> to confirm.
           </p>
           <Input
             v-model="confirmation"
             :disabled="isBusy"
-            placeholder="Type REMOVE to confirm"
+            :placeholder="`Type ${requiredToken} to confirm`"
             class="bg-gray-100"
           />
         </div>
@@ -106,7 +122,7 @@ function onConfirm() {
           :disabled="!student || !canDelete || isBusy"
           @click="onConfirm"
         >
-          {{ isBusy ? "Removing..." : "Remove Student" }}
+          {{ isBusy ? loadingLabel : confirmActionLabel }}
         </Button>
       </DialogFooter>
     </DialogContent>
