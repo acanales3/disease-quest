@@ -193,7 +193,6 @@ const handleSubmit = async () => {
           first_name: formData.firstName || "Unknown",
           last_name: formData.lastName || "Unknown",
           school: formData.school || "Unknown",
-          role: "STUDENT", // FIX LATER THIS IS DEFAULT
         },
       },
     });
