@@ -56,7 +56,9 @@ const getButtonText = () => {
       </DropdownMenuItem>
 
       <DropdownMenuItem v-if="props.role === 'admin'"> Edit </DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'admin'">Delete</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'" class="text-red-600 focus:text-red-600 focus:bg-red-50">
+        Delete
+      </DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'student' && props.caseData.status === 'completed'">Review Case</DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
