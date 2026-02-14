@@ -20,10 +20,15 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   edit: [classroom: Classroom];
+  delete: [classroom: Classroom];
 }>();
 
 function handleEdit() {
   emit("edit", props.classroom);
+}
+
+function handleDelete() {
+  emit("delete", props.classroom);
 }
 </script>
 
@@ -56,7 +61,12 @@ function handleEdit() {
           Manage Classroom
         </NuxtLink>
       </DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'admin'" class="text-red-600 focus:text-red-600 focus:bg-red-50">
+      <DropdownMenuSeparator v-if="props.role === 'admin' || props.role === 'instructor'" />
+      <DropdownMenuItem
+        v-if="props.role === 'admin' || props.role === 'instructor'"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50"
+        @click="handleDelete"
+      >
         Delete
       </DropdownMenuItem>
     </DropdownMenuContent>

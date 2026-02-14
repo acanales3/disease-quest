@@ -17,6 +17,7 @@ export interface Classroom {
 
 export interface ColumnOptions {
   onEdit?: (classroom: Classroom) => void;
+  onDelete?: (classroom: Classroom) => void;
 }
 
 export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Classroom>[] {
@@ -161,6 +162,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
           classroom,
           role,
           onEdit: options?.onEdit,
+          onDelete: options?.onDelete,
         })
       );
     },
