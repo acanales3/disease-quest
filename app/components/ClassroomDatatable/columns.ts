@@ -20,7 +20,7 @@ export interface ColumnOptions {
 }
 
 export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Classroom>[] {
-  return [
+  const columns: ColumnDef<Classroom>[] = [
   {
     accessorKey: "id",
     header: () =>
@@ -148,22 +148,28 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
       );
     },
   },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const classroom = row.original;
+  ];
 
-      return h(
-        "div",
-        { class: "relative flex justify-center" },
-        h(DropdownAction, { 
-          classroom,
-          role,
-          onEdit: options?.onEdit,
-        })
-      );
-    },
-  },
-];
+  // Only include actions column for admin and instructor roles
+  if (role === 'admin' || role === 'instructor') {
+    columns.push({
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const classroom = row.original;
+
+        return h(
+          "div",
+          { class: "relative flex justify-center" },
+          h(DropdownAction, { 
+            classroom,
+            role,
+            onEdit: options?.onEdit,
+          })
+        );
+      },
+    });
+  }
+
+  return columns;
 }
