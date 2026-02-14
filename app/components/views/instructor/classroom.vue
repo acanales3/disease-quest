@@ -1,5 +1,21 @@
 <template>
   <div class="space-y-10">
+    <!-- INVITE CODE BANNER (shown after classroom creation) -->
+    <div
+      v-if="inviteCode"
+      class="rounded-md border border-green-200 bg-green-50 px-6 py-4 text-center"
+    >
+      <p class="text-green-800 font-semibold text-lg mb-1">
+        Classroom created successfully!
+      </p>
+      <p class="text-green-700 text-sm">
+        Share this invite code with your students:
+      </p>
+      <p class="mt-2 text-2xl font-mono font-bold tracking-widest text-green-900">
+        {{ inviteCode }}
+      </p>
+    </div>
+
     <!-- CLASSROOM DETAILS -->
     <div v-if="classroom" class="bg-white shadow rounded p-8 text-center">
       <h1 class="text-2xl font-bold mb-6 text-gray-900">
@@ -45,6 +61,9 @@ import StudentDataTable from "../../StudentDatatable/data-table.vue";
 
 const route = useRoute();
 const classroomId = Number(route.params.classroomId);
+
+// Invite code passed via query param after classroom creation (UC-16)
+const inviteCode = computed(() => route.query.inviteCode as string | undefined);
 
 const classroom = ref<Classroom | null>(null);
 
