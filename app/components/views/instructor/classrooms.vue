@@ -20,30 +20,59 @@
       </Button>
     </div>
 
+    <!-- Success / invite-code banner -->
+    <div v-if="pageMessage" class="w-full py-2">
+      <div
+        class="rounded-md border px-4 py-3 text-sm"
+        :class="pageMessage.type === 'success'
+          ? 'border-green-200 bg-green-50 text-green-800'
+          : 'border-red-200 bg-red-50 text-red-700'"
+      >
+        {{ pageMessage.text }}
+      </div>
+    </div>
+
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable
+        :columns="visibleColumns"
+        :data="data"
+        @edit="handleEditClassroom"
+      />
     </div>
 
     <CreateClassroomModal 
       v-model:open="isCreateModalOpen" 
       @created="handleClassroomCreated"
+      @cancel="handleCancel"
+    />
+
+    <EditClassroomModal
+      v-model:open="isEditModalOpen"
+      :classroom="selectedClassroom"
+      @updated="handleClassroomUpdated"
     />
   </div>
 </template>
 
 <script setup lang="ts">
 import { getColumns } from "../../ClassroomDatatable/columns";
-import { classrooms } from "../../../assets/interface/Classroom";
 import type { Classroom } from '../../ClassroomDatatable/columns'
 import { onMounted, ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import DataTable from '../../ClassroomDatatable/data-table.vue'
 import TotalCount from '../../ui/TotalCount.vue'
 import { Button } from '../../ui/button'
 import { Icon } from '#components'
 import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModal.vue'
+import EditClassroomModal from '../../EditClassroomModal/EditClassroomModal.vue'
 
+const router = useRouter();
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
+const isEditModalOpen = ref(false);
+const selectedClassroom = ref<Classroom | null>(null);
+
+const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
 
 const visibleColumns = computed(() => {
   const columnsToShow = [
@@ -56,7 +85,9 @@ const visibleColumns = computed(() => {
     "status",
     "actions",
   ];
-  return getColumns('instructor').filter(column => {
+  return getColumns("instructor", {
+    onEdit: handleEditClassroom,
+  }).filter(column => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
@@ -72,21 +103,38 @@ async function getData(): Promise<Classroom[]> {
 }
 
 function openCreateModal() {
+  pageMessage.value = null;
   isCreateModalOpen.value = true;
 }
 
-function handleClassroomCreated(classroom: any) {
-  console.log('Classroom created:', classroom);
-  // data.value = await getData();
-  
-  // Will likely need to replace this once api is ready
-  const newClassroom = {
-    id: data.value.length + 1,
-    ...classroom,
-  };
+function handleEditClassroom(classroom: Classroom) {
+  selectedClassroom.value = classroom;
+  isEditModalOpen.value = true;
+}
 
-  data.value = [...data.value, newClassroom];
+function handleClassroomCreated(response: { id: number; inviteCode: string; [key: string]: any }) {
   isCreateModalOpen.value = false;
+
+  // Navigate to the new Classroom Overview and show invite code via query param
+  router.push({
+    path: `/instructor/classrooms/${response.id}`,
+    query: { inviteCode: response.inviteCode },
+  });
+}
+
+function handleCancel() {
+  // On cancel: stay on the current classrooms page (no submission)
+  isCreateModalOpen.value = false;
+}
+
+function handleClassroomUpdated(updatedClassroom: Classroom) {
+  data.value = data.value.map((classroom) =>
+    String(classroom.id) === String(updatedClassroom.id)
+      ? { ...classroom, ...updatedClassroom }
+      : classroom
+  );
+  selectedClassroom.value = updatedClassroom;
+  isEditModalOpen.value = false;
 }
 
 onMounted(async () => {

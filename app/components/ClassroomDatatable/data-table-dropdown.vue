@@ -19,11 +19,11 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'delete': [classroom: Classroom];
+  edit: [classroom: Classroom];
 }>();
 
-function handleDelete() {
-  emit('delete', props.classroom);
+function handleEdit() {
+  emit("edit", props.classroom);
 }
 </script>
 
@@ -38,21 +38,21 @@ function handleDelete() {
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Edit</DropdownMenuItem>
-      <DropdownMenuItem 
-        v-if="props.role === 'admin'" 
-        class="text-red-600 focus:text-red-600 focus:bg-red-50"
-        @click="handleDelete"
+      <DropdownMenuItem
+        v-if="props.role === 'instructor' || props.role === 'admin'"
+        @click="handleEdit"
       >
-        Delete
+        Edit
       </DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">View Analytics</DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
-        <NuxtLink 
-          :to="props.role === 'admin' 
-            ? `/admin/classrooms/${classroom.id}` 
-            : `/instructor/classrooms/${classroom.id}`"
-        >         
+        View Analytics
+      </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
+        <NuxtLink
+          :to="props.role === 'admin'
+            ? `/admin/classrooms/${props.classroom.id}`
+            : `/instructor/classrooms/${props.classroom.id}`"
+        >
           Manage Classroom
         </NuxtLink>
       </DropdownMenuItem>

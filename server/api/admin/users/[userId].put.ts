@@ -1,10 +1,10 @@
-import { serverSupabaseClient } from '#supabase/server'
-import { Database, TablesUpdate } from '@/assets/types/supabase'
+// server/api/admin/users/[userId].put.ts
+// Admin Update User Account API — PUT /api/admin/users/:userId
+import { defineEventHandler, createError, readBody, getRouterParam } from 'h3'
+import { serverSupabaseUser, serverSupabaseServiceRole } from '#supabase/server'
+import type { Database, TablesUpdate } from '@/assets/types/supabase'
 
 type UserUpdate = TablesUpdate<'users'>
-type StudentUpdate = TablesUpdate<'students'>
-type InstructorUpdate = TablesUpdate<'instructors'>
-
 type UserRole = Database['public']['Enums']['user_role']
 type InstructorStatus = Database['public']['Enums']['instructor_status']
 type StudentStatus = Database['public']['Enums']['student_status']
@@ -12,77 +12,77 @@ type StudentStatus = Database['public']['Enums']['student_status']
 const VALID_ROLES: UserRole[] = ['ADMIN', 'INSTRUCTOR', 'STUDENT']
 const VALID_INSTRUCTOR_STATUSES: InstructorStatus[] = ['active', 'deactivated']
 const VALID_STUDENT_STATUSES: StudentStatus[] = ['registered', 'unregistered']
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-/**
- * PUT /api/admin/users/:userId
- *
- * Admin-only endpoint to update user account details.
- * Supports updating instructors and students.
- *
- * Editable fields: name (first_name, last_name), email, school, role, status.
- */
 export default defineEventHandler(async (event) => {
-  const targetUserId = getRouterParam(event, 'userId')
+  // ── 1. Authentication ─────────────────────────────────────────────────
+  const user = await serverSupabaseUser(event)
 
-  if (!targetUserId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'User ID is required',
-    })
+  // @ts-ignore — supabase user shape can vary between versions
+  const actorUserId: string | undefined = user?.id || user?.sub
+
+  if (!actorUserId) {
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
-  const supabase = await serverSupabaseClient<Database>(event)
+  // ── 2. Route parameter ────────────────────────────────────────────────
+  const userId = getRouterParam(event, 'userId')
 
-  // ── Auth ────────────────────────────────────────────────────────────
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Unauthorized',
-    })
+  if (!userId) {
+    throw createError({ statusCode: 400, statusMessage: 'User ID is required' })
   }
 
-  // ── Role check – admin only ─────────────────────────────────────────
-  const { data: requester, error: requesterError } = await supabase
+  // ── 3. Service-role client (bypasses RLS for admin operations) ────────
+  const client = serverSupabaseServiceRole(event)
+
+  // ── 4. Authorization — only admins may use this endpoint ──────────────
+  const { data: actorProfile, error: actorError } = (await client
     .from('users')
     .select('role')
-    .eq('id', user.id)
-    .single()
+    .eq('id', actorUserId)
+    .single()) as { data: { role: string | null } | null; error: any }
 
-  if (requesterError || !requester) {
+  if (actorError || !actorProfile) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to verify requester',
+    })
+  }
+
+  const actorRole = (actorProfile.role ?? '').toUpperCase()
+  let isAdmin = actorRole === 'ADMIN'
+
+  // Fallback: check admins table
+  if (!isAdmin) {
+    const { data: adminRow, error: adminCheckError } = await client
+      .from('admins')
+      .select('user_id')
+      .eq('user_id', actorUserId)
+      .maybeSingle()
+
+    if (adminCheckError) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to check admin access: ' + adminCheckError.message,
+      })
+    }
+
+    isAdmin = !!adminRow
+  }
+
+  if (!isAdmin) {
     throw createError({
       statusCode: 403,
-      statusMessage: 'Forbidden: User profile not found',
+      statusMessage: 'Forbidden: Admin access required',
     })
   }
 
-  if (requester.role?.toUpperCase() !== 'ADMIN') {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'Forbidden: Only admins can update user accounts',
-    })
-  }
-
-  // ── Fetch the target user ───────────────────────────────────────────
-  const { data: targetUser, error: targetError } = await supabase
-    .from('users')
-    .select('id, email, first_name, last_name, name, school, role, created_at')
-    .eq('id', targetUserId)
-    .single()
-
-  if (targetError || !targetUser) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'User not found',
-    })
-  }
-
-  // ── Read & validate body ────────────────────────────────────────────
+  // ── 5. Read & validate request body ───────────────────────────────────
   const body = await readBody<{
     first_name?: string
     last_name?: string
     email?: string
+    phone?: string
     school?: string
     role?: UserRole
     status?: string
@@ -91,14 +91,13 @@ export default defineEventHandler(async (event) => {
   if (!body || Object.keys(body).length === 0) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Request body must contain at least one field to update',
+      statusMessage: 'Request body cannot be empty',
     })
   }
 
-  // Validate email format
+  // Email format validation
   if (body.email !== undefined) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(body.email)) {
+    if (typeof body.email !== 'string' || !EMAIL_REGEX.test(body.email)) {
       throw createError({
         statusCode: 400,
         statusMessage: 'Invalid email format',
@@ -106,24 +105,102 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Validate role value
-  if (body.role !== undefined) {
-    if (!VALID_ROLES.includes(body.role)) {
+  // Role value validation
+  if (body.role !== undefined && !VALID_ROLES.includes(body.role)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}`,
+    })
+  }
+
+  // ── 6. Verify target user exists ──────────────────────────────────────
+  const { data: targetUser, error: targetUserError } = (await client
+    .from('users')
+    .select('id, email, first_name, last_name, name, role, school, created_at')
+    .eq('id', userId)
+    .single()) as { data: any; error: any }
+
+  if (targetUserError || !targetUser) {
+    throw createError({ statusCode: 404, statusMessage: 'User not found' })
+  }
+
+  // ── 7. Duplicate email check ──────────────────────────────────────────
+  if (body.email !== undefined && body.email !== targetUser.email) {
+    const { data: emailExists, error: emailCheckError } = await client
+      .from('users')
+      .select('id')
+      .eq('email', body.email)
+      .neq('id', userId)
+      .maybeSingle()
+
+    if (emailCheckError) {
       throw createError({
-        statusCode: 400,
-        statusMessage: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}`,
+        statusCode: 500,
+        statusMessage: 'Failed to check email uniqueness',
+      })
+    }
+
+    if (emailExists) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Email is already in use by another account',
       })
     }
   }
 
-  // Validate status based on role
-  const effectiveRole = body.role ?? targetUser.role
+  // ── 8. Build users table update ───────────────────────────────────────
+  const userUpdate: UserUpdate = {}
+
+  if (body.first_name !== undefined) userUpdate.first_name = body.first_name
+  if (body.last_name !== undefined) userUpdate.last_name = body.last_name
+  if (body.email !== undefined) userUpdate.email = body.email
+  if (body.school !== undefined) userUpdate.school = body.school
+  if (body.role !== undefined) userUpdate.role = body.role
+
+  // Derive the composite 'name' field when first or last name changes
+  if (body.first_name !== undefined || body.last_name !== undefined) {
+    const first = body.first_name ?? targetUser.first_name ?? ''
+    const last = body.last_name ?? targetUser.last_name ?? ''
+    userUpdate.name = `${first} ${last}`.trim()
+  }
+
+  if (Object.keys(userUpdate).length > 0) {
+    const { error: updateError } = await client
+      .from('users')
+      // @ts-ignore — service role client typing mismatch
+      .update(userUpdate as any)
+      .eq('id', userId)
+
+    if (updateError) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: `Failed to update user: ${updateError.message}`,
+      })
+    }
+  }
+
+  // ── 9. Update status in role-specific table ───────────────────────────
+  const effectiveRole = (body.role ?? targetUser.role ?? '') as string
+
   if (body.status !== undefined) {
     if (effectiveRole === 'INSTRUCTOR') {
       if (!VALID_INSTRUCTOR_STATUSES.includes(body.status as InstructorStatus)) {
         throw createError({
           statusCode: 400,
           statusMessage: `Invalid status for instructor. Must be one of: ${VALID_INSTRUCTOR_STATUSES.join(', ')}`,
+        })
+      }
+
+      const { error: instructorError } = await client
+        .from('instructors')
+        // @ts-ignore — service role client typing mismatch
+        .update({ status: body.status as InstructorStatus } as any)
+        .eq('user_id', userId)
+
+      if (instructorError) {
+        throw createError({
+          statusCode: 500,
+          statusMessage: `Failed to update instructor status: ${instructorError.message}`,
         })
       }
     } else if (effectiveRole === 'STUDENT') {
@@ -133,175 +210,74 @@ export default defineEventHandler(async (event) => {
           statusMessage: `Invalid status for student. Must be one of: ${VALID_STUDENT_STATUSES.join(', ')}`,
         })
       }
+
+      const { error: studentError } = await client
+        .from('students')
+        // @ts-ignore — service role client typing mismatch
+        .update({ status: body.status as StudentStatus } as any)
+        .eq('user_id', userId)
+
+      if (studentError) {
+        throw createError({
+          statusCode: 500,
+          statusMessage: `Failed to update student status: ${studentError.message}`,
+        })
+      }
     } else if (effectiveRole === 'ADMIN') {
+      // Admin role-specific table has no status column
       throw createError({
         statusCode: 400,
-        statusMessage: 'Admin accounts do not have a status field',
+        statusMessage: 'Admin users do not have a modifiable status field',
       })
     }
   }
 
-  // ── Duplicate email check ───────────────────────────────────────────
-  if (body.email !== undefined && body.email !== targetUser.email) {
-    const { data: existing } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', body.email)
-      .neq('id', targetUserId)
-      .maybeSingle()
-
-    if (existing) {
-      throw createError({
-        statusCode: 409,
-        statusMessage: 'A user with this email already exists',
-      })
-    }
-  }
-
-  // ── Update users table ──────────────────────────────────────────────
-  const userUpdate: UserUpdate = {}
-
-  if (body.first_name !== undefined) userUpdate.first_name = body.first_name
-  if (body.last_name !== undefined) userUpdate.last_name = body.last_name
-  if (body.email !== undefined) userUpdate.email = body.email
-  if (body.school !== undefined) userUpdate.school = body.school
-  if (body.role !== undefined) userUpdate.role = body.role
-
-  // Derive the combined 'name' field when first or last name changes
-  if (body.first_name !== undefined || body.last_name !== undefined) {
-    const first = body.first_name ?? targetUser.first_name ?? ''
-    const last = body.last_name ?? targetUser.last_name ?? ''
-    userUpdate.name = `${first} ${last}`.trim()
-  }
-
-  if (Object.keys(userUpdate).length > 0) {
-    const { error: userError } = await supabase
-      .from('users')
-      .update(userUpdate)
-      .eq('id', targetUserId)
-
-    if (userError) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: `Error updating user: ${userError.message}`,
-      })
-    }
-  }
-
-  // ── Handle role change (migrate between role tables) ────────────────
-  const currentRole = targetUser.role
-  const newRole = body.role
-
-  if (newRole && newRole !== currentRole) {
-    // Remove from current role table
-    if (currentRole === 'STUDENT') {
-      await supabase.from('classroom_students').delete().eq('student_id', targetUserId)
-      await supabase.from('students').delete().eq('user_id', targetUserId)
-    } else if (currentRole === 'INSTRUCTOR') {
-      await supabase.from('instructors').delete().eq('user_id', targetUserId)
-    } else if (currentRole === 'ADMIN') {
-      await supabase.from('admins').delete().eq('user_id', targetUserId)
-    }
-
-    // Insert into new role table
-    if (newRole === 'STUDENT') {
-      const { error } = await supabase.from('students').insert({ user_id: targetUserId })
-      if (error) {
-        throw createError({
-          statusCode: 500,
-          statusMessage: `Error creating student record: ${error.message}`,
-        })
-      }
-    } else if (newRole === 'INSTRUCTOR') {
-      const { error } = await supabase.from('instructors').insert({ user_id: targetUserId })
-      if (error) {
-        throw createError({
-          statusCode: 500,
-          statusMessage: `Error creating instructor record: ${error.message}`,
-        })
-      }
-    } else if (newRole === 'ADMIN') {
-      const { error } = await supabase.from('admins').insert({ user_id: targetUserId })
-      if (error) {
-        throw createError({
-          statusCode: 500,
-          statusMessage: `Error creating admin record: ${error.message}`,
-        })
-      }
-    }
-  }
-
-  // ── Update role-specific status ─────────────────────────────────────
-  if (body.status !== undefined) {
-    const roleForStatus = body.role ?? currentRole
-
-    if (roleForStatus === 'INSTRUCTOR') {
-      const update: InstructorUpdate = { status: body.status as InstructorStatus }
-      const { error } = await supabase
-        .from('instructors')
-        .update(update)
-        .eq('user_id', targetUserId)
-
-      if (error) {
-        throw createError({
-          statusCode: 500,
-          statusMessage: `Error updating instructor status: ${error.message}`,
-        })
-      }
-    } else if (roleForStatus === 'STUDENT') {
-      const update: StudentUpdate = { status: body.status as StudentStatus }
-      const { error } = await supabase
-        .from('students')
-        .update(update)
-        .eq('user_id', targetUserId)
-
-      if (error) {
-        throw createError({
-          statusCode: 500,
-          statusMessage: `Error updating student status: ${error.message}`,
-        })
-      }
-    }
-  }
-
-  // ── Return updated user record ──────────────────────────────────────
-  const { data: updatedUser, error: fetchError } = await supabase
+  // ── 10. Return updated user record ────────────────────────────────────
+  const { data: updatedUser, error: fetchError } = (await client
     .from('users')
-    .select('id, email, first_name, last_name, name, school, role, created_at')
-    .eq('id', targetUserId)
-    .single()
+    .select('id, email, first_name, last_name, name, role, school, created_at')
+    .eq('id', userId)
+    .single()) as { data: any; error: any }
 
   if (fetchError || !updatedUser) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'User was updated but could not fetch the updated record',
+      statusMessage: 'User updated but failed to fetch updated record',
     })
   }
 
-  // Attach role-specific fields
+  // Fetch status from the appropriate role-specific table
   let status: string | null = null
+  const updatedRole = (updatedUser.role ?? '') as string
 
-  if (updatedUser.role === 'INSTRUCTOR') {
-    const { data: instructor } = await supabase
+  if (updatedRole === 'INSTRUCTOR') {
+    const { data: instructor } = (await client
       .from('instructors')
       .select('status')
-      .eq('user_id', targetUserId)
-      .single()
+      .eq('user_id', userId)
+      .maybeSingle()) as { data: { status: string } | null; error: any }
     status = instructor?.status ?? null
-  } else if (updatedUser.role === 'STUDENT') {
-    const { data: student } = await supabase
+  } else if (updatedRole === 'STUDENT') {
+    const { data: student } = (await client
       .from('students')
       .select('status')
-      .eq('user_id', targetUserId)
-      .single()
+      .eq('user_id', userId)
+      .maybeSingle()) as { data: { status: string } | null; error: any }
     status = student?.status ?? null
   }
 
   return {
     success: true,
-    user: {
-      ...updatedUser,
+    data: {
+      id: updatedUser.id,
+      first_name: updatedUser.first_name,
+      last_name: updatedUser.last_name,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      school: updatedUser.school,
       status,
+      created_at: updatedUser.created_at,
     },
   }
 })

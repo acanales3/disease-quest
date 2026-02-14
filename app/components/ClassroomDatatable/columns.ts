@@ -13,10 +13,10 @@ export interface Classroom {
   startDate: string;
   endDate: string;
   status: "active" | "inactive";
-} 
+}
 
 export interface ColumnOptions {
-  onDelete?: (classroom: Classroom) => void;
+  onEdit?: (classroom: Classroom) => void;
 }
 
 export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Classroom>[] {
@@ -121,7 +121,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
     header: () =>
       h("div", { class: "text-center font-normal text-black" }, "End Date"),
     cell: ({ row }) => {
-      const endDate = row.getValue("startDate") as string;
+      const endDate = row.getValue("endDate") as string;
       return h(
         "div",
         { class: "text-center font-normal text-gray-600" },
@@ -160,7 +160,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
         h(DropdownAction, { 
           classroom,
           role,
-          onDelete: options?.onDelete,
+          onEdit: options?.onEdit,
         })
       );
     },

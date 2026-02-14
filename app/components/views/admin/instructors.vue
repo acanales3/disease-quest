@@ -49,7 +49,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import DataTable from "../../InstructorDatatable/data-table.vue";
-import { getColumns, type Instructor } from "../../InstructorDatatable/columns";
+import { getColumns, type Instructor } from "@/components/InstructorDatatable/columns";
 import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
@@ -109,23 +109,36 @@ const visibleColumns = computed(() =>
   })
 );
 
-// Existing edit save
+// Existing edit save — now routes through the unified admin endpoint
 const saveInstructorEdits = async (instructor: Instructor) => {
-  const [first_name, ...rest] = instructor.name.split(" ");
-  const last_name = rest.join(" ");
+  pageMessage.value = null;
 
-  await $fetch(`/api/instructors/${instructor.id}`, {
-    method: "PUT",
-    body: {
-      first_name,
-      last_name,
-      email: instructor.email,
-      school: instructor.school,
-      status: instructor.status,
-    },
-  });
+  try {
+    const [first_name, ...rest] = instructor.name.split(" ");
+    const last_name = rest.join(" ");
 
-  data.value = data.value.map((i) => (i.id === instructor.id ? instructor : i));
-  modalBus.closeEdit();
+    await $fetch(`/api/admin/users/${instructor.id}`, {
+      method: "PUT",
+      body: {
+        first_name,
+        last_name,
+        email: instructor.email,
+        school: instructor.school,
+        status: instructor.status,
+      },
+    });
+
+    data.value = data.value.map((i) => (i.id === instructor.id ? instructor : i));
+    modalBus.closeEdit();
+  } catch (err: any) {
+    console.error("Error updating instructor:", err?.data || err);
+    pageMessage.value = {
+      type: "error",
+      text:
+        err?.data?.statusMessage ||
+        err?.message ||
+        "Failed to update instructor. Please try again.",
+    };
+  }
 };
 </script>

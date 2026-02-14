@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  validateClassroomDetails,
+  type ClassroomFormData,
+  type ClassroomFormErrors,
+} from "@/utils/validateClassroomDetails";
 
 const props = defineProps<{
   open: boolean;
@@ -17,7 +22,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:open': [value: boolean];
-  'created': [classroom: typeof form.value];
+  'created': [response: { id: number; inviteCode: string; [key: string]: any }];
+  'cancel': [];
 }>();
 
 const STEPS = {
@@ -28,8 +34,10 @@ const STEPS = {
 type Step = typeof STEPS[keyof typeof STEPS];
 
 const step = ref<Step>(STEPS.FORM);
+const isLoading = ref(false);
+const apiError = ref("");
 
-const form = ref({
+const form = ref<ClassroomFormData>({
   name: "",
   code: "",
   section: "",
@@ -38,7 +46,7 @@ const form = ref({
   endDate: "",
 });
 
-type FormField = keyof typeof form.value;
+type FormField = keyof ClassroomFormData;
 
 const fields: Array<{ id: FormField; label: string; placeholder: string }> = [
   { id: "name", label: "Course Title", placeholder: "DiseaseQuest 101" },
@@ -53,12 +61,60 @@ const dialogDescription = computed(() =>
     : "Review the classroom information before creating it."
 );
 
-function onContinue() {
-  const missing = Object.entries(form.value).filter(([_, v]) => !v);
-  if (missing.length > 0) {
-    alert("Please fill in all fields before continuing.");
-    return;
+// ── Validation ──────────────────────────────────────────────────────────────
+
+const errors = ref<ClassroomFormErrors>({});
+
+/** Tracks which fields the user has interacted with (blur). */
+const touched = ref<Record<FormField, boolean>>({
+  name: false,
+  code: false,
+  section: false,
+  term: false,
+  startDate: false,
+  endDate: false,
+});
+
+/** Set to true once the user clicks "Continue" so all errors show. */
+const submitted = ref(false);
+
+// Re-validate whenever the form changes (immediate so errors are populated from the start)
+watch(
+  form,
+  (val) => {
+    const result = validateClassroomDetails(val);
+    errors.value = result.success ? {} : result.errors;
+  },
+  { deep: true, immediate: true },
+);
+
+/** Whether the entire form is invalid. */
+const isInvalid = computed(() => {
+  const result = validateClassroomDetails(form.value);
+  return !result.success;
+});
+
+/** Should we display the error for a specific field? */
+function showError(field: FormField): boolean {
+  return (touched.value[field] || submitted.value) && !!errors.value[field];
+}
+
+function markTouched(field: FormField) {
+  touched.value[field] = true;
+}
+
+function markAllTouched() {
+  for (const key of Object.keys(touched.value) as FormField[]) {
+    touched.value[key] = true;
   }
+}
+
+// ── Step navigation ─────────────────────────────────────────────────────────
+
+function onContinue() {
+  submitted.value = true;
+  markAllTouched();
+  if (isInvalid.value) return;
   step.value = STEPS.SUMMARY;
 }
 
@@ -66,20 +122,45 @@ function backToEdit() {
   step.value = STEPS.FORM;
 }
 
+// ── Create ──────────────────────────────────────────────────────────────────
+
 async function createClassroom() {
+  if (isLoading.value) return;
+  isLoading.value = true;
+  apiError.value = "";
+
   try {
-    console.log("Creating classroom with data:", form.value);
-    emit('created', form.value);
+    const response = await $fetch<{ id: number; inviteCode: string }>("/api/classrooms", {
+      method: "POST",
+      body: {
+        name: form.value.name.trim(),
+        code: form.value.code.trim(),
+        section: form.value.section.trim(),
+        term: form.value.term.trim(),
+        startDate: form.value.startDate,
+        endDate: form.value.endDate,
+      },
+    });
+
+    emit("created", response);
     resetForm();
-    emit('update:open', false);
-  } catch (error) {
-    console.error("Failed to create classroom:", error);
+    emit("update:open", false);
+  } catch (error: any) {
+    apiError.value =
+      error?.data?.message ||
+      error?.statusMessage ||
+      "Failed to create classroom. Please try again.";
+  } finally {
+    isLoading.value = false;
   }
 }
 
+// ── Cancel ──────────────────────────────────────────────────────────────────
+
 function onCancel() {
   resetForm();
-  emit('update:open', false);
+  emit("update:open", false);
+  emit("cancel");
 }
 
 function resetForm() {
@@ -91,7 +172,19 @@ function resetForm() {
     startDate: "",
     endDate: "",
   };
+  errors.value = {};
+  touched.value = {
+    name: false,
+    code: false,
+    section: false,
+    term: false,
+    startDate: false,
+    endDate: false,
+  };
+  submitted.value = false;
   step.value = STEPS.FORM;
+  apiError.value = "";
+  isLoading.value = false;
 }
 </script>
 
@@ -103,46 +196,88 @@ function resetForm() {
         <DialogDescription>{{ dialogDescription }}</DialogDescription>
       </DialogHeader>
 
-      <div class="mt-4">
+      <p
+        v-if="submitted && isInvalid && step === STEPS.FORM"
+        class="text-red-500 text-sm text-center mt-1"
+      >
+        Please complete all required fields before continuing.
+      </p>
+
+      <div>
         <Transition name="fade" mode="out-in">
-          <div v-if="step === STEPS.FORM" key="form" class="grid gap-6 py-4">
+          <!-- ─── FORM STEP ─────────────────────────────────────────── -->
+          <div v-if="step === STEPS.FORM" key="form" class="grid gap-6 py-2">
             <div
               v-for="field in fields"
               :key="field.id"
-              class="grid grid-cols-4 items-center gap-4"
+              class="grid grid-cols-4 items-start gap-4"
             >
-              <Label :for="field.id" class="text-right">
+              <Label :for="field.id" class="text-right pt-2">
                 {{ field.label }}
               </Label>
-              <Input
-                :id="field.id"
-                v-model="form[field.id]"
-                class="col-span-3"
-                :placeholder="field.placeholder"
-              />
+              <div class="col-span-3">
+                <Input
+                  :id="field.id"
+                  v-model="form[field.id]"
+                  :placeholder="field.placeholder"
+                  :class="{ 'border-red-500': showError(field.id) }"
+                  @blur="markTouched(field.id)"
+                />
+                <p
+                  v-if="showError(field.id)"
+                  class="text-red-500 text-xs mt-1"
+                >
+                  {{ errors[field.id] }}
+                </p>
+              </div>
             </div>
 
-            <div class="grid grid-cols-4 items-center gap-4">
-              <Label for="startDate" class="text-right"> Start Date </Label>
-              <Input
-                id="startDate"
-                type="date"
-                v-model="form.startDate"
-                class="col-span-3"
-              />
+            <!-- Start Date -->
+            <div class="grid grid-cols-4 items-start gap-4">
+              <Label for="startDate" class="text-right pt-2">
+                Start Date
+              </Label>
+              <div class="col-span-3">
+                <Input
+                  id="startDate"
+                  type="date"
+                  v-model="form.startDate"
+                  :class="{ 'border-red-500': showError('startDate') }"
+                  @blur="markTouched('startDate')"
+                />
+                <p
+                  v-if="showError('startDate')"
+                  class="text-red-500 text-xs mt-1"
+                >
+                  {{ errors.startDate }}
+                </p>
+              </div>
             </div>
 
-            <div class="grid grid-cols-4 items-center gap-4">
-              <Label for="endDate" class="text-right"> End Date </Label>
-              <Input
-                id="endDate"
-                type="date"
-                v-model="form.endDate"
-                class="col-span-3"
-              />
+            <!-- End Date -->
+            <div class="grid grid-cols-4 items-start gap-4">
+              <Label for="endDate" class="text-right pt-2">
+                End Date
+              </Label>
+              <div class="col-span-3">
+                <Input
+                  id="endDate"
+                  type="date"
+                  v-model="form.endDate"
+                  :class="{ 'border-red-500': showError('endDate') }"
+                  @blur="markTouched('endDate')"
+                />
+                <p
+                  v-if="showError('endDate')"
+                  class="text-red-500 text-xs mt-1"
+                >
+                  {{ errors.endDate }}
+                </p>
+              </div>
             </div>
           </div>
 
+          <!-- ─── SUMMARY STEP ──────────────────────────────────────── -->
           <div v-else key="summary" class="grid gap-4 py-4 text-sm">
             <div
               v-for="(value, key) in form"
@@ -154,24 +289,73 @@ function resetForm() {
               </span>
               <span>{{ value || "—" }}</span>
             </div>
+
+            <!-- API error banner (only visible on summary step) -->
+            <div
+              v-if="apiError"
+              class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-700 text-sm"
+            >
+              {{ apiError }}
+            </div>
           </div>
         </Transition>
 
+        <!-- ─── ACTIONS ───────────────────────────────────────────── -->
         <div class="flex justify-end gap-3 mt-6 pt-6 border-t">
           <template v-if="step === STEPS.FORM">
             <Button variant="outline" type="button" @click="onCancel">
               Cancel
             </Button>
-            <Button type="button" @click="onContinue"> Continue </Button>
+            <Button
+              type="button"
+              :disabled="submitted && isInvalid"
+              @click="onContinue"
+            >
+              Continue
+            </Button>
           </template>
 
-          <!-- Read only summary -->
+          <!-- Summary actions -->
           <template v-else>
-            <Button variant="outline" type="button" @click="backToEdit">
+            <Button
+              variant="outline"
+              type="button"
+              :disabled="isLoading"
+              @click="backToEdit"
+            >
               Back to Edit
             </Button>
-            <Button type="button" @click="createClassroom">
-              Create Classroom
+            <Button
+              type="button"
+              :disabled="isLoading"
+              @click="createClassroom"
+            >
+              <template v-if="isLoading">
+                <svg
+                  class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                Creating…
+              </template>
+              <template v-else>
+                Create Classroom
+              </template>
             </Button>
           </template>
         </div>
@@ -190,4 +374,3 @@ function resetForm() {
   opacity: 0;
 }
 </style>
-
