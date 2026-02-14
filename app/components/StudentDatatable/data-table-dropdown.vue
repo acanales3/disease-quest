@@ -51,19 +51,20 @@ function onRemoveFromClassroom() {
       <DropdownMenuSeparator />
       <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
       <DropdownMenuItem
-        v-if="props.role === 'admin'"
-        class="text-red-600 focus:text-red-600 focus:bg-red-50"
-        @click="onDelete"
-      >
-        Delete Student
-      </DropdownMenuItem>
-      <DropdownMenuItem
         v-if="props.role === 'admin' || props.role === 'instructor'"
         class="text-red-600 focus:text-red-600 focus:bg-red-50"
         @click="onRemoveFromClassroom"
       >
         Remove from Classroom
       </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="props.role === 'admin'"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50"
+        @click="onDelete"
+      >
+        Delete Student
+      </DropdownMenuItem>
+      
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

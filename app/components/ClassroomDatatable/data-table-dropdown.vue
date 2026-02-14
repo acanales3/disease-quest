@@ -56,6 +56,9 @@ function handleEdit() {
           Manage Classroom
         </NuxtLink>
       </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'" class="text-red-600 focus:text-red-600 focus:bg-red-50">
+        Delete
+      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
