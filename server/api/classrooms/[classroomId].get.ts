@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  const classroomId = getRouterParam(event, 'id')
+  const classroomId = getRouterParam(event, 'classroomId')
   if (!classroomId) {
     throw createError({ statusCode: 400, message: 'Classroom ID is required' })
   }
