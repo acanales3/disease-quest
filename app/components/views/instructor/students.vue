@@ -8,7 +8,7 @@
 
     <!-- Student Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data"/>
+      <DataTable :columns="visibleColumns" :data="data" :classrooms="classrooms"/>
     </div>
   </div>
 </template>
@@ -22,7 +22,13 @@ import DataTable from "../../StudentDatatable/data-table.vue";
 import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 
+interface ClassroomDropdown {
+  id: number
+  name: string
+}
+
 const data = ref<Student[]>([]);
+const classrooms = ref<ClassroomDropdown[]>([])
 
 const visibleColumns = computed(() => {
   return getColumns('instructor');
@@ -34,7 +40,14 @@ async function getData(): Promise<Student[]> {
     return $fetch("/api/students");
 }
 
+async function getClassroomSelectors(): Promise<ClassroomDropdown[]> {
+  const response = await $fetch<{ classrooms: ClassroomDropdown[] }>(`/api/instructors/classrooms`)
+  console.log(response.classrooms)
+  return response.classrooms;
+}
+
 onMounted(async () => {
     data.value = await getData();
+    classrooms.value = await getClassroomSelectors()
 });
 </script>

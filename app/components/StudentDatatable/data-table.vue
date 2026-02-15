@@ -45,6 +45,7 @@ import FilterDialog from "@/components/FilterDialog/FilterDialog.vue";
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  classrooms: { id: number; name: string}[];
 }>();
 
 const sorting = ref<SortingState>([]);
@@ -65,7 +66,7 @@ const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
   // For array filters, check if cellValue is in the array
   if (Array.isArray(filterValue)) {
     // Convert cellValue to string for comparison
-    return filterValue.includes(String(cellValue));
+    return filterValue.includes(cellValue);
   }
 
   // Fallback for non-array filters (shouldn't happen with this function)
@@ -151,6 +152,14 @@ const handleApplyFilters = (filters: any) => {
       filters.status && filters.status.length > 0 ? filters.status : undefined,
     );
 };
+
+const selectedClassroom = computed(() => {
+  const filter = table.getColumn('classroom')?.getFilterValue() as number[] | undefined
+  if (!filter?.length) return 'All Classes'
+
+  const found = props.classrooms.find(c => c.id === filter[0])
+  return found?.name ?? 'All Classes'
+})
 </script>
 <template>
   <div
@@ -178,7 +187,7 @@ const handleApplyFilters = (filters: any) => {
             <Button
               class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
             >
-              All Classes
+              {{  selectedClassroom }}
               <ChevronDown class="w-4 h-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
@@ -187,19 +196,16 @@ const handleApplyFilters = (filters: any) => {
           >
             <DropdownMenuItem
               class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 0
-            </DropdownMenuItem>
+              @click="table.getColumn('classroom')?.setFilterValue(undefined)"
+            >All Classes</DropdownMenuItem>
             <DropdownMenuItem
+              v-for="classroom in props.classrooms"
+              :key="classroom.id"
               class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+              @click="table.getColumn('classroom')?.setFilterValue([classroom.id])"
             >
-              Example Class 1
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 2
-            </DropdownMenuItem>
+            {{ classroom.name }}
+          </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
