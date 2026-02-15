@@ -41,10 +41,12 @@ import {
 } from "~/components/ui/table";
 
 import FilterDialog from "@/components/FilterDialog/FilterDialog.vue";
+import type { Classroom } from "../ClassroomDatatable/columns"; // Import Classroom type
 
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  classrooms?: Classroom[]; // Add classrooms prop
 }>();
 
 const sorting = ref<SortingState>([]);
@@ -138,18 +140,22 @@ const handleApplyFilters = (filters: any) => {
     );
 
   table
-    .getColumn("classroom")
-    ?.setFilterValue(
-      filters.classroom && filters.classroom.length > 0
-        ? filters.classroom
-        : undefined,
-    );
-
-  table
     .getColumn("status")
     ?.setFilterValue(
       filters.status && filters.status.length > 0 ? filters.status : undefined,
     );
+};
+
+// Handle classroom dropdown selection
+const selectedClassroom = ref<Classroom | null>(null);
+
+const handleClassroomSelect = (classroom: Classroom | null) => {
+  selectedClassroom.value = classroom;
+  if (classroom) {
+    table.getColumn("classroom")?.setFilterValue([String(classroom.id)]);
+  } else {
+    table.getColumn("classroom")?.setFilterValue(undefined);
+  }
 };
 </script>
 <template>
@@ -164,7 +170,7 @@ const handleApplyFilters = (filters: any) => {
       <!-- Right: search input + dropdowns -->
       <div class="flex items-center space-x-4">
         <!-- Filter Dialog component -->
-        <FilterDialog @apply-filters="handleApplyFilters" />
+        <FilterDialog :classrooms="props.classrooms || []" @apply-filters="handleApplyFilters" />
 
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
@@ -178,27 +184,26 @@ const handleApplyFilters = (filters: any) => {
             <Button
               class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
             >
-              All Classes
+              {{ selectedClassroom ? selectedClassroom.name : "All Classes" }}
               <ChevronDown class="w-4 h-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            class="bg-white rounded-md shadow-md flex flex-col"
+            class="bg-white rounded-md shadow-md flex flex-col max-h-60 overflow-y-auto"
           >
             <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block cursor-pointer"
+              @click="handleClassroomSelect(null)"
             >
-              Example Class 0
+              All Classes
             </DropdownMenuItem>
             <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+              v-for="classroom in props.classrooms"
+              :key="classroom.id"
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block cursor-pointer"
+              @click="handleClassroomSelect(classroom)"
             >
-              Example Class 1
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 2
+              {{ classroom.name }}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

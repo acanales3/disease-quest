@@ -13,9 +13,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icon } from "#components";
+import type { Classroom } from "../ClassroomDatatable/columns"; // Import Classroom type
 
 const emit = defineEmits<{
   (e: "apply-filters", filters: FilterCriteria): void;
+}>();
+
+const props = defineProps<{
+  classrooms?: Classroom[];
 }>();
 
 interface FilterCriteria {
@@ -30,7 +35,7 @@ interface FilterCriteria {
 const isOpen = ref(false);
 
 const msyearOptions = ["1", "2", "3", "4"];
-const classroomOptions = ["0", "1", "2"];
+// const classroomOptions = ["0", "1", "2"]; // Removed hardcoded options
 const statusOptions = ["registered", "unregistered"];
 
 // Temporary filters - uses firstName and lastName for UI
@@ -269,22 +274,22 @@ const onOpenChange = (open: boolean) => {
             <Label>Classroom</Label>
             <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
-                v-for="classroom in classroomOptions"
-                :key="classroom"
+                v-for="classroom in props.classrooms"
+                :key="classroom.id"
                 class="flex items-center gap-2"
               >
                 <input
                   type="checkbox"
-                  :id="`classroom-${classroom}`"
-                  :checked="tempFilters.classroom.includes(classroom)"
-                  @change="toggleClassroom(classroom)"
+                  :id="`classroom-${classroom.id}`"
+                  :checked="tempFilters.classroom.includes(String(classroom.id))"
+                  @change="toggleClassroom(String(classroom.id))"
                   class="w-4 h-4 cursor-pointer"
                 />
                 <label
-                  :for="`classroom-${classroom}`"
+                  :for="`classroom-${classroom.id}`"
                   class="text-sm cursor-pointer"
                 >
-                  Example Classroom {{ classroom }}
+                  {{ classroom.name }}
                 </label>
               </div>
               <div

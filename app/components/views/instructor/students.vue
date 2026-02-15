@@ -8,7 +8,7 @@
 
     <!-- Student Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data"/>
+      <DataTable :columns="visibleColumns" :data="data" :classrooms="classrooms" />
     </div>
   </div>
 </template>
@@ -22,19 +22,30 @@ import DataTable from "../../StudentDatatable/data-table.vue";
 import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 
+import type { Classroom } from "../../ClassroomDatatable/columns"; // Import Classroom type
+
 const data = ref<Student[]>([]);
+const classrooms = ref<Classroom[]>([]); // Add classrooms ref
 
 const visibleColumns = computed(() => {
   return getColumns('instructor');
 });
 
-async function getData(): Promise<Student[]> {
-    // Fetch data from the API here.
-    // For now, we will use the mock student data from the interface.
-    return $fetch("/api/students");
+async function getData(): Promise<{ students: Student[], classrooms: Classroom[] }> {
+    const [studentsData, classroomsData] = await Promise.all([
+        $fetch<Student[]>("/api/students"),
+        $fetch<Classroom[]>("/api/classrooms")
+    ]);
+    
+    return {
+        students: studentsData,
+        classrooms: classroomsData
+    };
 }
 
 onMounted(async () => {
-    data.value = await getData();
+    const result = await getData();
+    data.value = result.students;
+    classrooms.value = result.classrooms;
 });
 </script>
