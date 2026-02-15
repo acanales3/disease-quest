@@ -17,6 +17,7 @@ export interface Classroom {
 
 export interface ColumnOptions {
   onEdit?: (classroom: Classroom) => void;
+  onDelete?: (classroom: Classroom) => void;
 }
 
 export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Classroom>[] {
@@ -150,26 +151,17 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
   },
   ];
 
-  // Only include actions column for admin and instructor roles
-  if (role === 'admin' || role === 'instructor') {
-    columns.push({
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        const classroom = row.original;
-
-        return h(
-          "div",
-          { class: "relative flex justify-center" },
-          h(DropdownAction, { 
-            classroom,
-            role,
-            onEdit: options?.onEdit,
-          })
-        );
-      },
-    });
-  }
-
-  return columns;
+      return h(
+        "div",
+        { class: "relative flex justify-center" },
+        h(DropdownAction, { 
+          classroom,
+          role,
+          onEdit: options?.onEdit,
+          onDelete: options?.onDelete,
+        })
+      );
+    },
+  },
+];
 }
