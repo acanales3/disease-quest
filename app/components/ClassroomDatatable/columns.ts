@@ -151,17 +151,27 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
   },
   ];
 
-      return h(
-        "div",
-        { class: "relative flex justify-center" },
-        h(DropdownAction, { 
-          classroom,
-          role,
-          onEdit: options?.onEdit,
-          onDelete: options?.onDelete,
-        })
-      );
-    },
-  },
-];
+  // Only include actions column for admin and instructor roles
+  if (role === 'admin' || role === 'instructor') {
+    columns.push({
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const classroom = row.original;
+
+        return h(
+          "div",
+          { class: "relative flex justify-center" },
+          h(DropdownAction, { 
+            classroom,
+            role,
+            onEdit: options?.onEdit,
+            onDelete: options?.onDelete,
+          })
+        );
+      },
+    });
+  }
+
+  return columns;
 }
