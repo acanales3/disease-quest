@@ -51,6 +51,14 @@
       :classroom="selectedClassroom"
       @updated="handleClassroomUpdated"
     />
+
+    <DeleteClassroomModal
+      v-model:open="isDeleteModalOpen"
+      :classroom="classroomToDelete"
+      :state="deleteState"
+      @confirm="handleDeleteConfirm"
+      @reset="resetDeleteState"
+    />
   </div>
 </template>
 
@@ -65,14 +73,24 @@ import { Button } from '../../ui/button'
 import { Icon } from '#components'
 import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModal.vue'
 import EditClassroomModal from '../../EditClassroomModal/EditClassroomModal.vue'
+import DeleteClassroomModal from '../../DeleteClassroomModal/DeleteClassroomModal.vue'
 
 const router = useRouter();
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
 const isEditModalOpen = ref(false);
+const isDeleteModalOpen = ref(false);
 const selectedClassroom = ref<Classroom | null>(null);
+const classroomToDelete = ref<Classroom | null>(null);
 
 const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
+
+const deleteState = ref<
+  | { status: "idle"; message?: string }
+  | { status: "loading"; message?: string }
+  | { status: "success"; message: string }
+  | { status: "error"; message: string }
+>({ status: "idle" });
 
 const visibleColumns = computed(() => {
   const columnsToShow = [
@@ -87,6 +105,7 @@ const visibleColumns = computed(() => {
   ];
   return getColumns("instructor", {
     onEdit: handleEditClassroom,
+    onDelete: handleDeleteClick,
   }).filter(column => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
@@ -125,6 +144,41 @@ function handleClassroomCreated(response: { id: number; inviteCode: string; [key
 function handleCancel() {
   // On cancel: stay on the current classrooms page (no submission)
   isCreateModalOpen.value = false;
+}
+
+function resetDeleteState() {
+  deleteState.value = { status: "idle" };
+}
+
+function handleDeleteClick(classroom: Classroom) {
+  pageMessage.value = null;
+  classroomToDelete.value = classroom;
+  isDeleteModalOpen.value = true;
+}
+
+async function handleDeleteConfirm(classroom: Classroom) {
+  deleteState.value = { status: "loading" };
+  pageMessage.value = null;
+
+  try {
+    await $fetch(`/api/classrooms/${classroom.id}`, {
+      method: "DELETE" as any,
+    });
+
+    deleteState.value = { status: "success", message: "Classroom deleted successfully." };
+    pageMessage.value = { type: "success", text: `Classroom "${classroom.name}" has been deleted.` };
+
+    data.value = await getData();
+    isDeleteModalOpen.value = false;
+    classroomToDelete.value = null;
+  } catch (error: any) {
+    const msg =
+      error?.data?.message ||
+      error?.statusMessage ||
+      "Failed to delete classroom.";
+    deleteState.value = { status: "error", message: msg };
+    pageMessage.value = { type: "error", text: msg };
+  }
 }
 
 function handleClassroomUpdated(updatedClassroom: Classroom) {

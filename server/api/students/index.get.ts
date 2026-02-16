@@ -135,6 +135,9 @@ export default defineEventHandler(async (event) => {
       school: row?.users?.school ?? "",
       msyear: row?.msyear ?? 0,
       classroom: Number(classroomId) || 0,
+      classrooms: Array.isArray(row?.classroom_students)
+        ? row.classroom_students.map((cs: any) => cs.classroom_id).filter(Boolean)
+        : [],
       status: row?.status ?? "registered",
     };
   });

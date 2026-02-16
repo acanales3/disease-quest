@@ -49,17 +49,23 @@ const getButtonText = () => {
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
 
-      <DropdownMenuItem>
-        <NuxtLink :to="`/case/${props.caseData.id}/introduction`">
+      <NuxtLink :to="`/case/${props.caseData.id}/introduction`">
+        <DropdownMenuItem>
           {{ getButtonText() }}
-        </NuxtLink>
-      </DropdownMenuItem>
+        </DropdownMenuItem>
+      </NuxtLink>
 
       <DropdownMenuItem v-if="props.role === 'admin'"> Edit </DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'admin'" class="text-red-600 focus:text-red-600 focus:bg-red-50">
+      <DropdownMenuItem
+        v-if="props.role === 'admin'"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50"
+      >
         Delete
       </DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'student' && props.caseData.status === 'completed'">Review Case</DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="props.role === 'student' && props.caseData.status === 'completed'"
+        >Review Case</DropdownMenuItem
+      >
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

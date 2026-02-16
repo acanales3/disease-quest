@@ -19,7 +19,7 @@
     
     <!-- Student Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable :columns="visibleColumns" :data="data" :classrooms="classrooms" />
     </div>
 
     <AdminEditStudentDialog
@@ -53,7 +53,10 @@ import { modalBus } from "@/components/AdminEditStudentDialog/modalBusEditStuden
 import AdminEditStudentDialog from "@/components/AdminEditStudentDialog/AdminEditStudentDialog.vue"
 import DeleteStudentModal from "@/components/DeleteStudentModal/DeleteStudentModal.vue"
 
+import type { Classroom } from "../../ClassroomDatatable/columns"; // Import Classroom type
+
 const data = ref<Student[]>([]);
+const classrooms = ref<Classroom[]>([]); // Add classrooms ref
 const count = ref<number>(0);
 const isDeleteModalOpen = ref(false);
 const studentToDelete = ref<Student | null>(null);
@@ -93,18 +96,23 @@ function handleRemoveFromClassroomClick(s: Student) {
   isDeleteModalOpen.value = true;
 }
 
-async function fetchStudents(): Promise<Student[]> {
+async function fetchStudents(): Promise<{ students: Student[], classrooms: Classroom[] }> {
   // Prefer backend API, fallback to mock.
   try {
-    return await $fetch<Student[]>("/api/students");
+    const [studentsData, classroomsData] = await Promise.all([
+      $fetch<Student[]>("/api/students"),
+      $fetch<Classroom[]>("/api/classrooms")
+    ]);
+    return { students: studentsData, classrooms: classroomsData };
   } catch {
-    return student as unknown as Student[];
+    return { students: student as unknown as Student[], classrooms: [] };
   }
 }
 
 async function refreshStudents() {
-  const students = await fetchStudents();
-  data.value = students;
+  const result = await fetchStudents();
+  data.value = result.students;
+  classrooms.value = result.classrooms;
 }
 
 async function handleDeleteConfirm(s: Student) {
