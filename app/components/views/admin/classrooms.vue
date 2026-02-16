@@ -1,13 +1,12 @@
 <template>
   <div class="flex flex-col w-full">
-    
     <div class="flex justify-center gap-4">
       <TotalCount
         :count="data.length"
         label="Total Classrooms"
         icon="simple-icons:googleclassroom"
       />
-      
+
       <Button
         variant="outline"
         class="h-28 w-48 flex flex-col items-center justify-center gap-2 p-4"
@@ -23,9 +22,11 @@
     <div v-if="pageMessage" class="w-full py-2">
       <div
         class="rounded-md border px-4 py-3 text-sm"
-        :class="pageMessage.type === 'success'
-          ? 'border-green-200 bg-green-50 text-green-800'
-          : 'border-red-200 bg-red-50 text-red-700'"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
       >
         {{ pageMessage.text }}
       </div>
@@ -35,8 +36,9 @@
       <DataTable :columns="visibleColumns" :data="data" />
     </div>
 
-    <CreateClassroomModal 
-      v-model:open="isCreateModalOpen" 
+    <CreateClassroomModal
+      v-model:open="isCreateModalOpen"
+      user-role="ADMIN"
       @created="handleClassroomCreated"
     />
 
@@ -58,16 +60,22 @@
 
 <script setup lang="ts">
 import { getColumns } from "../../ClassroomDatatable/columns";
-import { classrooms } from "../../../assets/interface/Classroom";
-import type { Classroom } from '../../ClassroomDatatable/columns'
-import { onMounted, ref, computed } from 'vue'
-import DataTable from '../../ClassroomDatatable/data-table.vue'
-import TotalCount from '../../ui/TotalCount.vue'
-import { Button } from '../../ui/button'
-import { Icon } from '#components'
-import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModal.vue'
-import EditClassroomModal from '../../EditClassroomModal/EditClassroomModal.vue'
-import DeleteClassroomModal from '../../DeleteClassroomModal/DeleteClassroomModal.vue'
+import type { Classroom } from "../../ClassroomDatatable/columns";
+import { onMounted, ref, computed } from "vue";
+import DataTable from "../../ClassroomDatatable/data-table.vue";
+import TotalCount from "../../ui/TotalCount.vue";
+import { Button } from "../../ui/button";
+import { Icon } from "#components";
+import CreateClassroomModal from "../../CreateClassroomModal/CreateClassroomModal.vue";
+import EditClassroomModal from "../../EditClassroomModal/EditClassroomModal.vue";
+import DeleteClassroomModal from "../../DeleteClassroomModal/DeleteClassroomModal.vue";
+
+// Named type alias avoids the angle-bracket parsing issue in .vue files
+type DeleteState =
+  | { status: "idle"; message?: string }
+  | { status: "loading"; message?: string }
+  | { status: "success"; message: string }
+  | { status: "error"; message: string };
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
@@ -76,17 +84,13 @@ const selectedClassroom = ref<Classroom | null>(null);
 const isDeleteModalOpen = ref(false);
 const classroomToDelete = ref<Classroom | null>(null);
 
-const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
-
-const deleteState = ref<
-  | { status: "idle"; message?: string }
-  | { status: "loading"; message?: string }
-  | { status: "success"; message: string }
-  | { status: "error"; message: string }
->({ status: "idle" });
+const pageMessage = ref<{ type: "success" | "error"; text: string } | null>(
+  null,
+);
+const deleteState = ref<DeleteState>({ status: "idle" });
 
 const visibleColumns = computed(() => {
-  return getColumns('admin', {
+  return getColumns("admin", {
     onEdit: handleEditClassroom,
   });
 });
@@ -100,11 +104,14 @@ function handleClassroomUpdated(updatedClassroom: Classroom) {
   data.value = data.value.map((classroom) =>
     String(classroom.id) === String(updatedClassroom.id)
       ? { ...classroom, ...updatedClassroom }
-      : classroom
+      : classroom,
   );
   selectedClassroom.value = null;
   isEditModalOpen.value = false;
-  pageMessage.value = { type: "success", text: `Classroom "${updatedClassroom.name}" has been updated.` };
+  pageMessage.value = {
+    type: "success",
+    text: `Classroom "${updatedClassroom.name}" has been updated.`,
+  };
 }
 
 function resetDeleteState() {
@@ -126,8 +133,14 @@ async function handleDeleteConfirm(classroom: Classroom) {
       method: "DELETE" as any,
     });
 
-    deleteState.value = { status: "success", message: "Classroom deleted successfully." };
-    pageMessage.value = { type: "success", text: `Classroom "${classroom.name}" has been deleted.` };
+    deleteState.value = {
+      status: "success",
+      message: "Classroom deleted successfully.",
+    };
+    pageMessage.value = {
+      type: "success",
+      text: `Classroom "${classroom.name}" has been deleted.`,
+    };
 
     await refreshClassrooms();
     isDeleteModalOpen.value = false;
@@ -137,25 +150,23 @@ async function handleDeleteConfirm(classroom: Classroom) {
     const statusMessage = error?.statusMessage ?? error?.data?.statusMessage;
 
     const isMissingEndpoint =
-      statusCode === 404 || (typeof statusMessage === "string" && statusMessage.includes("Page not found"));
+      statusCode === 404 ||
+      (typeof statusMessage === "string" &&
+        statusMessage.includes("Page not found"));
 
     if (isMissingEndpoint) {
-      // Backend not integrated yet — simulate so UI can still be tested.
-      const msg = "Delete classroom API not available yet (simulated for UI testing).";
+      const msg =
+        "Delete classroom API not available yet (simulated for UI testing).";
       deleteState.value = { status: "success", message: msg };
       pageMessage.value = { type: "success", text: msg };
-
-      // Remove from local state so the table updates
-      data.value = data.value.filter(c => c.id !== classroom.id);
+      data.value = data.value.filter((c) => c.id !== classroom.id);
       isDeleteModalOpen.value = false;
       classroomToDelete.value = null;
       return;
     }
 
     const msg =
-      error?.data?.message ||
-      statusMessage ||
-      "Failed to delete classroom.";
+      error?.data?.message || statusMessage || "Failed to delete classroom.";
     deleteState.value = { status: "error", message: msg };
     pageMessage.value = { type: "error", text: msg };
   }
@@ -163,10 +174,10 @@ async function handleDeleteConfirm(classroom: Classroom) {
 
 async function getData(): Promise<Classroom[]> {
   try {
-    return await $fetch<Classroom[]>('/api/classrooms')
+    return await $fetch<Classroom[]>("/api/classrooms");
   } catch (error) {
-    console.error('Failed to fetch classrooms:', error)
-    return []
+    console.error("Failed to fetch classrooms:", error);
+    return [];
   }
 }
 
@@ -179,8 +190,11 @@ function openCreateModal() {
 }
 
 function handleClassroomCreated(classroom: any) {
-  console.log('Classroom created:', classroom);
-  // data.value = await getData();
+  pageMessage.value = {
+    type: "success",
+    text: `Classroom "${classroom.name}" created successfully.`,
+  };
+  refreshClassrooms();
 }
 
 onMounted(async () => {
