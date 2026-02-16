@@ -14,7 +14,8 @@
                         id="firstName"
                         v-model="form.firstName"
                         class="col-span-3"
-                        placeholder="Enter first name"
+                        readonly
+                        aria-readonly="true"
                     />
                 </div>
                 <div class="grid grid-cols-4 items-center gap-4">
@@ -23,7 +24,8 @@
                         id="lastName"
                         v-model="form.lastName"
                         class="col-span-3"
-                        placeholder="Enter last name"
+                        readonly
+                        aria-readonly="true"
                     />
                 </div>
             </div>
@@ -117,7 +119,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useSupabaseClient } from '#imports'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -131,7 +132,7 @@ import {
 } from '@/components/ui/dialog'
 
 const router = useRouter()
-const supabase = useSupabaseClient()
+const { fetchCustomUser } = useSupabaseAuth()
 
 const form = ref({
     firstName: '',
@@ -145,11 +146,6 @@ const showConfirmDialog = ref(false)
 const showSuccessDialog = ref(false)
 
 const onSave = () => {
-    if (!form.value.firstName || !form.value.lastName) {
-        alert('Please fill in all required fields.')
-        return
-    }
-
     // Check if user is trying to change password
     if (form.value.newPassword || form.value.confirmPassword) {
         if (!form.value.currentPassword) {
@@ -234,8 +230,31 @@ const closeSuccessDialog = async () => {
 }
 
 onMounted(() => {
-    // TODO: Load current user data from API
-    form.value.firstName = 'John'
-    form.value.lastName = 'Doe'
+    loadCurrentUserName()
 })
+
+const loadCurrentUserName = async () => {
+    try {
+        const profile = await fetchCustomUser()
+        if (!profile) return
+
+        const first = (profile.first_name ?? '').trim()
+        const last = (profile.last_name ?? '').trim()
+
+        if (first || last) {
+            form.value.firstName = first
+            form.value.lastName = last
+            return
+        }
+
+        const fallbackName = (profile.name ?? '').trim()
+        if (!fallbackName) return
+
+        const parts = fallbackName.split(/\s+/).filter(Boolean)
+        form.value.firstName = parts[0] ?? ''
+        form.value.lastName = parts.slice(1).join(' ')
+    } catch (error) {
+        console.error('Failed to load current user profile for settings:', error)
+    }
+}
 </script>
