@@ -144,14 +144,14 @@
         </h2>
 
         <p class="text-gray-600">
-          Your account was created successfully. Please log in.
+          Your account was created successfully. Please continue
         </p>
 
         <button
           @click="goToLogin"
           class="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700"
         >
-          Go to Login
+          Continue
         </button>
       </div>
     </div>
