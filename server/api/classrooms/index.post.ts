@@ -85,9 +85,6 @@ export default defineEventHandler(async (event) => {
   const inviteCode = randomBytes(4).toString('hex').toUpperCase()
 
   // ── Insert classroom ──────────────────────────────────────────────
-  // Only columns that exist in the classrooms table:
-  //   id, name, code, instructor_id, school, section, start_date, end_date, status, created_at
-  // "term" and "invite_code" do NOT exist in the schema.
   const { data: classroom, error: insertError } = await client
     .from('classrooms')
     .insert({
@@ -99,8 +96,9 @@ export default defineEventHandler(async (event) => {
       status: 'active',
       instructor_id: userId,
       school: userProfile.school || '',
+      invitation_code: inviteCode,
     })
-    .select('id, name, code, section, start_date, end_date, status, school')
+    .select('id, name, code, section, start_date, end_date, status, school, invitation_code')
     .single()
 
   if (insertError || !classroom) {
@@ -120,6 +118,6 @@ export default defineEventHandler(async (event) => {
     status: classroom.status,
     school: classroom.school,
     term: term?.trim() || '',
-    inviteCode,
+    inviteCode: classroom.invitation_code,
   }
 })

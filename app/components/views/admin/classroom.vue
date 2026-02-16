@@ -38,6 +38,10 @@
           >
             {{ classroom.status }}
           </span>
+          <div class="font-semibold mt-2">Invitation Code</div>
+          <div class="font-mono font-bold tracking-widest">
+            {{ classroom.invitationCode || 'N/A' }}
+          </div>
         </div>
       </div>
     </div>
@@ -91,9 +95,16 @@ import AdminEditStudentDialog from "@/components/AdminEditStudentDialog/AdminEdi
 const route = useRoute();
 const classroomId = Number(route.params.classroomId);
 
-const classroom: Classroom | undefined = classrooms.find(
-  c => c.id === classroomId
-);
+const classroom = ref<Classroom | undefined>(undefined);
+
+async function fetchClassroom() {
+  try {
+    const allClassrooms = await $fetch<Classroom[]>('/api/classrooms');
+    classroom.value = allClassrooms.find(c => c.id === classroomId);
+  } catch {
+    classroom.value = classrooms.find(c => c.id === classroomId);
+  }
+}
 
 /* ===== STUDENTS ===== */
 const studentData = ref<Student[]>([]);
@@ -145,6 +156,7 @@ const saveStudentEdits = async (updated: Student) => {
 };
 
 onMounted(async () => {
+  await fetchClassroom();
   studentData.value = await getStudents();
   caseData.value = await getCases();
 });
