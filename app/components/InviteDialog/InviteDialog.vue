@@ -350,7 +350,7 @@ async function sendInvite() {
               class="wrap-break-word"
             >
               <span class="font-mono">{{ r.email }}</span>
-              <span v-if="r.ok">SENT</span>
+              <span v-if="r.ok"> SENT</span>
               <span v-else> FAILED({{ r.error }})</span>
             </li>
           </ul>
