@@ -1,13 +1,12 @@
 <template>
   <div class="flex flex-col w-full">
-    
     <div class="flex justify-center gap-4">
       <TotalCount
         :count="data.length"
         label="Total Classrooms"
         icon="simple-icons:googleclassroom"
       />
-      
+
       <Button
         variant="outline"
         class="h-28 w-48 flex flex-col items-center justify-center gap-2 p-4"
@@ -24,9 +23,11 @@
     <div v-if="pageMessage" class="w-full py-2">
       <div
         class="rounded-md border px-4 py-3 text-sm"
-        :class="pageMessage.type === 'success'
-          ? 'border-green-200 bg-green-50 text-green-800'
-          : 'border-red-200 bg-red-50 text-red-700'"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
       >
         {{ pageMessage.text }}
       </div>
@@ -40,8 +41,11 @@
       />
     </div>
 
-    <CreateClassroomModal 
-      v-model:open="isCreateModalOpen" 
+    <CreateClassroomModal
+      v-model:open="isCreateModalOpen"
+      user-role="INSTRUCTOR"
+      :current-instructor-id="currentUser.id"
+      :current-instructor-name="currentUser.name"
       @created="handleClassroomCreated"
       @cancel="handleCancel"
     />
@@ -64,18 +68,27 @@
 
 <script setup lang="ts">
 import { getColumns } from "../../ClassroomDatatable/columns";
-import type { Classroom } from '../../ClassroomDatatable/columns'
-import { onMounted, ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import DataTable from '../../ClassroomDatatable/data-table.vue'
-import TotalCount from '../../ui/TotalCount.vue'
-import { Button } from '../../ui/button'
-import { Icon } from '#components'
-import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModal.vue'
-import EditClassroomModal from '../../EditClassroomModal/EditClassroomModal.vue'
-import DeleteClassroomModal from '../../DeleteClassroomModal/DeleteClassroomModal.vue'
+import type { Classroom } from "../../ClassroomDatatable/columns";
+import { onMounted, ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import DataTable from "../../ClassroomDatatable/data-table.vue";
+import TotalCount from "../../ui/TotalCount.vue";
+import { Button } from "../../ui/button";
+import { Icon } from "#components";
+import CreateClassroomModal from "../../CreateClassroomModal/CreateClassroomModal.vue";
+import EditClassroomModal from "../../EditClassroomModal/EditClassroomModal.vue";
+import DeleteClassroomModal from "../../DeleteClassroomModal/DeleteClassroomModal.vue";
+import useSupabaseAuth from "~/composables/useSupabaseAuth";
+
+type DeleteState =
+  | { status: "idle"; message?: string }
+  | { status: "loading"; message?: string }
+  | { status: "success"; message: string }
+  | { status: "error"; message: string };
 
 const router = useRouter();
+const { fetchCustomUser } = useSupabaseAuth();
+
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
 const isEditModalOpen = ref(false);
@@ -83,14 +96,11 @@ const isDeleteModalOpen = ref(false);
 const selectedClassroom = ref<Classroom | null>(null);
 const classroomToDelete = ref<Classroom | null>(null);
 
-const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
-
-const deleteState = ref<
-  | { status: "idle"; message?: string }
-  | { status: "loading"; message?: string }
-  | { status: "success"; message: string }
-  | { status: "error"; message: string }
->({ status: "idle" });
+const currentUser = ref<{ id: string; name: string }>({ id: "", name: "" });
+const pageMessage = ref<{ type: "success" | "error"; text: string } | null>(
+  null,
+);
+const deleteState = ref<DeleteState>({ status: "idle" });
 
 const visibleColumns = computed(() => {
   const columnsToShow = [
@@ -106,18 +116,33 @@ const visibleColumns = computed(() => {
   return getColumns("instructor", {
     onEdit: handleEditClassroom,
     onDelete: handleDeleteClick,
-  }).filter(column => {
-    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
+  }).filter((column) => {
+    const key =
+      "id" in column
+        ? column.id
+        : "accessorKey" in column
+          ? column.accessorKey
+          : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
 });
 
 async function getData(): Promise<Classroom[]> {
   try {
-    return await $fetch<Classroom[]>('/api/classrooms')
+    return await $fetch<Classroom[]>("/api/classrooms");
   } catch (error) {
-    console.error('Failed to fetch classrooms:', error)
-    return []
+    console.error("Failed to fetch classrooms:", error);
+    return [];
+  }
+}
+
+async function fetchCurrentUser() {
+  const profile = await fetchCustomUser();
+  if (profile) {
+    currentUser.value = {
+      id: profile.id ?? "",
+      name: profile.name ?? "",
+    };
   }
 }
 
@@ -131,10 +156,12 @@ function handleEditClassroom(classroom: Classroom) {
   isEditModalOpen.value = true;
 }
 
-function handleClassroomCreated(response: { id: number; inviteCode: string; [key: string]: any }) {
+function handleClassroomCreated(response: {
+  id: number;
+  inviteCode: string;
+  [key: string]: any;
+}) {
   isCreateModalOpen.value = false;
-
-  // Navigate to the new Classroom Overview and show invite code via query param
   router.push({
     path: `/instructor/classrooms/${response.id}`,
     query: { inviteCode: response.inviteCode },
@@ -142,7 +169,6 @@ function handleClassroomCreated(response: { id: number; inviteCode: string; [key
 }
 
 function handleCancel() {
-  // On cancel: stay on the current classrooms page (no submission)
   isCreateModalOpen.value = false;
 }
 
@@ -165,8 +191,14 @@ async function handleDeleteConfirm(classroom: Classroom) {
       method: "DELETE" as any,
     });
 
-    deleteState.value = { status: "success", message: "Classroom deleted successfully." };
-    pageMessage.value = { type: "success", text: `Classroom "${classroom.name}" has been deleted.` };
+    deleteState.value = {
+      status: "success",
+      message: "Classroom deleted successfully.",
+    };
+    pageMessage.value = {
+      type: "success",
+      text: `Classroom "${classroom.name}" has been deleted.`,
+    };
 
     data.value = await getData();
     isDeleteModalOpen.value = false;
@@ -185,13 +217,14 @@ function handleClassroomUpdated(updatedClassroom: Classroom) {
   data.value = data.value.map((classroom) =>
     String(classroom.id) === String(updatedClassroom.id)
       ? { ...classroom, ...updatedClassroom }
-      : classroom
+      : classroom,
   );
   selectedClassroom.value = updatedClassroom;
   isEditModalOpen.value = false;
 }
 
 onMounted(async () => {
+  await fetchCurrentUser();
   data.value = await getData();
 });
 </script>
