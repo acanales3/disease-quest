@@ -53,17 +53,6 @@
           {{ isLoading ? "Logging in..." : "Login" }}
         </button>
       </form>
-
-      <!-- Test Accounts Info (REMOVE IN PRODUCTION) -->
-      <div class="mt-6 p-4 bg-white/20 rounded-md text-white text-sm">
-        <p class="font-semibold mb-2">Test Accounts:</p>
-        <ul class="space-y-1 text-xs">
-          <li>Admin: fakeadmin@gmail.com</li>
-          <li>Instructor: fakeinstructor@gmail.com</li>
-          <li>Student: fakestudent@gmail.com</li>
-          <li>Password: Newpass1!</li>
-        </ul>
-      </div>
     </div>
   </div>
 </template>
