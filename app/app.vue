@@ -1,5 +1,11 @@
+<script setup lang="ts">
+import { TooltipProvider } from '@/components/ui/tooltip';
+</script>
+
 <template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <TooltipProvider>
+    <NuxtLayout>
+     <NuxtPage />
+    </NuxtLayout>
+  </TooltipProvider>
 </template>

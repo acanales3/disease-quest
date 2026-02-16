@@ -2,13 +2,18 @@ import type { ColumnDef } from "@tanstack/vue-table";
 import { h } from "vue";
 import DropdownAction from "@/components/InstructorDatatable/data-table-dropdown.vue";
 import { ArrowUpDown } from "lucide-vue-next";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip"
 
 export interface Instructor {
   id: string;
   name: string;
   email: string;
   school: string;
-  classroom: number;
+  classrooms: { id: number; name: string }[];
   status: "active" | "deactivated";
 }
 
@@ -71,15 +76,61 @@ export function getColumns(
     },
   },
   {
-    accessorKey: "classroom",
+    accessorKey: "classrooms",
     header: () =>
       h("div", { class: "text-center font-normal text-black" }, "Classroom"),
     cell: ({ row }) => {
-      const room = row.getValue("classroom") as number;
+      const classrooms = row.getValue("classrooms") as {
+        id: number;
+        name: string;
+      }[];
+
+      if (!classrooms || classrooms.length === 0) {
+        return h("div", { class: "text-center text-gray-600" }, "-");
+      }
+
+      const first = classrooms[0].name;
+      const truncated = first.length > 10 || classrooms.length > 1 ? first.slice(0, 10) + '...' : first;
+      const needsTooltip = classrooms.length > 1 || first.length > 10;
+
+    
+
       return h(
-        "div",
-        { class: "text-center font-normal text-gray-600" },
-        room != null ? String(room) : '-'
+        Tooltip,
+        {},
+        {
+          default: () => [
+            h(
+              TooltipTrigger,
+              { asChild: true },
+              {
+                default: () => 
+                  h(
+                    "div",
+                    {
+                      class: "text-center cursor-pointer text-gray-600 hover:text-gray-900 transition",
+                    },
+                    truncated
+                  ),
+              }
+            ),
+
+            h(
+              TooltipContent,
+              { side: "bottom", class: "bg-white shadow-md w-56" },
+              {
+                default: () => 
+                  classrooms.map((c) => 
+                    h(
+                      "div",
+                      { key: c.id, class: "py-1 text-sm text-gray-600" },
+                      c.name
+                    )
+                  ),
+              }
+            ),
+          ],
+        }
       );
     },
   },
