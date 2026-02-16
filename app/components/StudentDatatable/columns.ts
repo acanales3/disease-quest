@@ -16,6 +16,7 @@ export interface Student {
   school: string;
   msyear: number;
   classroom: number;
+  classrooms?: number[];
   status: "registered" | "unregistered";
   // action column still needed
 }

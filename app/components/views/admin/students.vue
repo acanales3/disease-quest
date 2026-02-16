@@ -34,6 +34,7 @@
       :student="studentToDelete"
       :mode="deleteMode"
       :state="deleteState"
+      :available-classrooms="classrooms"
       @confirm="handleDeleteConfirm"
       @reset="resetDeleteState"
     />
@@ -115,34 +116,43 @@ async function refreshStudents() {
   classrooms.value = result.classrooms;
 }
 
-async function handleDeleteConfirm(s: Student) {
+async function handleDeleteConfirm(s: Student, selectedClassroomIds?: number[]) {
   deleteState.value = { status: "loading" };
   pageMessage.value = null;
 
   try {
-    // Real DB key is UUID (students.user_id). Numeric id is only for datatable display.
     if (!s.userId) {
       throw createError({
         statusCode: 400,
         statusMessage: "Delete failed: missing student UUID (userId).",
       });
     }
-    if (deleteMode.value === "unenroll" && (!s.classroom || Number(s.classroom) <= 0)) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "Student is not currently assigned to a classroom.",
-      });
+    if (deleteMode.value === "unenroll") {
+      if (!selectedClassroomIds || selectedClassroomIds.length === 0) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: "No classrooms selected for removal.",
+        });
+      }
     }
 
     await $fetch(`/api/students/${s.userId}`, {
       method: "DELETE" as any,
-      query: deleteMode.value === "unenroll" ? { classroomId: s.classroom } : undefined,
+      query: deleteMode.value === "unenroll"
+        ? { classroomIds: selectedClassroomIds!.join(",") }
+        : undefined,
     });
 
-    const successMessage =
-      deleteMode.value === "unenroll"
-        ? "Student removed from classroom successfully."
-        : "Student deleted successfully.";
+    let successMessage: string;
+    if (deleteMode.value === "unenroll") {
+      const classroomNames = selectedClassroomIds!
+        .map((id) => classrooms.value.find((c) => c.id === id)?.name)
+        .filter(Boolean);
+      const nameList = classroomNames.length > 0 ? classroomNames.join(", ") : `${selectedClassroomIds!.length} classroom(s)`;
+      successMessage = `${s.name} has been removed from: ${nameList}.`;
+    } else {
+      successMessage = "Student deleted successfully.";
+    }
     deleteState.value = { status: "success", message: successMessage };
     pageMessage.value = { type: "success", text: successMessage };
 
@@ -157,7 +167,6 @@ async function handleDeleteConfirm(s: Student) {
       typeof statusMessage === "string" && statusMessage.includes("Page not found")
 
     if (isMissingEndpoint) {
-      // Backend not integrated yet so need to simulate so UI can still be tested.
       const msg =
         deleteMode.value === "unenroll"
           ? "Remove-from-classroom API not available yet (simulated for UI testing)."

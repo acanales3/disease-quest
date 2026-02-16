@@ -49,7 +49,7 @@ function handleDelete() {
       >
         Edit
       </DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin' || props.role === 'student'">
         View Analytics
       </DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
