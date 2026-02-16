@@ -40,6 +40,12 @@
       @created="handleClassroomCreated"
     />
 
+    <EditClassroomModal
+      v-model:open="isEditModalOpen"
+      :classroom="selectedClassroom"
+      @updated="handleClassroomUpdated"
+    />
+
     <DeleteClassroomModal
       v-model:open="isDeleteModalOpen"
       :classroom="classroomToDelete"
@@ -60,10 +66,13 @@ import TotalCount from '../../ui/TotalCount.vue'
 import { Button } from '../../ui/button'
 import { Icon } from '#components'
 import CreateClassroomModal from '../../CreateClassroomModal/CreateClassroomModal.vue'
+import EditClassroomModal from '../../EditClassroomModal/EditClassroomModal.vue'
 import DeleteClassroomModal from '../../DeleteClassroomModal/DeleteClassroomModal.vue'
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
+const isEditModalOpen = ref(false);
+const selectedClassroom = ref<Classroom | null>(null);
 const isDeleteModalOpen = ref(false);
 const classroomToDelete = ref<Classroom | null>(null);
 
@@ -78,9 +87,25 @@ const deleteState = ref<
 
 const visibleColumns = computed(() => {
   return getColumns('admin', {
-    onDelete: handleDeleteClick,
+    onEdit: handleEditClassroom,
   });
 });
+
+function handleEditClassroom(classroom: Classroom) {
+  selectedClassroom.value = classroom;
+  isEditModalOpen.value = true;
+}
+
+function handleClassroomUpdated(updatedClassroom: Classroom) {
+  data.value = data.value.map((classroom) =>
+    String(classroom.id) === String(updatedClassroom.id)
+      ? { ...classroom, ...updatedClassroom }
+      : classroom
+  );
+  selectedClassroom.value = null;
+  isEditModalOpen.value = false;
+  pageMessage.value = { type: "success", text: `Classroom "${updatedClassroom.name}" has been updated.` };
+}
 
 function resetDeleteState() {
   deleteState.value = { status: "idle" };
