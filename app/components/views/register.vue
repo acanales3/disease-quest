@@ -1,7 +1,13 @@
 <template>
   <div
-    class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[rgb(175,103,240)] to-white py-8"
+    class="relative min-h-screen flex flex-col items-center justify-start pt-16 bg-gradient-to-b from-[rgb(175,103,240)] to-white py-8"
   >
+    <!-- BACK BUTTON -->
+    <div class="absolute top-10 left-10 flex justify-start">
+      <BackwardButton route="/"/>
+    </div>
+
+    <!-- Header -->
     <div class="flex items-center space-x-3 mb-8">
       <div class="p-4 bg-white rounded-full shadow-lg">
         <Icon name="healthicons:autoimmune-disease-outline" class="text-6xl" />
@@ -11,106 +17,85 @@
       </h1>
     </div>
 
+    <!-- Form -->
     <div class="w-full max-w-md">
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- First Name -->
         <div>
-          <label for="firstName" class="block text-sm font-medium text-white"
-            >First Name</label
-          >
+          <label class="block text-sm font-medium text-white">First Name</label>
           <input
             v-model="formData.firstName"
             type="text"
-            id="firstName"
-            name="firstName"
             required
             placeholder="John"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full"
           />
         </div>
 
         <!-- Last Name -->
         <div>
-          <label for="lastName" class="block text-sm font-medium text-white"
-            >Last Name</label
-          >
+          <label class="block text-sm font-medium text-white">Last Name</label>
           <input
             v-model="formData.lastName"
             type="text"
-            id="lastName"
-            name="lastName"
             required
             placeholder="Doe"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full"
           />
         </div>
 
         <!-- Email -->
         <div>
-          <label for="email" class="block text-sm font-medium text-white"
-            >Email</label
-          >
+          <label class="block text-sm font-medium text-white">Email</label>
           <input
             v-model="formData.email"
             type="email"
-            id="email"
-            name="email"
             required
             placeholder="john.doe@university.edu"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full"
           />
         </div>
 
-        <!-- School/Institution -->
+        <!-- School -->
         <div>
-          <label for="school" class="block text-sm font-medium text-white"
-            >School/Institution</label
-          >
+          <label class="block text-sm font-medium text-white">
+            School/Institution
+          </label>
           <input
             v-model="formData.school"
             type="text"
-            id="school"
-            name="school"
             required
             placeholder="Texas Christian University"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full"
           />
         </div>
 
         <!-- Password -->
         <div>
-          <label for="password" class="block text-sm font-medium text-white"
-            >Password</label
-          >
+          <label class="block text-sm font-medium text-white">Password</label>
           <input
             v-model="formData.password"
             type="password"
-            id="password"
-            name="password"
+            minlength="8"
             required
             placeholder="••••••••"
-            minlength="8"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full"
           />
           <p class="text-xs text-white mt-1">Minimum 8 characters</p>
         </div>
 
         <!-- Confirm Password -->
         <div>
-          <label
-            for="confirmPassword"
-            class="block text-sm font-medium text-white"
-            >Confirm Password</label
-          >
+          <label class="block text-sm font-medium text-white">
+            Confirm Password
+          </label>
           <input
             v-model="formData.confirmPassword"
             type="password"
-            id="confirmPassword"
-            name="confirmPassword"
+            minlength="8"
             required
             placeholder="••••••••"
-            minlength="8"
-            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full focus:ring-purple-500 focus:border-purple-500 placeholder:text-gray-400"
+            class="mt-1 p-2 bg-white border border-gray-300 rounded-md w-full"
           />
         </div>
 
@@ -126,24 +111,49 @@
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="w-full bg-purple-600 text-white p-2 rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full bg-purple-600 text-white p-2 rounded-md hover:bg-purple-700 transition disabled:opacity-50"
         >
           {{ isSubmitting ? "Creating Account..." : "Create Account" }}
         </button>
 
         <!-- Login Link -->
         <div class="text-center mt-4">
-          <p class="text-white text-sm">
+          <p class="text-gray-800 text-sm">
             Already have an account?
             <NuxtLink
               to="/login"
-              class="font-medium underline hover:text-purple-200"
+              class="font-medium underline text-purple-700 hover:text-purple-900"
             >
               Login here
             </NuxtLink>
           </p>
         </div>
       </form>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div
+      v-if="showSuccessModal"
+      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+    >
+      <div
+        class="bg-white p-6 rounded-xl shadow-xl max-w-sm text-center space-y-4"
+      >
+        <h2 class="text-xl font-bold text-green-600">
+          Registration Successful!
+        </h2>
+
+        <p class="text-gray-600">
+          Your account was created successfully. Please log in.
+        </p>
+
+        <button
+          @click="goToLogin"
+          class="w-full bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700"
+        >
+          Go to Login
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -152,6 +162,7 @@
 import { ref, reactive } from "vue";
 import { useSupabaseClient } from "#imports";
 import { useRouter } from "vue-router";
+import BackwardButton from "~/components/BackwardButton/BackwardButton.vue";
 
 const supabase = useSupabaseClient();
 const router = useRouter();
@@ -167,15 +178,20 @@ const formData = reactive({
 
 const errorMessage = ref("");
 const isSubmitting = ref(false);
+const showSuccessModal = ref(false);
+
+const goToLogin = () => {
+  router.push("/login");
+};
 
 const handleSubmit = async () => {
   errorMessage.value = "";
 
-  // Validate passwords
   if (formData.password !== formData.confirmPassword) {
     errorMessage.value = "Passwords do not match";
     return;
   }
+
   if (formData.password.length < 8) {
     errorMessage.value = "Password must be at least 8 characters long";
     return;
@@ -184,7 +200,6 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
 
   try {
-    // Supabase sign up with metadata
     const { error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -199,11 +214,7 @@ const handleSubmit = async () => {
 
     if (error) throw error;
 
-    alert(
-      "Registration successful! Please check your email to verify your account.",
-    );
-
-    router.push("/login");
+    showSuccessModal.value = true;
   } catch (err: any) {
     console.error(err);
     errorMessage.value =
@@ -215,5 +226,5 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-/* Optional additional styles */
+/* optional */
 </style>
