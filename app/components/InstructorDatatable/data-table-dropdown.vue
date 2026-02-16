@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import type { Instructor } from "./columns";
+import type { Instructor } from "@/components/InstructorDatatable/columns";
 import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
 
 interface Props {
@@ -26,7 +26,7 @@ function onEdit() {
     name: props.instructor.name,
     email: props.instructor.email,
     school: props.instructor.school,
-    classroom: props.instructor.classroom,
+    classrooms: props.instructor.classrooms,
     status: props.instructor.status as "active" | "deactivated",
   });
 }
