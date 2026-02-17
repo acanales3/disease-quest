@@ -13,6 +13,7 @@ export interface Classroom {
   startDate: string;
   endDate: string;
   status: "active" | "inactive";
+  invitationCode?: string | null;
 }
 
 export interface ColumnOptions {
@@ -151,8 +152,8 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
   },
   ];
 
-  // Only include actions column for admin and instructor roles
-  if (role === 'admin' || role === 'instructor') {
+  // Include actions column for admin, instructor, and student roles
+  if (role === 'admin' || role === 'instructor' || role === 'student') {
     columns.push({
       id: "actions",
       enableHiding: false,

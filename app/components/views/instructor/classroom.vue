@@ -47,6 +47,10 @@
           >
             {{ classroom.status }}
           </span>
+          <div class="font-semibold mt-2">Invitation Code</div>
+          <div class="font-mono font-bold tracking-widest">
+            {{ classroom.invitationCode || 'N/A' }}
+          </div>
         </div>
       </div>
     </div>

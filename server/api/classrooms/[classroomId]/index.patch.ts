@@ -187,6 +187,7 @@ export default defineEventHandler(async (event) => {
         startDate: c.start_date,
         endDate: c.end_date,
         status: c.status,
+        invitationCode: c.invitation_code,
     })
 
     // Update classroom
