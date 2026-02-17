@@ -14,18 +14,16 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // 1 Find invitation by id (the token in the URL is the invitation's id)
   const { data: invite, error } = await supabase
     .from("invitations")
     .select("*")
-    .eq("id", token) // ← was .eq("token", token)
+    .eq("id", token)
     .single();
 
   if (error || !invite) {
     return Response.redirect(`${REGISTER_URL}?invite=invalid`, 302);
   }
 
-  // 2 Check expiration
   const expiresAt = new Date(
     invite.expires_at.endsWith("Z")
       ? invite.expires_at
@@ -39,23 +37,20 @@ Deno.serve(async (req) => {
     return Response.redirect(`${REGISTER_URL}?invite=expired`, 302);
   }
 
-  // 3 Check if already accepted
   if (invite.accepted_at || invite.status === "accepted") {
     return Response.redirect(`${REGISTER_URL}?invite=already`, 302);
   }
 
-  // 4 Mark accepted — update both accepted_at and status to satisfy your CHECK constraint
   await supabase
     .from("invitations")
     .update({
       accepted_at: new Date().toISOString(),
-      status: "accepted", // ← was missing, your CHECK constraint requires this value
+      status: "accepted",
     })
     .eq("id", invite.id);
 
-  // 5 Redirect to your Nuxt register page
   return Response.redirect(
     `${REGISTER_URL}?invite=accepted&email=${encodeURIComponent(invite.email)}`,
     302,
   );
-};);
+});
