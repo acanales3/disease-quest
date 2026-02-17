@@ -160,6 +160,7 @@ export type Database = {
           end_date: string | null
           id: number
           instructor_id: string
+          invitation_code: string | null
           name: string
           school: string | null
           section: string | null
@@ -172,6 +173,7 @@ export type Database = {
           end_date?: string | null
           id?: never
           instructor_id: string
+          invitation_code?: string | null
           name: string
           school?: string | null
           section?: string | null
@@ -184,6 +186,7 @@ export type Database = {
           end_date?: string | null
           id?: never
           instructor_id?: string
+          invitation_code?: string | null
           name?: string
           school?: string | null
           section?: string | null

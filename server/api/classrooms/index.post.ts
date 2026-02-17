@@ -122,9 +122,10 @@ export default defineEventHandler(async (event) => {
       status: "active" as const,
       instructor_id: resolvedInstructorId,
       school: (userProfile.school as string) || "",
+      invitation_code: inviteCode,
     })
-    .select("id, name, code, section, start_date, end_date, status, school")
-    .single();
+    .select("id, name, code, section, start_date, end_date, status, school, invitation_code")
+    .single()
 
   if (insertError || !classroom) {
     throw createError({
@@ -143,7 +144,7 @@ export default defineEventHandler(async (event) => {
     status: classroom.status,
     school: classroom.school,
     term: term?.trim() || "",
-    inviteCode,
+    inviteCode: classroom.invitation_code,
     instructorId: resolvedInstructorId,
   };
 });

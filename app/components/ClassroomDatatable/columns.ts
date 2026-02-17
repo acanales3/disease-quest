@@ -13,6 +13,7 @@ export interface Classroom {
   startDate: string;
   endDate: string;
   status: "active" | "inactive";
+  invitationCode?: string | null;
 }
 
 export interface ColumnOptions {
