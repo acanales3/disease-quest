@@ -28,7 +28,9 @@ const data = ref<Student[]>([]);
 const classrooms = ref<Classroom[]>([]); // Add classrooms ref
 
 const visibleColumns = computed(() => {
-  return getColumns('instructor');
+  return getColumns('instructor', {
+    classrooms: classrooms.value
+  });
 });
 
 async function getData(): Promise<{ students: Student[], classrooms: Classroom[] }> {
