@@ -43,6 +43,7 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
 import type { LeaderboardEntry } from "~/assets/interface/Leaderboard";
 import { onMounted, ref, computed } from "vue";
@@ -57,45 +58,33 @@ const data = ref<LeaderboardEntry[]>([]);
 const top3 = ref<LeaderboardEntry[]>([]);
 
 const classrooms = ref([
-  { id: 1, name: "Classroom 1" },
-  { id: 2, name: "Classroom 2" },
-  { id: 3, name: "Classroom 3" },
+  { id: -1, name: "All Classrooms" },
+  { id: 1, name: "Classroom A" }, // Updated mock classrooms to match mock data
+  { id: 2, name: "Classroom B" },
 ]);
 
 const columns = computed(() => baseColumns);
 
-function getPositions(entries: LeaderboardEntry[]): LeaderboardEntry[] {
-  const sorted = [...entries].sort((a, b) => b.score - a.score);
-  let rank = 1;
-  let previousScore = sorted[0]?.score ?? 0;
-
-  return sorted.map((entry, index) => {
-    if (index === 0) {
-      entry.position = rank;
-    } else {
-      if (entry.score === previousScore) {
-        entry.position = rank;
-      } else {
-        rank = index + 1;
-        entry.position = rank;
-        previousScore = entry.score;
-      }
+function handleClassroomSelected(cl: any) { // Type check loose for mock
+    // In real implementation this would filter by ID or fetch from API
+    // For now with mock data, we filter by classroomName
+    if (!cl) return;
+    
+    let filtered = allData.value;
+    if (cl.id !== -1) {
+        filtered = allData.value.filter(
+            (entry) => entry.classroomName === cl.name
+        );
     }
-    return entry;
-  });
-}
-
-function handleClassroomSelected(classroomId: number) {
-  const filtered = allData.value.filter(
-    (entry) => entry.classroomId === classroomId
-  );
-  const positions = getPositions(filtered);
-  data.value = positions;
-  top3.value = positions.slice(0, 3);
+    
+     // Sort by rank
+    const sorted = [...filtered].sort((a, b) => a.rank - b.rank);
+    data.value = sorted;
+    top3.value = sorted.slice(0, 3);
 }
 
 function displayName(entry?: LeaderboardEntry) {
-  return entry?.studentName ?? entry?.nickname ?? "-";
+  return entry?.nickname ?? "-";
 }
 
 async function getData(): Promise<LeaderboardEntry[]> {
@@ -104,9 +93,8 @@ async function getData(): Promise<LeaderboardEntry[]> {
 
 onMounted(async () => {
   allData.value = await getData();
-  const firstClassroom = classrooms.value[0];
-  if (firstClassroom) {
-    handleClassroomSelected(firstClassroom.id);
-  }
+  // Simplified init for mock data
+  handleClassroomSelected(classrooms.value[0]); // Select "All Classrooms" by default
 });
 </script>
+
