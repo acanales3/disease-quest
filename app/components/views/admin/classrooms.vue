@@ -92,6 +92,7 @@ const deleteState = ref<DeleteState>({ status: "idle" });
 const visibleColumns = computed(() => {
   return getColumns("admin", {
     onEdit: handleEditClassroom,
+    onDelete: handleDeleteClick,
   });
 });
 
