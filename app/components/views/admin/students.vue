@@ -76,6 +76,7 @@ const visibleColumns = computed(() => {
   return getColumns('admin', {
     onDelete: handleDeleteClick,
     onRemoveFromClassroom: handleRemoveFromClassroomClick,
+    classrooms: classrooms.value,
   });
 });
 
