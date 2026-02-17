@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     // Find classroom
     const { data: classroom, error: classroomError } = await supabase
         .from("classrooms")
-        .select("id, name, status, invitation_code")
+        .select("id, name, status")
         .eq("invitation_code", body.inviteCode)
         .single()
     
