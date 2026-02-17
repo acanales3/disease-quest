@@ -26,10 +26,15 @@ Deno.serve(async (req) => {
   }
 
   // 2 Check expiration
-  if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+  const expiresAt = new Date(
+    invite.expires_at.endsWith("Z")
+      ? invite.expires_at
+      : invite.expires_at + "Z",
+  );
+  if (expiresAt < new Date()) {
     await supabase
       .from("invitations")
-      .update({ status: "expired" }) // ← keep status in sync with your CHECK constraint
+      .update({ status: "expired" })
       .eq("id", invite.id);
     return Response.redirect(`${REGISTER_URL}?invite=expired`, 302);
   }
@@ -53,4 +58,4 @@ Deno.serve(async (req) => {
     `${REGISTER_URL}?invite=accepted&email=${encodeURIComponent(invite.email)}`,
     302,
   );
-});
+};);
