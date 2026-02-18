@@ -65,36 +65,28 @@ const classrooms = ref([
 
 const columns = computed(() => baseColumns);
 
-function handleClassroomSelected(cl: any) { // Type check loose for mock
-    // In real implementation this would filter by ID or fetch from API
-    // For now with mock data, we filter by classroomName
+async function getData(classroomId?: number): Promise<LeaderboardEntry[]> {
+    const query = classroomId && classroomId !== -1 ? { classroomId } : {};
+    return await $fetch<LeaderboardEntry[]>('/api/leaderboards', { query });
+}
+
+async function handleClassroomSelected(cl: any) { 
     if (!cl) return;
     
-    let filtered = allData.value;
-    if (cl.id !== -1) {
-        filtered = allData.value.filter(
-            (entry) => entry.classroomName === cl.name
-        );
-    }
-    
-     // Sort by rank
-    const sorted = [...filtered].sort((a, b) => a.rank - b.rank);
-    data.value = sorted;
-    top3.value = sorted.slice(0, 3);
+    data.value = await getData(cl.id);
+    top3.value = data.value.slice(0, 3);
+    allData.value = data.value; // allData now represents the *currently fetched* data
 }
 
 function displayName(entry?: LeaderboardEntry) {
   return entry?.nickname ?? "-";
 }
 
-async function getData(): Promise<LeaderboardEntry[]> {
-  return leaderboard;
-}
-
 onMounted(async () => {
-  allData.value = await getData();
-  // Simplified init for mock data
-  handleClassroomSelected(classrooms.value[0]); // Select "All Classrooms" by default
+    // Initial fetch for all allowed classrooms (default)
+    data.value = await getData();
+    top3.value = data.value.slice(0, 3);
+    allData.value = data.value;
 });
-</script>
 
+</script>

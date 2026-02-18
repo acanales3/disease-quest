@@ -64,32 +64,26 @@ const classrooms = ref([
 
 const columns = computed(() => adminColumns);
 
-function handleClassroomSelected(cl: any) {
+async function getData(classroomId?: number): Promise<LeaderboardEntry[]> {
+    const query = classroomId && classroomId !== -1 ? { classroomId } : {};
+    return await $fetch<LeaderboardEntry[]>('/api/leaderboards', { query });
+}
+
+async function handleClassroomSelected(cl: any) {
     if (!cl) return;
     
-    let filtered = allData.value;
-    if (cl.id !== -1) {
-        filtered = allData.value.filter(
-            (entry) => entry.classroomName === cl.name
-        );
-    }
-
-     // Sort by rank
-    const sorted = [...filtered].sort((a, b) => a.rank - b.rank);
-    data.value = sorted;
-    top3.value = sorted.slice(0, 3);
+    data.value = await getData(cl.id);
+    top3.value = data.value.slice(0, 3);
+    allData.value = data.value;
 }
 
 function displayName(entry?: LeaderboardEntry) {
   return entry?.studentName ?? entry?.nickname ?? "-";
 }
 
-async function getData(): Promise<LeaderboardEntry[]> {
-  return leaderboard;
-}
-
 onMounted(async () => {
-  allData.value = await getData();
-  handleClassroomSelected(classrooms.value[0]);
+    data.value = await getData();
+    top3.value = data.value.slice(0, 3);
+    allData.value = data.value;
 });
 </script>
