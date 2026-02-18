@@ -20,15 +20,11 @@ const form = ref({
   userId: "",
   first_name: "",
   last_name: "",
-  email: "",
-  school: "",
 });
 
 const errors = ref({
   first_name: "",
   last_name: "",
-  email: "",
-  school: "",
 });
 
 // Populate form when modal opens / data changes
@@ -40,8 +36,6 @@ watch(
         userId: "",
         first_name: "",
         last_name: "",
-        email: "",
-        school: "",
       };
       return;
     }
@@ -52,8 +46,6 @@ watch(
       userId: newData.userId, // UUID for backend ops later
       first_name: nameParts[0] ?? "",
       last_name: nameParts.slice(1).join(" ") ?? "",
-      email: newData.email ?? "",
-      school: newData.school ?? "",
     };
   },
   { immediate: true }
@@ -72,16 +64,6 @@ watch(
     else if (val.last_name.length > 50)
       errors.value.last_name = "Last name cannot exceed 50 characters";
     else errors.value.last_name = "";
-
-    if (!val.email) errors.value.email = "Email is required";
-    else if (!val.email.endsWith(".edu"))
-      errors.value.email = "Email must be a .edu address";
-    else errors.value.email = "";
-
-    if (!val.school) errors.value.school = "School is required";
-    else if (val.school.length > 255)
-      errors.value.school = "School name cannot exceed 255 characters";
-    else errors.value.school = "";
   },
   { deep: true, immediate: true }
 );
@@ -95,7 +77,6 @@ const handleOpenChange = (value: boolean) => {
   if (!value) emit("close");
 };
 
-// Save (frontend only for now)
 const handleSave = async () => {
   if (isInvalid.value) return;
 
@@ -103,8 +84,8 @@ const handleSave = async () => {
     id: props.data?.id ?? 0, // keep row number for table stability
     userId: form.value.userId,
     name: `${form.value.first_name} ${form.value.last_name}`.trim(),
-    email: form.value.email,
-    school: form.value.school,
+    email: props.data?.email ?? "",
+    school: props.data?.school ?? "",
   });
 
   emit("close");
@@ -147,32 +128,6 @@ const handleSave = async () => {
           />
           <p v-if="errors.last_name" class="text-red-500 text-xs mt-1">
             {{ errors.last_name }}
-          </p>
-        </label>
-
-        <label class="flex flex-col">
-          Email
-          <input
-            type="email"
-            v-model="form.email"
-            class="p-2 border rounded"
-            :class="{ 'border-red-500': errors.email }"
-          />
-          <p v-if="errors.email" class="text-red-500 text-xs mt-1">
-            {{ errors.email }}
-          </p>
-        </label>
-
-        <label class="flex flex-col">
-          School
-          <input
-            type="text"
-            v-model="form.school"
-            class="p-2 border rounded"
-            :class="{ 'border-red-500': errors.school }"
-          />
-          <p v-if="errors.school" class="text-red-500 text-xs mt-1">
-            {{ errors.school }}
           </p>
         </label>
       </div>

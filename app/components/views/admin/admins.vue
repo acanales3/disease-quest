@@ -64,11 +64,43 @@ const { data, pending, error, refresh } = await useFetch<Administrator[]>("/api/
 const uiError = ref<string>("");
 
 // =======================
-// Edit handling (frontend-only, as you already had)
+// Edit handling
 // =======================
 const saveAdminEdits = async (admin: Administrator) => {
-  data.value = data.value.map((a) => (a.userId === admin.userId ? admin : a));
-  modalBus.closeEdit();
+  uiError.value = "";
+
+  try {
+    const [first_name, ...rest] = (admin.name ?? "").trim().split(" ");
+    const last_name = rest.join(" ");
+
+    const response = await $fetch<{
+      success: boolean;
+      data: Partial<Administrator>;
+    }>(`/api/admins/${admin.userId}`, {
+      method: "PUT",
+      body: {
+        first_name,
+        last_name,
+      },
+    });
+
+    data.value = data.value.map((a) =>
+      a.userId === admin.userId
+        ? {
+            ...a,
+            ...admin,
+            ...response?.data,
+          }
+        : a
+    );
+    modalBus.closeEdit();
+  } catch (e: any) {
+    uiError.value =
+      e?.data?.statusMessage ||
+      e?.data?.message ||
+      e?.message ||
+      "Failed to update administrator. Please try again.";
+  }
 };
 
 // =======================
