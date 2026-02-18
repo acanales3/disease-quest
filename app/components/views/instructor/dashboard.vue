@@ -35,23 +35,17 @@
         :data="graphData"
         :type="'donut'"
         :categories="['Registered', 'Unregistered']"
+        :render-dropdowns="false"
+        :render-labels="true"
+        :label="dashboardData?.totalInvitations ?? 0"
+        :sublabel="'Unregistered'"
       />
-    </div>
-
-    <!-- Table -->
-    <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" :row-length="5" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import PieChart from "../../PieChart/pie-chart.vue";
-
-import { getColumns } from "../../ClassroomDatatable/columns";
-import DataTable from "../../ClassroomDatatable/data-table.vue";
-import { classrooms } from "../../../assets/interface/Classroom";
-import type { Classroom } from "../../ClassroomDatatable/columns";
 import TotalCount from "@/components/ui/TotalCount.vue";
 import { onMounted, ref, computed } from "vue";
 
@@ -70,34 +64,8 @@ const graphData = ref([
 
 const userName = ref('')
 
-const data = ref<Classroom[]>([]);
 const dashboardData = ref<InstructorDashboard>();
 
-const visibleColumns = computed(() => {
-  const columnsToShow = [
-    "id",
-    "name",
-    "code",
-    "section",
-    "startDate",
-    "endDate",
-    "status",
-    "actions",
-  ];
-  return getColumns('instructor').filter(column => {
-    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
-    return key ? columnsToShow.includes(String(key)) : false;
-  });
-});
-
-async function getData(): Promise<Classroom[]> {
-  try {
-    return await $fetch<Classroom[]>('/api/classrooms')
-  } catch (error) {
-    console.error('Failed to fetch classrooms:', error)
-    return []
-  }
-}
 
 async function getDashboardData(): Promise<InstructorDashboard>{
   return await $fetch('/api/instructors/dashboard')
@@ -111,8 +79,6 @@ onMounted(async () => {
     userName.value = dashboardData.value.instructorName;
     graphData.value[0].total = dashboardData.value.totalStudents;
     graphData.value[1].total = dashboardData.value.totalInvitations - dashboardData.value.totalStudents;
-
-    data.value = await getData();
   } catch (error) {
     console.error("Failed to fetch instructor's dashboard data:", error)
   }

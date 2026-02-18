@@ -18,6 +18,10 @@ const props = defineProps<{
   type?: "pie" | "donut";
   header: string;
   categories: string[];
+  renderDropdowns: boolean;
+  renderLabels: boolean;
+  label: number;
+  sublabel: string;
 }>();
 
 // Map colors to categories (primary and secondary)
@@ -60,12 +64,15 @@ const chartDataWithColors = computed(() =>
       :category="props.category"
       :data="props.data"
       :type="props.type"
+      :central-label="props.label"
+      :sublabel="props.sublabel"
+      :renderLabels="props.renderLabels"
     />
 
     <!-- Dropdowns side by side -->
     <div class="flex gap-4">
       <!-- Date Dropdown -->
-      <DropdownMenu>
+      <DropdownMenu v-if="props.renderDropdowns">
         <DropdownMenuTrigger as-child>
           <Button
             class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
@@ -101,7 +108,7 @@ const chartDataWithColors = computed(() =>
       </DropdownMenu>
 
       <!-- Classroom Dropdown -->
-      <DropdownMenu>
+      <DropdownMenu v-if="renderDropdowns">
         <DropdownMenuTrigger as-child>
           <Button
             class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
