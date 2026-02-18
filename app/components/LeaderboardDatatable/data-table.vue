@@ -11,6 +11,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem,
 } from "~/components/ui/dropdown-menu";
 
 import {
@@ -42,11 +43,17 @@ const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   classrooms: { id: number; name: string }[];
+  selectedClassroomId?: number;
 }>();
 
 const emit = defineEmits<{
   (e: "classroom-selected", classroomId: number): void; // emits when a classroom is selected in the dropdown menu of the data table
 }>();
+
+const selectedClassroomName = computed(() => {
+    const selected = props.classrooms.find(c => c.id === props.selectedClassroomId);
+    return selected ? selected.name : "Classrooms";
+});
 
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
@@ -100,7 +107,7 @@ const hideableColumns = computed(() =>
     <!-- Top bar: label left, search & column menu right -->
     <div class="flex items-center justify-between py-4">
       <!-- Left: label -->
-      <div class="text-md font-light text-black">Classroom Leaderboard</div>
+      <div class="text-md font-light text-black">Leaderboard</div>
 
       <!-- Right: dropdown to select classroom -->
       <div class="flex items-center space-x-4">
@@ -109,7 +116,7 @@ const hideableColumns = computed(() =>
             <Button
               class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
             >
-              Classrooms
+              {{ selectedClassroomName }}
               <ChevronDown class="w-4 h-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>

@@ -37,6 +37,7 @@
         :columns="columns"
         :data="data"
         :classrooms="classrooms"
+        :selected-classroom-id="selectedClassroomId"
         @classroom-selected="handleClassroomSelected"
       />
     </div>
@@ -57,11 +58,23 @@ const allData = ref<LeaderboardEntry[]>([]);
 const data = ref<LeaderboardEntry[]>([]);
 const top3 = ref<LeaderboardEntry[]>([]);
 
-const classrooms = ref([
+const classrooms = ref<{id: number, name: string}[]>([
   { id: -1, name: "All Classrooms" },
-  { id: 1, name: "Classroom A" }, // Updated mock classrooms to match mock data
-  { id: 2, name: "Classroom B" },
 ]);
+
+async function fetchClassrooms() {
+    try {
+        const data = await $fetch<{id: number, name: string}[]>('/api/classrooms');
+        if (data) {
+            classrooms.value = [
+                { id: -1, name: "All Classrooms" },
+                ...data.map((c: any) => ({ id: c.id, name: c.name }))
+            ];
+        }
+    } catch (e) {
+        console.error("Failed to fetch classrooms", e);
+    }
+}
 
 const columns = computed(() => baseColumns);
 
@@ -70,10 +83,13 @@ async function getData(classroomId?: number): Promise<LeaderboardEntry[]> {
     return await $fetch<LeaderboardEntry[]>('/api/leaderboards', { query });
 }
 
-async function handleClassroomSelected(cl: any) { 
-    if (!cl) return;
+const selectedClassroomId = ref<number>(-1);
+
+async function handleClassroomSelected(classroomId: number) { 
+    if (classroomId === undefined) return;
     
-    data.value = await getData(cl.id);
+    selectedClassroomId.value = classroomId;
+    data.value = await getData(classroomId);
     top3.value = data.value.slice(0, 3);
     allData.value = data.value; // allData now represents the *currently fetched* data
 }
@@ -84,9 +100,14 @@ function displayName(entry?: LeaderboardEntry) {
 
 onMounted(async () => {
     // Initial fetch for all allowed classrooms (default)
-    data.value = await getData();
-    top3.value = data.value.slice(0, 3);
-    allData.value = data.value;
+    await Promise.all([
+        getData().then(d => {
+            data.value = d;
+            top3.value = d.slice(0, 3);
+            allData.value = d;
+        }),
+        fetchClassrooms()
+    ]);
 });
 
 </script>
