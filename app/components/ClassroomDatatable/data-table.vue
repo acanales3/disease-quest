@@ -82,9 +82,7 @@ const table = useVueTable({
         return {
           ...col,
           filterFn: (row, columnId, filterValues: string[]) => {
-            const cellValue = String(
-              row.getValue(columnId) ?? ""
-            ).toLowerCase()
+            const cellValue = String(row.getValue(columnId) ?? "").toLowerCase()
 
             if (!filterValues?.length) return true
             return filterValues.includes(cellValue)
@@ -144,7 +142,7 @@ onMounted(() => {
 
 
 /* ---------------------------------------------
-SAFE SEARCH MODEL VALUE (FIXES TYPE ERROR)
+SAFE SEARCH MODEL VALUE
 --------------------------------------------- */
 const getNameFilterValue = () => {
   const value = table.getColumn("name")?.getFilterValue()
@@ -202,7 +200,6 @@ const applyClassroomFilters = (filters: {
           @apply-filters="applyClassroomFilters"
         />
 
-        <!-- ✅ FIXED SEARCH INPUT -->
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-2 py-1 w-80"
           placeholder="Search by Class Name"
@@ -242,9 +239,11 @@ const applyClassroomFilters = (filters: {
               :key="row.id"
               :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
             >
+              <!-- ROW HEIGHT FIX -->
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
+                class="py-3 text-center"
               >
                 <FlexRender
                   :render="cell.column.columnDef.cell"
