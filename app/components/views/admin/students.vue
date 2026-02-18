@@ -19,7 +19,7 @@
     
     <!-- Student Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable :columns="visibleColumns" :data="data" :classrooms="classrooms" />
     </div>
 
     <AdminEditStudentDialog
@@ -34,6 +34,7 @@
       :student="studentToDelete"
       :mode="deleteMode"
       :state="deleteState"
+      :available-classrooms="classrooms"
       @confirm="handleDeleteConfirm"
       @reset="resetDeleteState"
     />
@@ -53,7 +54,10 @@ import { modalBus } from "@/components/AdminEditStudentDialog/modalBusEditStuden
 import AdminEditStudentDialog from "@/components/AdminEditStudentDialog/AdminEditStudentDialog.vue"
 import DeleteStudentModal from "@/components/DeleteStudentModal/DeleteStudentModal.vue"
 
+import type { Classroom } from "../../ClassroomDatatable/columns"; // Import Classroom type
+
 const data = ref<Student[]>([]);
+const classrooms = ref<Classroom[]>([]); // Add classrooms ref
 const count = ref<number>(0);
 const isDeleteModalOpen = ref(false);
 const studentToDelete = ref<Student | null>(null);
@@ -72,6 +76,7 @@ const visibleColumns = computed(() => {
   return getColumns('admin', {
     onDelete: handleDeleteClick,
     onRemoveFromClassroom: handleRemoveFromClassroomClick,
+    classrooms: classrooms.value,
   });
 });
 
@@ -93,48 +98,62 @@ function handleRemoveFromClassroomClick(s: Student) {
   isDeleteModalOpen.value = true;
 }
 
-async function fetchStudents(): Promise<Student[]> {
+async function fetchStudents(): Promise<{ students: Student[], classrooms: Classroom[] }> {
   // Prefer backend API, fallback to mock.
   try {
-    return await $fetch<Student[]>("/api/students");
+    const [studentsData, classroomsData] = await Promise.all([
+      $fetch<Student[]>("/api/students"),
+      $fetch<Classroom[]>("/api/classrooms")
+    ]);
+    return { students: studentsData, classrooms: classroomsData };
   } catch {
-    return student as unknown as Student[];
+    return { students: student as unknown as Student[], classrooms: [] };
   }
 }
 
 async function refreshStudents() {
-  const students = await fetchStudents();
-  data.value = students;
+  const result = await fetchStudents();
+  data.value = result.students;
+  classrooms.value = result.classrooms;
 }
 
-async function handleDeleteConfirm(s: Student) {
+async function handleDeleteConfirm(s: Student, selectedClassroomIds?: number[]) {
   deleteState.value = { status: "loading" };
   pageMessage.value = null;
 
   try {
-    // Real DB key is UUID (students.user_id). Numeric id is only for datatable display.
     if (!s.userId) {
       throw createError({
         statusCode: 400,
         statusMessage: "Delete failed: missing student UUID (userId).",
       });
     }
-    if (deleteMode.value === "unenroll" && (!s.classroom || Number(s.classroom) <= 0)) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "Student is not currently assigned to a classroom.",
-      });
+    if (deleteMode.value === "unenroll") {
+      if (!selectedClassroomIds || selectedClassroomIds.length === 0) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: "No classrooms selected for removal.",
+        });
+      }
     }
 
     await $fetch(`/api/students/${s.userId}`, {
       method: "DELETE" as any,
-      query: deleteMode.value === "unenroll" ? { classroomId: s.classroom } : undefined,
+      query: deleteMode.value === "unenroll"
+        ? { classroomIds: selectedClassroomIds!.join(",") }
+        : undefined,
     });
 
-    const successMessage =
-      deleteMode.value === "unenroll"
-        ? "Student removed from classroom successfully."
-        : "Student deleted successfully.";
+    let successMessage: string;
+    if (deleteMode.value === "unenroll") {
+      const classroomNames = selectedClassroomIds!
+        .map((id) => classrooms.value.find((c) => c.id === id)?.name)
+        .filter(Boolean);
+      const nameList = classroomNames.length > 0 ? classroomNames.join(", ") : `${selectedClassroomIds!.length} classroom(s)`;
+      successMessage = `${s.name} has been removed from: ${nameList}.`;
+    } else {
+      successMessage = "Student deleted successfully.";
+    }
     deleteState.value = { status: "success", message: successMessage };
     pageMessage.value = { type: "success", text: successMessage };
 
@@ -149,7 +168,6 @@ async function handleDeleteConfirm(s: Student) {
       typeof statusMessage === "string" && statusMessage.includes("Page not found")
 
     if (isMissingEndpoint) {
-      // Backend not integrated yet so need to simulate so UI can still be tested.
       const msg =
         deleteMode.value === "unenroll"
           ? "Remove-from-classroom API not available yet (simulated for UI testing)."
@@ -179,21 +197,45 @@ const saveStudentEdits = async (updated: Student) => {
     if (!updated.userId) {
       throw new Error("Missing userId for student update.");
     }
-    // Update backend
+
+    // Split name into first/last for the admin endpoint
+    const [first_name, ...rest] = (updated.name ?? "").split(" ");
+    const last_name = rest.join(" ");
+
+    // 1. Update user-level fields via the admin endpoint
+    await $fetch(`/api/admin/users/${updated.userId}`, {
+      method: "PUT",
+      body: {
+        first_name,
+        last_name,
+        email: updated.email,
+        school: updated.school,
+        status: updated.status,
+      },
+    });
+
+    // 2. Update student-specific fields (nickname, msyear, classroom)
+    //    via the existing student endpoint
     await $fetch(`/api/students/${updated.userId}`, {
       method: "PUT",
-      body: updated
+      body: updated,
     });
 
     // Update local ref array
-    // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place 
+    // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place
     data.value = data.value.map(student => student.id === updated.id ? { ...updated } : student);
 
     // Close modal
     modalBus.closeEdit();
-  } catch (error) {
-    console.error("Error updating student: ", error);
-    pageMessage.value = { type: "error", text: "Failed to update student. Please try again." };
+  } catch (error: any) {
+    console.error("Error updating student:", error?.data || error);
+    pageMessage.value = {
+      type: "error",
+      text:
+        error?.data?.statusMessage ||
+        error?.message ||
+        "Failed to update student. Please try again.",
+    };
   }
 };
 

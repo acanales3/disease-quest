@@ -39,24 +39,32 @@ export default defineEventHandler(async (event) => {
 
   const role = userProfile.role?.toUpperCase()
 
-  if (role !== 'ADMIN') {
+  if (role !== 'ADMIN' && role !== 'INSTRUCTOR') {
     throw createError({
       statusCode: 403,
-      message: 'Forbidden: Only admins can delete classrooms',
+      message: 'Forbidden: Only admins and instructors can delete classrooms',
     })
   }
 
   // Verify the classroom exists
   const { data: classroom, error: classroomError } = await client
     .from('classrooms')
-    .select('id')
+    .select('id, instructor_id')
     .eq('id', classroomId)
-    .single()
+    .single() as { data: { id: number; instructor_id: string } | null; error: any }
 
   if (classroomError || !classroom) {
     throw createError({
       statusCode: 404,
       message: 'Classroom not found',
+    })
+  }
+
+  // Instructors can only delete their own classrooms
+  if (role === 'INSTRUCTOR' && classroom.instructor_id !== requesterId) {
+    throw createError({
+      statusCode: 403,
+      message: 'Forbidden: You can only delete classrooms you own',
     })
   }
 

@@ -33,7 +33,8 @@ export default defineEventHandler(async (event) => {
         school
       ),
       classrooms (
-        id
+        id,
+        name
       )
     `)
 
@@ -49,7 +50,7 @@ export default defineEventHandler(async (event) => {
     name: row.user.name,
     email: row.user.email,
     school: row.user.school,
-    classroom: row.classrooms?.[0]?.id ?? null,
+    classrooms: row.classrooms ?? [],
     status: row.status,
   }))
 })

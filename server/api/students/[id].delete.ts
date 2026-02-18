@@ -19,8 +19,9 @@ export default defineEventHandler(async (event) => {
 
   const studentId = getRouterParam(event, "id");
   const query = getQuery(event) as Record<string, unknown>;
+  const hasClassroomIds = Object.prototype.hasOwnProperty.call(query, "classroomIds");
   const hasClassroomId = Object.prototype.hasOwnProperty.call(query, "classroomId");
-  const classroomIdRaw = query.classroomId;
+  const isUnenroll = hasClassroomIds || hasClassroomId;
 
   if (!studentId) {
     throw createError({
@@ -46,46 +47,63 @@ export default defineEventHandler(async (event) => {
   const role = userProfile.role?.toUpperCase();
   const isAdmin = role === "ADMIN";
 
-  // Mode 1: remove enrollment from a classroom.
-  if (hasClassroomId) {
-    if (typeof classroomIdRaw !== "string" || classroomIdRaw.trim() === "") {
-      throw createError({
-        statusCode: 400,
-        message: "Invalid classroomId query param",
-      });
+  // Mode 1: remove enrollment from classroom(s).
+  if (isUnenroll) {
+    // Parse classroom IDs — supports both ?classroomIds=1,2,3 and legacy ?classroomId=1
+    let parsedClassroomIds: number[] = [];
+
+    if (hasClassroomIds) {
+      const raw = query.classroomIds;
+      if (typeof raw !== "string" || raw.trim() === "") {
+        throw createError({ statusCode: 400, message: "Invalid classroomIds query param" });
+      }
+      parsedClassroomIds = raw.split(",").map((s) => Number(s.trim()));
+    } else if (hasClassroomId) {
+      const raw = query.classroomId;
+      if (typeof raw !== "string" || raw.trim() === "") {
+        throw createError({ statusCode: 400, message: "Invalid classroomId query param" });
+      }
+      parsedClassroomIds = [Number(raw.trim())];
     }
 
-    const parsedClassroomId = Number(classroomIdRaw);
-    if (!Number.isInteger(parsedClassroomId) || parsedClassroomId <= 0) {
-      throw createError({
-        statusCode: 400,
-        message: "Invalid classroomId query param",
-      });
+    // Validate all IDs are positive integers
+    if (parsedClassroomIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+      throw createError({ statusCode: 400, message: "All classroom IDs must be positive integers" });
+    }
+    if (parsedClassroomIds.length === 0) {
+      throw createError({ statusCode: 400, message: "At least one classroom ID is required" });
     }
 
-    // If not admin, must be the instructor of the classroom
-    const { data: classroom, error: classroomError } = await adminClient
+    // Authorization: for each classroom, check that the requester has permission
+    const { data: classroomRows, error: classroomError } = await adminClient
       .from("classrooms")
       .select("id, instructor_id")
-      .eq("id", parsedClassroomId)
-      .single();
+      .in("id", parsedClassroomIds);
 
-    if (classroomError || !classroom) {
-      throw createError({
-        statusCode: 404,
-        message: "Classroom not found",
-      });
+    if (classroomError) {
+      throw createError({ statusCode: 500, message: `Error fetching classrooms: ${classroomError.message}` });
     }
 
-    const isInstructorOfClass = classroom.instructor_id === requesterId;
-    if (!isAdmin && !isInstructorOfClass) {
-      throw createError({
-        statusCode: 403,
-        message: "Forbidden: You are not authorized to modify this classroom",
-      });
+    const foundIds = new Set((classroomRows ?? []).map((c: any) => c.id));
+    const missingIds = parsedClassroomIds.filter((id) => !foundIds.has(id));
+    if (missingIds.length > 0) {
+      throw createError({ statusCode: 404, message: `Classroom(s) not found: ${missingIds.join(", ")}` });
     }
 
-    // Ensure the target student exists.
+    // Permission check per classroom
+    if (!isAdmin) {
+      for (const classroom of classroomRows!) {
+        const isInstructorOfClass = classroom.instructor_id === requesterId;
+        if (!isInstructorOfClass) {
+          throw createError({
+            statusCode: 403,
+            message: `Forbidden: You are not authorized to modify classroom ${classroom.id}`,
+          });
+        }
+      }
+    }
+
+    // Ensure the target student exists
     const { data: targetStudent, error: targetStudentError } = await adminClient
       .from("students")
       .select("user_id")
@@ -99,36 +117,36 @@ export default defineEventHandler(async (event) => {
       });
     }
     if (!targetStudent) {
-      throw createError({
-        statusCode: 404,
-        message: "Student not found",
-      });
+      throw createError({ statusCode: 404, message: "Student not found" });
     }
 
+    // Remove from all specified classrooms
     const { data: removedRows, error: removeError } = await adminClient
       .from("classroom_students")
       .delete()
-      .eq("classroom_id", parsedClassroomId)
+      .in("classroom_id", parsedClassroomIds)
       .eq("student_id", studentId)
       .select("student_id, classroom_id");
 
     if (removeError) {
       throw createError({
         statusCode: 500,
-        message: `Error removing student from classroom: ${removeError.message}`,
+        message: `Error removing student from classroom(s): ${removeError.message}`,
       });
     }
     if (!removedRows || removedRows.length === 0) {
       throw createError({
         statusCode: 404,
-        message: `Student ${studentId} is not enrolled in classroom ${classroomIdRaw}.`,
+        message: `Student ${studentId} is not enrolled in the specified classroom(s).`,
       });
     }
 
+    const removedClassroomIds = removedRows.map((r: any) => r.classroom_id);
     return {
       success: true,
       mode: "unenroll",
-      message: `Student ${studentId} was removed from classroom ${classroomIdRaw}.`,
+      message: `Student ${studentId} was removed from classroom(s): ${removedClassroomIds.join(", ")}.`,
+      removedClassroomIds,
     };
   }
 

@@ -13,14 +13,16 @@ export interface Classroom {
   startDate: string;
   endDate: string;
   status: "active" | "inactive";
+  invitationCode?: string | null;
 }
 
 export interface ColumnOptions {
   onEdit?: (classroom: Classroom) => void;
+  onDelete?: (classroom: Classroom) => void;
 }
 
 export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Classroom>[] {
-  return [
+  const columns: ColumnDef<Classroom>[] = [
   {
     accessorKey: "id",
     header: () =>
@@ -148,22 +150,29 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
       );
     },
   },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const classroom = row.original;
+  ];
 
-      return h(
-        "div",
-        { class: "relative flex justify-center" },
-        h(DropdownAction, { 
-          classroom,
-          role,
-          onEdit: options?.onEdit,
-        })
-      );
-    },
-  },
-];
+  // Include actions column for admin, instructor, and student roles
+  if (role === 'admin' || role === 'instructor' || role === 'student') {
+    columns.push({
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const classroom = row.original;
+
+        return h(
+          "div",
+          { class: "relative flex justify-center" },
+          h(DropdownAction, { 
+            classroom,
+            role,
+            onEdit: options?.onEdit,
+            onDelete: options?.onDelete,
+          })
+        );
+      },
+    });
+  }
+
+  return columns;
 }
