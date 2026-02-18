@@ -6,8 +6,16 @@ import type { LeaderboardEntry } from "../../assets/interface/Leaderboard";
 export const baseColumns: ColumnDef<LeaderboardEntry>[] = [
   {
     accessorKey: "rank",
-    header: () =>
-      h("div", { class: "text-center font-normal text-black" }, "Rank"),
+    header: ({ column }) =>
+      h(
+        "button",
+        {
+          class:
+            "flex justify-center items-center gap-1 font-normal text-black w-full px-3 py-1 rounded-md hover:bg-gray-200",
+          onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
+        },
+        ["Rank", h(ArrowUpDown, { class: "h-4 w-4" })]
+      ),
     cell: ({ row }) =>
       h(
         "div",
@@ -17,16 +25,8 @@ export const baseColumns: ColumnDef<LeaderboardEntry>[] = [
   },
   {
     accessorKey: "nickname",
-    header: ({ column }) =>
-      h(
-        "button",
-        {
-          class:
-            "flex justify-center items-center gap-1 font-normal text-black w-full px-3 py-1 rounded-md hover:bg-gray-200",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-        },
-        ["Nickname", h(ArrowUpDown, { class: "h-4 w-4" })]
-      ),
+    header: () =>
+      h("div", { class: "text-center font-normal text-black" }, "Nickname"),
     cell: ({ row }) =>
       h(
         "div",
@@ -36,16 +36,8 @@ export const baseColumns: ColumnDef<LeaderboardEntry>[] = [
   },
   {
     accessorKey: "classroomName",
-    header: ({ column }) =>
-      h(
-        "button",
-        {
-          class:
-            "flex justify-center items-center gap-1 font-normal text-black w-full px-3 py-1 rounded-md hover:bg-gray-200",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-        },
-        ["Classroom", h(ArrowUpDown, { class: "h-4 w-4" })]
-      ),
+    header: () =>
+      h("div", { class: "text-center font-normal text-black" }, "Classroom"),
     cell: ({ row }) =>
       h(
         "div",
@@ -55,16 +47,8 @@ export const baseColumns: ColumnDef<LeaderboardEntry>[] = [
   },
   {
     accessorKey: "casesCompleted",
-    header: ({ column }) =>
-      h(
-        "button",
-        {
-          class:
-            "flex justify-center items-center gap-1 font-normal text-black w-full px-3 py-1 rounded-md hover:bg-gray-200",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-        },
-        ["Cases Completed", h(ArrowUpDown, { class: "h-4 w-4" })]
-      ),
+    header: () =>
+      h("div", { class: "text-center font-normal text-black" }, "Cases Completed"),
     cell: ({ row }) =>
       h(
         "div",
@@ -74,16 +58,8 @@ export const baseColumns: ColumnDef<LeaderboardEntry>[] = [
   },
   {
     accessorKey: "averageScore",
-    header: ({ column }) =>
-      h(
-        "button",
-        {
-          class:
-            "flex justify-center items-center gap-1 font-normal text-black w-full px-3 py-1 rounded-md hover:bg-gray-200",
-          onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
-        },
-        ["Average Score", h(ArrowUpDown, { class: "h-4 w-4" })]
-      ),
+    header: () =>
+      h("div", { class: "text-center font-normal text-black" }, "Average Score"),
     cell: ({ row }) =>
       h(
         "div",
