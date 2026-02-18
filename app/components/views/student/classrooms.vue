@@ -15,7 +15,7 @@
     </div>
 
     <div class="w-full py-2">
-      <DataTable :columns="columns" :data="data" />
+      <DataTable :columns="columns" :data="data" user-role="student" />
     </div>
   </div>
 </template>

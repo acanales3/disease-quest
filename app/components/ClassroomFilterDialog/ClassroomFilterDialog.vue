@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +14,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icon } from "#components";
 
+/*
+ROLE RULES
+admin → see everything
+instructor → hide instructor + school
+student → hide school only
+*/
+const props = defineProps<{
+  userRole: "admin" | "instructor" | "student";
+}>();
+
 const emit = defineEmits<{
   (e: "apply-filters", filters: ClassroomFilterCriteria): void;
 }>();
@@ -24,10 +34,16 @@ interface ClassroomFilterCriteria {
   instructor: string;
   school: string;
   section: string;
-  startDate: string; // empty string if not selected
+  startDate: string;
   endDate: string;
-  status: string[]; // ["active", "inactive"]
+  status: string[];
 }
+
+/* -----------------------
+FIELD VISIBILITY LOGIC
+----------------------- */
+const showInstructor = computed(() => props.userRole !== "instructor");
+const showSchool = computed(() => props.userRole === "admin");
 
 const isOpen = ref(false);
 
@@ -101,6 +117,7 @@ const onOpenChange = (open: boolean) => {
       </DialogHeader>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
+
         <!-- LEFT COLUMN -->
         <div class="flex flex-col gap-5">
           <div class="flex flex-col gap-1.5">
@@ -113,7 +130,8 @@ const onOpenChange = (open: boolean) => {
             <Input v-model="tempFilters.code" placeholder="Enter classroom code" />
           </div>
 
-          <div class="flex flex-col gap-1.5">
+          <!-- INSTRUCTOR (hidden for instructor role) -->
+          <div v-if="showInstructor" class="flex flex-col gap-1.5">
             <Label>Instructor</Label>
             <Input v-model="tempFilters.instructor" placeholder="Enter instructor" />
           </div>
@@ -140,16 +158,15 @@ const onOpenChange = (open: boolean) => {
                   {{ statusOption }}
                 </label>
               </div>
-              <div v-if="tempFilters.status.length === 0" class="text-xs text-gray-400">
-                No status selected
-              </div>
             </div>
           </div>
         </div>
 
         <!-- RIGHT COLUMN -->
         <div class="flex flex-col gap-5">
-          <div class="flex flex-col gap-1.5">
+
+          <!-- SCHOOL (hidden for students) -->
+          <div v-if="showSchool" class="flex flex-col gap-1.5">
             <Label>School</Label>
             <Input v-model="tempFilters.school" placeholder="Enter school" />
           </div>

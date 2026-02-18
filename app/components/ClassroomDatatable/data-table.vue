@@ -4,7 +4,7 @@ import type {
   SortingState,
   ColumnFiltersState,
   VisibilityState,
-} from "@tanstack/vue-table";
+} from "@tanstack/vue-table"
 
 import {
   FlexRender,
@@ -13,12 +13,12 @@ import {
   getSortedRowModel,
   getFilteredRowModel,
   useVueTable,
-} from "@tanstack/vue-table";
+} from "@tanstack/vue-table"
 
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { ref, onMounted } from "vue";
-import { valueUpdater } from "@/lib/utils";
+import { Button } from "~/components/ui/button"
+import { Input } from "~/components/ui/input"
+import { ref, onMounted } from "vue"
+import { valueUpdater } from "@/lib/utils"
 
 import {
   Table,
@@ -27,129 +27,187 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
+} from "~/components/ui/table"
 
-// Import the new ClassroomFilterDialog
-import ClassroomFilterDialog from "../ClassroomFilterDialog/ClassroomFilterDialog.vue";
+import ClassroomFilterDialog from "../ClassroomFilterDialog/ClassroomFilterDialog.vue"
 
+
+/* ---------------------------------------------
+TYPE GUARD (fix accessorKey TS error)
+--------------------------------------------- */
+function hasAccessorKey<TData, TValue>(
+  col: ColumnDef<TData, TValue>
+): col is ColumnDef<TData, TValue> & { accessorKey: string } {
+  return "accessorKey" in col
+}
+
+
+/* ---------------------------------------------
+PROPS
+--------------------------------------------- */
 const props = withDefaults(
   defineProps<{
-    columns: ColumnDef<TData, TValue>[];
-    data: TData[];
-    rowLength?: number;
+    columns: ColumnDef<TData, TValue>[]
+    data: TData[]
+    rowLength?: number
+    userRole: "admin" | "instructor" | "student"
   }>(),
   { rowLength: 10 }
-);
+)
 
-const sorting = ref<SortingState>([]);
-const columnFilters = ref<ColumnFiltersState>([]);
-const columnVisibility = ref<VisibilityState>({});
 
-// --------------------------
-// Create table instance
-// --------------------------
+/* ---------------------------------------------
+STATE
+--------------------------------------------- */
+const sorting = ref<SortingState>([])
+const columnFilters = ref<ColumnFiltersState>([])
+const columnVisibility = ref<VisibilityState>({})
+
+
+/* ---------------------------------------------
+CREATE TABLE
+--------------------------------------------- */
 const table = useVueTable({
   get data() {
-    return props.data;
+    return props.data
   },
+
   get columns() {
-    // Override the status column to use exact-match filter
     return props.columns.map((col) => {
-      if (col.id === "status" || (col as any).accessorKey === "status") {
+      const isStatusColumn =
+        col.id === "status" ||
+        (hasAccessorKey(col) && col.accessorKey === "status")
+
+      if (isStatusColumn) {
         return {
           ...col,
           filterFn: (row, columnId, filterValues: string[]) => {
-            const cellValue = (row.getValue(columnId) ?? "").toString().toLowerCase();
-            if (!filterValues.length) return true; // no filter, show all
-            return filterValues.includes(cellValue); // exact match only
+            const cellValue = String(
+              row.getValue(columnId) ?? ""
+            ).toLowerCase()
+
+            if (!filterValues?.length) return true
+            return filterValues.includes(cellValue)
           },
-        } as ColumnDef<TData, TValue>;
+        } as ColumnDef<TData, TValue>
       }
-      return col;
-    });
+
+      return col
+    })
   },
+
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   getSortedRowModel: getSortedRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
-  onColumnFiltersChange: (updaterOrValue) =>
-    valueUpdater(updaterOrValue, columnFilters),
-  onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
-  onColumnVisibilityChange: (updaterOrValue) =>
-    valueUpdater(updaterOrValue, columnVisibility),
+
+  onColumnFiltersChange: (v) => valueUpdater(v, columnFilters),
+  onSortingChange: (v) => valueUpdater(v, sorting),
+  onColumnVisibilityChange: (v) => valueUpdater(v, columnVisibility),
+
   state: {
     get sorting() {
-      return sorting.value;
+      return sorting.value
     },
     get columnFilters() {
-      return columnFilters.value;
+      return columnFilters.value
     },
     get columnVisibility() {
-      return columnVisibility.value;
+      return columnVisibility.value
     },
   },
+
   initialState: {
     pagination: {
       pageSize: props.rowLength,
       pageIndex: 0,
     },
   },
-});
+})
 
+
+/* ---------------------------------------------
+INITIAL COLUMN VISIBILITY
+--------------------------------------------- */
 onMounted(() => {
   props.columns.forEach((col) => {
-    const key = (col.id ?? (col as any).accessorKey) as string;
+    const key =
+      col.id ?? (hasAccessorKey(col) ? col.accessorKey : undefined)
+
+    if (!key) return
+
     if ((col as any).meta?.hidden) {
-      table.getColumn(key)?.toggleVisibility(false);
+      table.getColumn(key)?.toggleVisibility(false)
     }
-  });
-});
+  })
+})
 
-// --------------------------
-// Apply filters from ClassroomFilterDialog
-// --------------------------
+
+/* ---------------------------------------------
+SAFE SEARCH MODEL VALUE (FIXES TYPE ERROR)
+--------------------------------------------- */
+const getNameFilterValue = () => {
+  const value = table.getColumn("name")?.getFilterValue()
+  return typeof value === "string" ? value : ""
+}
+
+const setNameFilterValue = (value: string | number) => {
+  table.getColumn("name")?.setFilterValue(String(value))
+}
+
+
+/* ---------------------------------------------
+APPLY FILTERS FROM FILTER DIALOG
+--------------------------------------------- */
 const applyClassroomFilters = (filters: {
-  name: string;
-  code: string;
-  instructor: string;
-  school: string;
-  section: string;
-  startDate: string;
-  endDate: string;
-  status: string[];
+  name: string
+  code: string
+  instructor: string
+  school: string
+  section: string
+  startDate: string
+  endDate: string
+  status: string[]
 }) => {
-  table.getColumn("name")?.setFilterValue(filters.name || undefined);
-  table.getColumn("code")?.setFilterValue(filters.code || undefined);
-  table.getColumn("instructor")?.setFilterValue(filters.instructor || undefined);
-  table.getColumn("school")?.setFilterValue(filters.school || undefined);
-  table.getColumn("section")?.setFilterValue(filters.section || undefined);
-  table.getColumn("startDate")?.setFilterValue(filters.startDate || undefined);
-  table.getColumn("endDate")?.setFilterValue(filters.endDate || undefined);
+  table.getColumn("name")?.setFilterValue(filters.name || undefined)
+  table.getColumn("code")?.setFilterValue(filters.code || undefined)
+  table.getColumn("instructor")?.setFilterValue(filters.instructor || undefined)
+  table.getColumn("school")?.setFilterValue(filters.school || undefined)
+  table.getColumn("section")?.setFilterValue(filters.section || undefined)
+  table.getColumn("startDate")?.setFilterValue(filters.startDate || undefined)
+  table.getColumn("endDate")?.setFilterValue(filters.endDate || undefined)
 
-  // Lowercase status for exact match
-  const statusFilter = filters.status.map((s) => s.toLowerCase());
+  const statusFilter = filters.status.map((s) => s.toLowerCase())
+
   table.getColumn("status")?.setFilterValue(
     statusFilter.length ? statusFilter : undefined
-  );
-};
+  )
+}
 </script>
 
+
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden">
-    <!-- Top bar: label left, search & filter dialog right -->
+  <div class="bg-white p-6 rounded-md shadow-md w-full max-w-full overflow-hidden">
+
+    <!-- Top Bar -->
     <div class="flex items-center justify-between py-4">
-      <div class="text-md font-light text-black">All Classrooms List</div>
+      <div class="text-md font-light text-black">
+        All Classrooms List
+      </div>
 
       <div class="flex items-center space-x-4">
-        <!-- Classroom Filter Dialog -->
-        <ClassroomFilterDialog @apply-filters="applyClassroomFilters" />
 
-        <!-- Quick search by Name -->
+        <ClassroomFilterDialog
+          :user-role="props.userRole"
+          @apply-filters="applyClassroomFilters"
+        />
+
+        <!-- ✅ FIXED SEARCH INPUT -->
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-2 py-1 w-80"
           placeholder="Search by Class Name"
-          :model-value="table.getColumn('name')?.getFilterValue() as string"
-          @update:model-value="table.getColumn('name')?.setFilterValue($event)"
+          :model-value="getNameFilterValue()"
+          @update:model-value="setNameFilterValue"
         />
       </div>
     </div>
@@ -157,6 +215,7 @@ const applyClassroomFilters = (filters: {
     <!-- Table -->
     <div class="border rounded-md overflow-x-auto">
       <Table class="w-full text-center font-normal text-gray-500">
+
         <TableHeader class="bg-blue-50">
           <TableRow
             v-for="headerGroup in table.getHeaderGroups()"
@@ -177,17 +236,15 @@ const applyClassroomFilters = (filters: {
         </TableHeader>
 
         <TableBody>
-          <template v-if="table.getRowModel().rows?.length">
+          <template v-if="table.getRowModel().rows.length">
             <TableRow
               v-for="(row, idx) in table.getRowModel().rows"
               :key="row.id"
-              :data-state="row.getIsSelected() ? 'selected' : undefined"
               :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
             >
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
-                class="text-center"
               >
                 <FlexRender
                   :render="cell.column.columnDef.cell"
@@ -199,12 +256,13 @@ const applyClassroomFilters = (filters: {
 
           <template v-else>
             <TableRow>
-              <TableCell :colspan="columns.length" class="h-24 text-center">
+              <TableCell :colspan="props.columns.length" class="h-24 text-center">
                 No results.
               </TableCell>
             </TableRow>
           </template>
         </TableBody>
+
       </Table>
     </div>
 
@@ -218,6 +276,7 @@ const applyClassroomFilters = (filters: {
       >
         Previous
       </Button>
+
       <Button
         variant="outline"
         size="sm"
