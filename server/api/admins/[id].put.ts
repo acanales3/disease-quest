@@ -76,10 +76,10 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (body.email !== undefined || body.school !== undefined) {
+  if (body.email !== undefined) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Only first_name and last_name are editable for admins",
+      statusMessage: "Email is not editable for admins",
     });
   }
 
@@ -116,6 +116,7 @@ export default defineEventHandler(async (event) => {
   const userUpdate: UserUpdate = {};
   if (body.first_name !== undefined) userUpdate.first_name = body.first_name;
   if (body.last_name !== undefined) userUpdate.last_name = body.last_name;
+  if (body.school !== undefined) userUpdate.school = body.school;
 
   if (body.first_name !== undefined || body.last_name !== undefined) {
     const first = body.first_name ?? targetUser.first_name ?? "";
