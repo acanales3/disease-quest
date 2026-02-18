@@ -3,6 +3,12 @@ import { h } from "vue";
 import DropdownAction from "@/components/StudentDatatable/data-table-dropdown.vue";
 import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
+import type { Classroom } from "../ClassroomDatatable/columns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 export interface Student {
   id: number;
@@ -24,9 +30,12 @@ export interface Student {
 export interface ColumnOptions {
   onDelete?: (student: Student) => void;
   onRemoveFromClassroom?: (student: Student) => void;
+  classrooms?: Classroom[];
 }
 
 export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Student>[] {
+  const classroomsMap = new Map((options?.classrooms || []).map(c => [c.id, c.name]));
+
   return [
     {
       accessorKey: "id",
@@ -78,11 +87,71 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Stu
       header: () =>
         h("div", { class: "text-center font-normal text-black" }, "Classroom"),
       cell: ({ row }) => {
-        const room = row.getValue("classroom") as number;
+        const student = row.original;
+
+        // Get all classroom IDs for this student
+        const classroomIds = student.classrooms && student.classrooms.length > 0
+          ? student.classrooms
+          : [row.getValue("classroom") as number];
+
+        // Map to names
+        const roomNames = classroomIds.map(id => classroomsMap.get(id) || id.toString());
+
+        if (roomNames.length === 0) {
+          return h(
+            "div",
+            { class: "text-center font-normal text-gray-600" },
+            "-"
+          );
+        }
+
+        const first = roomNames[0] || "";
+        // Truncate if long or if there are multiple
+        const text = roomNames.length > 1 || first.length > 20
+          ? (first.length > 20 ? first.slice(0, 20) + '...' : first) + (roomNames.length > 1 ? '...' : '')
+          : first;
+
+        const needsTooltip = roomNames.length > 1 || first.length > 20;
+
+        if (!needsTooltip) {
+          return h(
+            "div",
+            { class: "text-center font-normal text-gray-600" },
+            text
+          );
+        }
+
         return h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          room.toString()
+          Tooltip,
+          {},
+          {
+            default: () => [
+              h(
+                TooltipTrigger,
+                { asChild: true },
+                {
+                  default: () =>
+                    h(
+                      "div",
+                      {
+                        class: "text-center cursor-pointer text-gray-600 hover:text-gray-900 transition",
+                      },
+                      text
+                    ),
+                }
+              ),
+
+              h(
+                TooltipContent,
+                { side: "bottom", class: "bg-white shadow-md max-w-xs" },
+                {
+                  default: () => roomNames.map(name =>
+                    h("div", { class: "text-sm text-gray-600 py-0.5" }, name)
+                  )
+                }
+              ),
+            ],
+          }
         );
       },
     },

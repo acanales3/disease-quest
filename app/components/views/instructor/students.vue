@@ -72,6 +72,7 @@ function handleRemoveFromClassroomClick(s: Student) {
 
 const visibleColumns = computed(() => {
   return getColumns('instructor', {
+    classrooms: classrooms.value,
     onRemoveFromClassroom: handleRemoveFromClassroomClick,
   });
 });
