@@ -38,7 +38,7 @@
         :render-dropdowns="false"
         :render-labels="true"
         :label="dashboardData?.totalInvitations ?? 0"
-        :sublabel="'Unregistered'"
+        :sublabel="'Total Invites'"
       />
     </div>
   </div>
