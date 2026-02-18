@@ -2,6 +2,12 @@
   <div
     class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[rgb(175,103,240)] to-white"
   >
+
+    <!-- BACK BUTTON -->
+    <div class="absolute top-10 left-10 flex justify-start">
+      <BackwardButton route="/"/>
+    </div>
+
     <!-- Icon and Title -->
     <div class="flex items-center space-x-3 mb-8">
       <div class="p-4 bg-white rounded-full shadow-lg">
@@ -53,16 +59,17 @@
           {{ isLoading ? "Logging in..." : "Login" }}
         </button>
       </form>
-
-      <!-- Test Accounts Info (REMOVE IN PRODUCTION) -->
-      <div class="mt-6 p-4 bg-white/20 rounded-md text-white text-sm">
-        <p class="font-semibold mb-2">Test Accounts:</p>
-        <ul class="space-y-1 text-xs">
-          <li>Admin: fakeadmin@gmail.com</li>
-          <li>Instructor: fakeinstructor@gmail.com</li>
-          <li>Student: fakestudent@gmail.com</li>
-          <li>Password: Newpass1!</li>
-        </ul>
+      <!-- Register Link -->
+      <div class="text-center mt-4">
+        <p class="text-gray-800 text-sm">
+          Don't have an account yet?
+          <NuxtLink
+            to="/register"
+            class="font-medium underline text-purple-700 hover:text-purple-900"
+          >
+            Register here
+          </NuxtLink>
+        </p>
       </div>
     </div>
   </div>
@@ -72,6 +79,8 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import useSupabaseAuth from "~/composables/useSupabaseAuth";
+import BackwardButton from "~/components/BackwardButton/BackwardButton.vue";
+
 
 definePageMeta({
   layout: false, // No layout for login page

@@ -8,7 +8,7 @@ export interface Classroom {
   startDate: string;
   endDate: string;
   status: "active" | "inactive";
-  // action column still needed
+  invitationCode?: string | null;
 }
 
 export const classrooms: Classroom[] = [];

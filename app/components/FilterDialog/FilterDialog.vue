@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,27 +13,39 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icon } from "#components";
+import type { Classroom } from "../ClassroomDatatable/columns";
 
 const emit = defineEmits<{
   (e: "apply-filters", filters: FilterCriteria): void;
 }>();
 
+const props = defineProps<{
+  classrooms?: Classroom[];
+  showMsyear?: boolean;
+  role?: "student" | "instructor"; // NEW: identify type
+}>();
+
+const showMsyear = props.showMsyear ?? true;
+
 interface FilterCriteria {
   name: string;
   email: string;
   school: string;
-  msyear: string[];
+  msyear?: string[];
   classroom: string[];
   status: string[];
 }
 
 const isOpen = ref(false);
-
 const msyearOptions = ["1", "2", "3", "4"];
-const classroomOptions = ["0", "1", "2"];
-const statusOptions = ["registered", "unregistered"];
 
-// Temporary filters - uses firstName and lastName for UI
+// Status options depend on role
+const statusOptions = computed(() => {
+  if (props.role === "instructor") return ["active", "deactivated"];
+  return ["registered", "unregistered"];
+});
+
+// Temporary filters (UI state)
 const tempFilters = ref({
   firstName: "",
   lastName: "",
@@ -44,7 +56,7 @@ const tempFilters = ref({
   status: [] as string[],
 });
 
-// Saved filters - stores the combined name
+// Saved filters (persisted state)
 const savedFilters = ref({
   firstName: "",
   lastName: "",
@@ -58,47 +70,25 @@ const savedFilters = ref({
 
 const toggleMsyear = (year: string) => {
   const index = tempFilters.value.msyear.indexOf(year);
-  if (index === -1) {
-    tempFilters.value.msyear.push(year);
-  } else {
-    tempFilters.value.msyear.splice(index, 1);
-  }
+  index === -1 ? tempFilters.value.msyear.push(year) : tempFilters.value.msyear.splice(index, 1);
 };
 
 const toggleClassroom = (classroom: string) => {
   const index = tempFilters.value.classroom.indexOf(classroom);
-  if (index === -1) {
-    tempFilters.value.classroom.push(classroom);
-  } else {
-    tempFilters.value.classroom.splice(index, 1);
-  }
+  index === -1 ? tempFilters.value.classroom.push(classroom) : tempFilters.value.classroom.splice(index, 1);
 };
 
 const toggleStatus = (status: string) => {
   const index = tempFilters.value.status.indexOf(status);
-  if (index === -1) {
-    tempFilters.value.status.push(status);
-  } else {
-    tempFilters.value.status.splice(index, 1);
-  }
+  index === -1 ? tempFilters.value.status.push(status) : tempFilters.value.status.splice(index, 1);
 };
 
 const resetFilters = () => {
-  tempFilters.value = {
-    firstName: "",
-    lastName: "",
-    email: "",
-    school: "",
-    msyear: [],
-    classroom: [],
-    status: [],
-  };
+  tempFilters.value = { firstName: "", lastName: "", email: "", school: "", msyear: [], classroom: [], status: [] };
 };
 
 const saveFilters = () => {
-  // Combine firstName and lastName into name
-  const combinedName =
-    `${tempFilters.value.firstName} ${tempFilters.value.lastName}`.trim();
+  const combinedName = `${tempFilters.value.firstName} ${tempFilters.value.lastName}`.trim();
 
   savedFilters.value = {
     firstName: tempFilters.value.firstName,
@@ -111,17 +101,15 @@ const saveFilters = () => {
     status: [...tempFilters.value.status],
   };
 
-  // Emit the filter criteria with combined name
   const filterCriteria: FilterCriteria = {
     name: combinedName,
     email: savedFilters.value.email,
     school: savedFilters.value.school,
-    msyear: [...savedFilters.value.msyear],
     classroom: [...savedFilters.value.classroom],
     status: [...savedFilters.value.status],
+    ...(showMsyear && { msyear: [...savedFilters.value.msyear] }),
   };
 
-  console.log("Emitting filters:", filterCriteria);
   emit("apply-filters", filterCriteria);
   isOpen.value = false;
 };
@@ -167,11 +155,8 @@ const onOpenChange = (open: boolean) => {
 
     <DialogContent class="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>Filter Students</DialogTitle>
-        <DialogDescription>
-          Add search criteria to filter the student list. All fields are
-          optional.
-        </DialogDescription>
+        <DialogTitle>Filters</DialogTitle>
+        <DialogDescription>Add search criteria to filter results. All fields are optional.</DialogDescription>
       </DialogHeader>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
@@ -179,18 +164,12 @@ const onOpenChange = (open: boolean) => {
         <div class="flex flex-col gap-5">
           <div class="flex flex-col gap-1.5">
             <Label>First Name</Label>
-            <Input
-              v-model="tempFilters.firstName"
-              placeholder="Enter first name"
-            />
+            <Input v-model="tempFilters.firstName" placeholder="Enter first name" />
           </div>
 
           <div class="flex flex-col gap-1.5">
             <Label>Last Name</Label>
-            <Input
-              v-model="tempFilters.lastName"
-              placeholder="Enter last name"
-            />
+            <Input v-model="tempFilters.lastName" placeholder="Enter last name" />
           </div>
 
           <div class="flex flex-col gap-1.5">
@@ -208,22 +187,16 @@ const onOpenChange = (open: boolean) => {
               >
                 <input
                   type="checkbox"
-                  :id="`status-${statusOption}`"
                   :checked="tempFilters.status.includes(statusOption)"
                   @change="toggleStatus(statusOption)"
                   class="w-4 h-4 cursor-pointer"
                 />
-                <label
-                  :for="`status-${statusOption}`"
-                  class="capitalize text-sm cursor-pointer"
-                >
+                <label class="capitalize text-sm cursor-pointer">
                   {{ statusOption }}
                 </label>
               </div>
-              <div
-                v-if="tempFilters.status.length === 0"
-                class="text-xs text-gray-400"
-              >
+
+              <div v-if="tempFilters.status.length === 0" class="text-xs text-gray-400">
                 No status selected
               </div>
             </div>
@@ -237,7 +210,7 @@ const onOpenChange = (open: boolean) => {
             <Input v-model="tempFilters.school" placeholder="Enter school" />
           </div>
 
-          <div class="flex flex-col gap-1.5">
+          <div v-if="showMsyear" class="flex flex-col gap-1.5">
             <Label>MS Year</Label>
             <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
@@ -247,19 +220,14 @@ const onOpenChange = (open: boolean) => {
               >
                 <input
                   type="checkbox"
-                  :id="`msyear-${year}`"
                   :checked="tempFilters.msyear.includes(year)"
                   @change="toggleMsyear(year)"
                   class="w-4 h-4 cursor-pointer"
                 />
-                <label :for="`msyear-${year}`" class="text-sm cursor-pointer">
-                  Year {{ year }}
-                </label>
+                <label class="text-sm cursor-pointer">Year {{ year }}</label>
               </div>
-              <div
-                v-if="tempFilters.msyear.length === 0"
-                class="text-xs text-gray-400"
-              >
+
+              <div v-if="tempFilters.msyear.length === 0" class="text-xs text-gray-400">
                 No years selected
               </div>
             </div>
@@ -269,28 +237,20 @@ const onOpenChange = (open: boolean) => {
             <Label>Classroom</Label>
             <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
-                v-for="classroom in classroomOptions"
-                :key="classroom"
+                v-for="classroom in props.classrooms"
+                :key="classroom.id"
                 class="flex items-center gap-2"
               >
                 <input
                   type="checkbox"
-                  :id="`classroom-${classroom}`"
-                  :checked="tempFilters.classroom.includes(classroom)"
-                  @change="toggleClassroom(classroom)"
+                  :checked="tempFilters.classroom.includes(String(classroom.id))"
+                  @change="toggleClassroom(String(classroom.id))"
                   class="w-4 h-4 cursor-pointer"
                 />
-                <label
-                  :for="`classroom-${classroom}`"
-                  class="text-sm cursor-pointer"
-                >
-                  Example Classroom {{ classroom }}
-                </label>
+                <label class="text-sm cursor-pointer">{{ classroom.name }}</label>
               </div>
-              <div
-                v-if="tempFilters.classroom.length === 0"
-                class="text-xs text-gray-400"
-              >
+
+              <div v-if="tempFilters.classroom.length === 0" class="text-xs text-gray-400">
                 No classrooms selected
               </div>
             </div>
@@ -299,11 +259,7 @@ const onOpenChange = (open: boolean) => {
       </div>
 
       <DialogFooter class="w-full flex items-center">
-        <Button
-          variant="outline"
-          @click="resetFilters"
-          class="flex items-center gap-2"
-        >
+        <Button variant="outline" @click="resetFilters" class="flex items-center gap-2">
           <Icon name="mdi:refresh" size="16" />
           Reset
         </Button>

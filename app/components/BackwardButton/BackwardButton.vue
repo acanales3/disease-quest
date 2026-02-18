@@ -4,13 +4,18 @@ import { ArrowUpIcon } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 
 const props = defineProps<{
-  route: string;
+  route?: string; // optional now
 }>();
 
 const router = useRouter();
 
 function go() {
-  router.push(props.route);
+  // If route is "back" or not provided → go to previous page
+  if (!props.route || props.route === "back") {
+    router.back();
+  } else {
+    router.push(props.route);
+  }
 }
 </script>
 

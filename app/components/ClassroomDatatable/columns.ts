@@ -13,14 +13,16 @@ export interface Classroom {
   startDate: string;
   endDate: string;
   status: "active" | "inactive";
-} 
+  invitationCode?: string | null;
+}
 
 export interface ColumnOptions {
+  onEdit?: (classroom: Classroom) => void;
   onDelete?: (classroom: Classroom) => void;
 }
 
 export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Classroom>[] {
-  return [
+  const columns: ColumnDef<Classroom>[] = [
   {
     accessorKey: "id",
     header: () =>
@@ -121,7 +123,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
     header: () =>
       h("div", { class: "text-center font-normal text-black" }, "End Date"),
     cell: ({ row }) => {
-      const endDate = row.getValue("startDate") as string;
+      const endDate = row.getValue("endDate") as string;
       return h(
         "div",
         { class: "text-center font-normal text-gray-600" },
@@ -148,22 +150,29 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
       );
     },
   },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const classroom = row.original;
+  ];
 
-      return h(
-        "div",
-        { class: "relative flex justify-center" },
-        h(DropdownAction, { 
-          classroom,
-          role,
-          onDelete: options?.onDelete,
-        })
-      );
-    },
-  },
-];
+  // Include actions column for admin, instructor, and student roles
+  if (role === 'admin' || role === 'instructor' || role === 'student') {
+    columns.push({
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const classroom = row.original;
+
+        return h(
+          "div",
+          { class: "relative flex justify-center" },
+          h(DropdownAction, { 
+            classroom,
+            role,
+            onEdit: options?.onEdit,
+            onDelete: options?.onDelete,
+          })
+        );
+      },
+    });
+  }
+
+  return columns;
 }

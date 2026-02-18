@@ -2,13 +2,18 @@ import type { ColumnDef } from "@tanstack/vue-table";
 import { h } from "vue";
 import DropdownAction from "@/components/InstructorDatatable/data-table-dropdown.vue";
 import { ArrowUpDown } from "lucide-vue-next";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 export interface Instructor {
   id: string;
   name: string;
   email: string;
   school: string;
-  classroom: number;
+  classrooms: { id: number; name: string }[];
   status: "active" | "deactivated";
 }
 
@@ -19,24 +24,18 @@ export function getColumns(
 ): ColumnDef<Instructor>[] {
   return [
     {
-      accessorKey: "id",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "No"),
-      cell: ({ row }) => {
-        // NOTE: your Instructor.id is a string (uuid), but you render it as "No".
-        // Keeping your behavior: just show it as a string.
-        const id = row.getValue("id") as string;
-        return h(
+      id: "index",
+      header: () => h("div", { class: "text-center font-normal text-black" }, "No"),
+      cell: ({ row }) =>
+        h(
           "div",
           { class: "text-center font-normal text-gray-600" },
-          id != null ? String(id) : "-"
-        );
-      },
+          String(row.index + 1)
+        ),
     },
     {
       accessorKey: "name",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Name"),
+      header: () => h("div", { class: "text-center font-normal text-black" }, "Name"),
       cell: ({ row }) => {
         const name = row.getValue("name") as string;
         return h("div", { class: "text-center font-normal text-gray-600" }, name);
@@ -63,10 +62,9 @@ export function getColumns(
     },
     {
       accessorKey: "school",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "School"),
+      header: () => h("div", { class: "text-center font-normal text-black" }, "School"),
       cell: ({ row }) => {
-        const school = row.getValue("school") as string;
+        const school = row.getValue("school") as string | undefined;
         return h(
           "div",
           { class: "text-center font-normal text-gray-600" },
@@ -75,22 +73,59 @@ export function getColumns(
       },
     },
     {
-      accessorKey: "classroom",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Classroom"),
+      accessorKey: "classrooms",
+      header: () => h("div", { class: "text-center font-normal text-black" }, "Classroom"),
       cell: ({ row }) => {
-        const room = row.getValue("classroom") as number;
+        const classrooms = row.getValue("classrooms") as { id: number; name: string }[] | undefined;
+
+        if (!classrooms || classrooms.length === 0) {
+          return h("div", { class: "text-center text-gray-600" }, "-");
+        }
+
+        const first = classrooms[0]?.name ?? "-";
+        const truncated = first.length > 10 || classrooms.length > 1 ? first.slice(0, 10) + "..." : first;
+
         return h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          room != null ? String(room) : "-"
+          Tooltip,
+          {},
+          {
+            default: () => [
+              h(
+                TooltipTrigger,
+                { asChild: true },
+                {
+                  default: () =>
+                    h(
+                      "div",
+                      {
+                        class: "text-center cursor-pointer text-gray-600 hover:text-gray-900 transition",
+                      },
+                      truncated
+                    ),
+                }
+              ),
+              h(
+                TooltipContent,
+                { side: "bottom", class: "bg-white shadow-md w-56" },
+                {
+                  default: () =>
+                    classrooms.map((c) =>
+                      h(
+                        "div",
+                        { key: c.id, class: "py-1 text-sm text-gray-600" },
+                        c.name
+                      )
+                    ),
+                }
+              ),
+            ],
+          }
         );
       },
     },
     {
       accessorKey: "status",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Status"),
+      header: () => h("div", { class: "text-center font-normal text-black" }, "Status"),
       cell: ({ row }) => {
         const status = row.getValue("status") as Instructor["status"];
         const isActive = status === "active";

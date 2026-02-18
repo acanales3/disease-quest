@@ -26,7 +26,13 @@
 
     <!-- Instructor Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <!-- classrooms passed here + role -->
+      <DataTable
+        :columns="visibleColumns"
+        :data="data"
+        :classrooms="classrooms"
+        role="instructor"   
+      />
     </div>
 
     <!-- Instructor Edit Modal -->
@@ -47,27 +53,53 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import DataTable from "../../InstructorDatatable/data-table.vue";
-import { getColumns, type Instructor } from "../../InstructorDatatable/columns";
+import { getColumns, type Instructor } from "@/components/InstructorDatatable/columns";
+import type { Classroom } from "../../ClassroomDatatable/columns";
+
 import TotalCount from "@/components/ui/TotalCount.vue";
 import InviteDialog from "@/components/InviteDialog/InviteDialog.vue";
 import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
 import AdminEditInstructorDialog from "@/components/AdminEditInstructorDialog/AdminEditInstructorDialog.vue";
 import DeleteInstructorModal from "@/components/DeleteInstructorModal/DeleteInstructorModal.vue";
 
+// ------------------
 // Fetch instructors
+// ------------------
 const { data, pending, error } = await useFetch<Instructor[]>("/api/instructors", {
   default: () => [],
 });
 
+// ------------------
+// Classrooms state
+// ------------------
+const classrooms = ref<Classroom[]>([]);
+
+async function fetchClassrooms() {
+  try {
+    classrooms.value = await $fetch<Classroom[]>("/api/classrooms");
+  } catch {
+    classrooms.value = [];
+  }
+}
+
+onMounted(fetchClassrooms);
+
+// ------------------
 // Delete modal state
+// ------------------
 const isDeleteModalOpen = ref(false);
 const instructorToDelete = ref<Instructor | null>(null);
 
-// page banner message
+// ------------------
+// Page banner message
+// ------------------
 const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
 
+// ------------------
+// Delete logic
+// ------------------
 function handleDeleteClick(instructor: Instructor) {
   pageMessage.value = null;
   instructorToDelete.value = instructor;
@@ -102,30 +134,51 @@ async function handleDeleteConfirm(instructor: Instructor) {
   }
 }
 
-// Pass onDelete into getColumns so dropdown can open modal
+// ------------------
+// Table columns
+// ------------------
 const visibleColumns = computed(() =>
   getColumns("admin", {
     onDelete: handleDeleteClick,
   })
 );
 
-// Existing edit save
+// ------------------
+// Save instructor edits
+// ------------------
 const saveInstructorEdits = async (instructor: Instructor) => {
-  const [first_name, ...rest] = instructor.name.split(" ");
-  const last_name = rest.join(" ");
+  pageMessage.value = null;
 
-  await $fetch(`/api/instructors/${instructor.id}`, {
-    method: "PUT",
-    body: {
-      first_name,
-      last_name,
-      email: instructor.email,
-      school: instructor.school,
-      status: instructor.status,
-    },
-  });
+  try {
+    const [first_name, ...rest] = instructor.name.split(" ");
+    const last_name = rest.join(" ");
 
-  data.value = data.value.map((i) => (i.id === instructor.id ? instructor : i));
-  modalBus.closeEdit();
+    await $fetch(`/api/admin/users/${instructor.id}`, {
+      method: "PUT",
+      body: {
+        first_name,
+        last_name,
+        email: instructor.email,
+        school: instructor.school,
+        status: instructor.status,
+      },
+    });
+
+    data.value = data.value.map((i) =>
+      i.id === instructor.id ? instructor : i
+    );
+
+    modalBus.closeEdit();
+  } catch (err: any) {
+    console.error("Error updating instructor:", err?.data || err);
+
+    pageMessage.value = {
+      type: "error",
+      text:
+        err?.data?.statusMessage ||
+        err?.message ||
+        "Failed to update instructor. Please try again.",
+    };
+  }
 };
 </script>
