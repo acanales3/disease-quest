@@ -7,26 +7,17 @@ import type {
 } from "@tanstack/vue-table";
 
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-
-import {
   FlexRender,
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useVueTable,
   getFilteredRowModel,
+  useVueTable,
 } from "@tanstack/vue-table";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-
-import { ChevronDown } from "lucide-vue-next";
-import { h, ref } from "vue";
+import { ref, onMounted } from "vue";
 import { valueUpdater } from "@/lib/utils";
 
 import {
@@ -38,34 +29,47 @@ import {
   TableRow,
 } from "~/components/ui/table";
 
+// Import the new ClassroomFilterDialog
+import ClassroomFilterDialog from "../ClassroomFilterDialog/ClassroomFilterDialog.vue";
+
 const props = withDefaults(
   defineProps<{
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     rowLength?: number;
   }>(),
-  { rowLength: 10 } // default to 10 rows per page
+  { rowLength: 10 }
 );
 
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
 
+// --------------------------
+// Create table instance
+// --------------------------
 const table = useVueTable({
   get data() {
     return props.data;
   },
   get columns() {
-    return props.columns;
+    // Override the status column to use exact-match filter
+    return props.columns.map((col) => {
+      if (col.id === "status" || (col as any).accessorKey === "status") {
+        return {
+          ...col,
+          filterFn: (row, columnId, filterValues: string[]) => {
+            const cellValue = (row.getValue(columnId) ?? "").toString().toLowerCase();
+            if (!filterValues.length) return true; // no filter, show all
+            return filterValues.includes(cellValue); // exact match only
+          },
+        } as ColumnDef<TData, TValue>;
+      }
+      return col;
+    });
   },
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
-  initialState: {
-    pagination: {
-      pageSize: props.rowLength,
-      pageIndex: 0,
-    },
-  },
   getSortedRowModel: getSortedRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
   onColumnFiltersChange: (updaterOrValue) =>
@@ -84,6 +88,12 @@ const table = useVueTable({
       return columnVisibility.value;
     },
   },
+  initialState: {
+    pagination: {
+      pageSize: props.rowLength,
+      pageIndex: 0,
+    },
+  },
 });
 
 onMounted(() => {
@@ -94,58 +104,53 @@ onMounted(() => {
     }
   });
 });
+
+// --------------------------
+// Apply filters from ClassroomFilterDialog
+// --------------------------
+const applyClassroomFilters = (filters: {
+  name: string;
+  code: string;
+  instructor: string;
+  school: string;
+  section: string;
+  startDate: string;
+  endDate: string;
+  status: string[];
+}) => {
+  table.getColumn("name")?.setFilterValue(filters.name || undefined);
+  table.getColumn("code")?.setFilterValue(filters.code || undefined);
+  table.getColumn("instructor")?.setFilterValue(filters.instructor || undefined);
+  table.getColumn("school")?.setFilterValue(filters.school || undefined);
+  table.getColumn("section")?.setFilterValue(filters.section || undefined);
+  table.getColumn("startDate")?.setFilterValue(filters.startDate || undefined);
+  table.getColumn("endDate")?.setFilterValue(filters.endDate || undefined);
+
+  // Lowercase status for exact match
+  const statusFilter = filters.status.map((s) => s.toLowerCase());
+  table.getColumn("status")?.setFilterValue(
+    statusFilter.length ? statusFilter : undefined
+  );
+};
 </script>
 
 <template>
   <div class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden">
-    <!-- Top bar: label left, search & column menu right -->
+    <!-- Top bar: label left, search & filter dialog right -->
     <div class="flex items-center justify-between py-4">
-      <!-- Left: label -->
       <div class="text-md font-light text-black">All Classrooms List</div>
 
-      <!-- Right: search input + dropdowns -->
       <div class="flex items-center space-x-4">
-        <div
-          class="flex items-center justify-center w-8 h-8 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
-        >
-          <Icon name="lets-icons:filter" />
-        </div>
+        <!-- Classroom Filter Dialog -->
+        <ClassroomFilterDialog @apply-filters="applyClassroomFilters" />
+
+        <!-- Quick search by Name -->
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-2 py-1 w-80"
           placeholder="Search by Class Name"
           :model-value="table.getColumn('name')?.getFilterValue() as string"
           @update:model-value="table.getColumn('name')?.setFilterValue($event)"
         />
-
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button
-              class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
-            >
-              All Classes
-              <ChevronDown class="w-4 h-4 ml-2" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            class="bg-white rounded-md shadow-md flex flex-col"
-          >
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 0
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 1
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 2
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
 
