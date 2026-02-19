@@ -1,5 +1,8 @@
 import { defineEventHandler, createError } from "h3";
-import { serverSupabaseUser, serverSupabaseServiceRole } from "#supabase/server";
+import {
+  serverSupabaseUser,
+  serverSupabaseServiceRole,
+} from "#supabase/server";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -18,7 +21,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ✅ Explicitly type the profile result to avoid "never"
   const { data: profile, error: profileError } = (await client
     .from("users")
     .select("role")
@@ -73,10 +75,9 @@ export default defineEventHandler(async (event) => {
         first_name,
         last_name,
         email,
-        school,
-        name
+        school
       )
-    `
+    `,
     )
     .order("user_id", { ascending: true });
 
@@ -88,17 +89,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // ✅ IMPORTANT: id is row number; userId keeps UUID for later
   const admins = (data ?? []).map((row: any, idx: number) => {
     const u = row?.users;
-    const first = u?.first_name ?? "";
-    const last = u?.last_name ?? "";
-    const fullName = `${first} ${last}`.trim();
-    const name = fullName || u?.name || "Unknown";
+    const name =
+      [u?.first_name, u?.last_name].filter(Boolean).join(" ") || "Unknown";
 
     return {
-      id: idx + 1, // UI row number
-      userId: row.user_id, // UUID for backend ops later
+      id: idx + 1,
+      userId: row.user_id,
       name,
       email: u?.email ?? "",
       school: u?.school ?? "",

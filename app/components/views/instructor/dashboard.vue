@@ -4,17 +4,13 @@
     <div
       class="rounded-lg text-center flex flex-col items-center justify-center w-full bg-white shadow-sm py-6"
     >
-      <h1 class="text-lg font-bold text-gray-800">Hey {{ user.name }}!</h1>
+      <h1 class="text-lg font-bold text-gray-800">Hey {{ displayName }}!</h1>
       <p class="text-sm text-gray-500">Welcome back to DiseaseQuest!</p>
     </div>
 
     <!-- Stats Row -->
     <div class="flex w-full justify-between items-center gap-4 my-6">
-      <TotalCount 
-        icon="hugeicons:students" 
-        :count="26" 
-        label="Students" 
-      />
+      <TotalCount icon="hugeicons:students" :count="26" label="Students" />
 
       <TotalCount
         icon="simple-icons:googleclassroom"
@@ -22,11 +18,7 @@
         label="Classrooms"
       />
 
-      <TotalCount
-        icon="si:book-line"
-        :count="4"
-        label="Cases"
-      />
+      <TotalCount icon="si:book-line" :count="4" label="Cases" />
 
       <PieChart
         header="Student Participation"
@@ -73,10 +65,8 @@ const graphData = [
 ];
 const categories = ["Registered", "Unregistered"];
 
-// Example user - replace with api data
-const user = {
-  name: "Instructor",
-};
+// Hardcoded for now — replace with API data when available
+const displayName = "Instructor";
 
 const data = ref<Classroom[]>([]);
 const isEditModalOpen = ref(false);
@@ -93,14 +83,18 @@ const visibleColumns = computed(() => {
     "status",
     "actions",
   ];
-  return getColumns('instructor', {
+  return getColumns("instructor", {
     onEdit: handleEditClassroom,
-  }).filter(column => {
-    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
+  }).filter((column) => {
+    const key =
+      "id" in column
+        ? column.id
+        : "accessorKey" in column
+          ? column.accessorKey
+          : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
 });
-
 
 function handleEditClassroom(classroom: Classroom) {
   selectedClassroom.value = classroom;
@@ -111,7 +105,7 @@ function handleClassroomUpdated(updatedClassroom: Classroom) {
   data.value = data.value.map((classroom) =>
     String(classroom.id) === String(updatedClassroom.id)
       ? { ...classroom, ...updatedClassroom }
-      : classroom
+      : classroom,
   );
   selectedClassroom.value = updatedClassroom;
   isEditModalOpen.value = false;
@@ -119,10 +113,10 @@ function handleClassroomUpdated(updatedClassroom: Classroom) {
 
 async function getData(): Promise<Classroom[]> {
   try {
-    return await $fetch<Classroom[]>('/api/classrooms')
+    return await $fetch<Classroom[]>("/api/classrooms");
   } catch (error) {
-    console.error('Failed to fetch classrooms:', error)
-    return []
+    console.error("Failed to fetch classrooms:", error);
+    return [];
   }
 }
 

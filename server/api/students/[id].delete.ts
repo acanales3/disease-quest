@@ -7,30 +7,29 @@ export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
   const adminClient = serverSupabaseServiceRole(event);
 
-  // @ts-ignore - supabase user can be { id } or { sub }
+  // @ts-ignore
   const requesterId = user?.id || user?.sub;
 
   if (!requesterId) {
-    throw createError({
-      statusCode: 401,
-      message: "Unauthorized",
-    });
+    throw createError({ statusCode: 401, message: "Unauthorized" });
   }
 
   const studentId = getRouterParam(event, "id");
   const query = getQuery(event) as Record<string, unknown>;
-  const hasClassroomIds = Object.prototype.hasOwnProperty.call(query, "classroomIds");
-  const hasClassroomId = Object.prototype.hasOwnProperty.call(query, "classroomId");
+  const hasClassroomIds = Object.prototype.hasOwnProperty.call(
+    query,
+    "classroomIds",
+  );
+  const hasClassroomId = Object.prototype.hasOwnProperty.call(
+    query,
+    "classroomId",
+  );
   const isUnenroll = hasClassroomIds || hasClassroomId;
 
   if (!studentId) {
-    throw createError({
-      statusCode: 400,
-      message: "Student ID is required",
-    });
+    throw createError({ statusCode: 400, message: "Student ID is required" });
   }
 
-  // Fetch requester profile for role check
   const { data: userProfile, error: profileError } = (await adminClient
     .from("users")
     .select("role")
@@ -47,54 +46,67 @@ export default defineEventHandler(async (event) => {
   const role = userProfile.role?.toUpperCase();
   const isAdmin = role === "ADMIN";
 
-  // Mode 1: remove enrollment from classroom(s).
+  // Mode 1: unenroll from classroom(s)
   if (isUnenroll) {
-    // Parse classroom IDs — supports both ?classroomIds=1,2,3 and legacy ?classroomId=1
     let parsedClassroomIds: number[] = [];
 
     if (hasClassroomIds) {
       const raw = query.classroomIds;
       if (typeof raw !== "string" || raw.trim() === "") {
-        throw createError({ statusCode: 400, message: "Invalid classroomIds query param" });
+        throw createError({
+          statusCode: 400,
+          message: "Invalid classroomIds query param",
+        });
       }
       parsedClassroomIds = raw.split(",").map((s) => Number(s.trim()));
     } else if (hasClassroomId) {
       const raw = query.classroomId;
       if (typeof raw !== "string" || raw.trim() === "") {
-        throw createError({ statusCode: 400, message: "Invalid classroomId query param" });
+        throw createError({
+          statusCode: 400,
+          message: "Invalid classroomId query param",
+        });
       }
       parsedClassroomIds = [Number(raw.trim())];
     }
 
-    // Validate all IDs are positive integers
     if (parsedClassroomIds.some((id) => !Number.isInteger(id) || id <= 0)) {
-      throw createError({ statusCode: 400, message: "All classroom IDs must be positive integers" });
+      throw createError({
+        statusCode: 400,
+        message: "All classroom IDs must be positive integers",
+      });
     }
     if (parsedClassroomIds.length === 0) {
-      throw createError({ statusCode: 400, message: "At least one classroom ID is required" });
+      throw createError({
+        statusCode: 400,
+        message: "At least one classroom ID is required",
+      });
     }
 
-    // Authorization: for each classroom, check that the requester has permission
     const { data: classroomRows, error: classroomError } = await adminClient
       .from("classrooms")
       .select("id, instructor_id")
       .in("id", parsedClassroomIds);
 
     if (classroomError) {
-      throw createError({ statusCode: 500, message: `Error fetching classrooms: ${classroomError.message}` });
+      throw createError({
+        statusCode: 500,
+        message: `Error fetching classrooms: ${classroomError.message}`,
+      });
     }
 
     const foundIds = new Set((classroomRows ?? []).map((c: any) => c.id));
     const missingIds = parsedClassroomIds.filter((id) => !foundIds.has(id));
     if (missingIds.length > 0) {
-      throw createError({ statusCode: 404, message: `Classroom(s) not found: ${missingIds.join(", ")}` });
+      throw createError({
+        statusCode: 404,
+        message: `Classroom(s) not found: ${missingIds.join(", ")}`,
+      });
     }
 
-    // Permission check per classroom
     if (!isAdmin) {
       for (const classroom of classroomRows!) {
-        const isInstructorOfClass = classroom.instructor_id === requesterId;
-        if (!isInstructorOfClass) {
+        if (classroom.instructor_id !== requesterId) {
           throw createError({
             statusCode: 403,
             message: `Forbidden: You are not authorized to modify classroom ${classroom.id}`,
@@ -103,7 +115,6 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Ensure the target student exists
     const { data: targetStudent, error: targetStudentError } = await adminClient
       .from("students")
       .select("user_id")
@@ -120,7 +131,6 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: "Student not found" });
     }
 
-    // Remove from all specified classrooms
     const { data: removedRows, error: removeError } = await adminClient
       .from("classroom_students")
       .delete()
@@ -150,15 +160,15 @@ export default defineEventHandler(async (event) => {
     };
   }
 
-  // Mode 2: permanent student deletion (admin only).
+  // Mode 2: permanent deletion (admin only)
   if (!isAdmin) {
     throw createError({
       statusCode: 403,
-      message:
-        "Forbidden: Only admins can permanently delete student accounts",
+      message: "Forbidden: Only admins can permanently delete student accounts",
     });
   }
 
+  // Removed .eq("users.role", "STUDENT") — unreliable on joined columns
   const { data: targetStudent, error: targetStudentError } = await adminClient
     .from("students")
     .select(
@@ -167,13 +177,11 @@ export default defineEventHandler(async (event) => {
       users!inner (
         first_name,
         last_name,
-        email,
-        role
+        email
       )
-    `
+    `,
     )
     .eq("user_id", studentId)
-    .eq("users.role", "STUDENT")
     .maybeSingle();
 
   if (targetStudentError) {
@@ -183,14 +191,15 @@ export default defineEventHandler(async (event) => {
     });
   }
   if (!targetStudent) {
-    throw createError({
-      statusCode: 404,
-      message: "Student not found",
-    });
+    throw createError({ statusCode: 404, message: "Student not found" });
   }
 
   const userInfo = targetStudent.users as
-    | { first_name?: string | null; last_name?: string | null; email?: string | null }
+    | {
+        first_name?: string | null;
+        last_name?: string | null;
+        email?: string | null;
+      }
     | undefined;
   const displayName =
     [userInfo?.first_name, userInfo?.last_name].filter(Boolean).join(" ") ||
@@ -238,39 +247,23 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Delete from app users table first; DB FKs/cascades handle related student rows atomically.
-  const { data: deletedUsers, error: deleteUserError } = await adminClient
-    .from("users")
-    .delete()
-    .eq("id", studentId)
-    .select("id");
-
-  if (deleteUserError) {
+  // Delete from Supabase Auth — cascades to public.users → public.students
+  const { error: deleteAuthError } =
+    await adminClient.auth.admin.deleteUser(studentId);
+  if (
+    deleteAuthError &&
+    !/user not found/i.test(deleteAuthError.message || "")
+  ) {
     throw createError({
       statusCode: 500,
-      message: `Failed deleting student user: ${deleteUserError.message}`,
-    });
-  }
-  if (!deletedUsers || deletedUsers.length === 0) {
-    throw createError({
-      statusCode: 500,
-      message: "Delete users affected 0 rows. Student was not deleted.",
-    });
-  }
-
-  // Delete from Supabase Auth as part of permanent account deletion.
-  const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(studentId);
-  if (deleteAuthError && !/user not found/i.test(deleteAuthError.message || "")) {
-    throw createError({
-      statusCode: 500,
-      message: `Student app data deleted, but auth user deletion failed: ${deleteAuthError.message}`,
+      message: `Auth user deletion failed: ${deleteAuthError.message}`,
     });
   }
 
   const message = `Student permanently deleted: ${displayName}.`;
   const { error: notifErr } = await adminClient
     .from("notifications")
-    .insert([{ user_id: requesterId, message }]);
+    .insert([{ user_id: requesterId, message }] as any);
   const warning = notifErr
     ? `Student deleted, but notification/audit log failed: ${notifErr.message}`
     : undefined;
