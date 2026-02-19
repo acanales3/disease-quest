@@ -34,11 +34,7 @@
     </div>
 
     <div class="w-full py-2">
-      <DataTable
-        :columns="visibleColumns"
-        :data="data"
-        @edit="handleEditClassroom"
-      />
+      <DataTable :columns="visibleColumns" :data="data" user-role="instructor" />
     </div>
 
     <CreateClassroomModal
