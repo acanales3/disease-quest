@@ -24,6 +24,7 @@ const props = withDefaults(defineProps<BaseChartProps<T> & {
    */
   xLabel?: string
   yLabel?: string
+  legendPosition?: 'top' | 'bottom'
 }>(), {
   curveType: CurveType.MonotoneX,
   filterOpacity: 0.2,
@@ -35,6 +36,7 @@ const props = withDefaults(defineProps<BaseChartProps<T> & {
   showGridLine: true,
   xLabel: '',
   yLabel: '',
+  legendPosition: 'top',
 })
 
 const emits = defineEmits<{
@@ -65,10 +67,10 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
 </script>
 
 <template>
-  <div :class="cn('w-full h-[400px] flex flex-col items-end relative', $attrs.class ?? '')">
-    <!-- Legend -->
+  <div :class="cn('w-full flex flex-col items-end relative min-h-[400px]', $attrs.class ?? '')">
+    <!-- Legend (Top) -->
     <ChartLegend
-      v-if="showLegend"
+      v-if="showLegend && legendPosition === 'top'"
       v-model:items="legendItems"
       @legend-item-click="handleLegendItemClick"
     />
@@ -145,5 +147,12 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
         {{ props.xLabel }}
       </div>
     </div>
+
+    <!-- Legend (Bottom) -->
+    <ChartLegend
+      v-if="showLegend && legendPosition === 'bottom'"
+      v-model:items="legendItems"
+      @legend-item-click="handleLegendItemClick"
+    />
   </div>
 </template>

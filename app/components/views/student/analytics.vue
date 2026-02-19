@@ -1,10 +1,8 @@
 <template>
     <div class="w-full">
-        <ClassroomScores class="mb-8" v-if="user" :student-id="user.id"/>
+        <ClassroomScores class="mb-8" :data="mockData"/>
         <AssessmentCategoryScoreGraph
         :data="mockData"
-        :index="index"
-        :categories="categories"
         /> 
     </div>
 </template>
@@ -12,26 +10,35 @@
 <script setup lang="ts">
 import ClassroomScores from '../../graph/ScoresByCategoryGraph.vue'
 import AssessmentCategoryScoreGraph from '@/components/AssessmentCategoryScoreGraph/graph.vue'
-import type { CaseScore } from '@/components/AssessmentCategoryScoreGraph/types'
+import type { AnalyticsScoreEntry } from '@/types/analytics'
 
 const user = useSupabaseUser()
 
-const mockData: CaseScore[] = [
-  { case: 'Case 1', score: 85 },
-  { case: 'Case 2', score: 90 },
-  { case: 'Case 3', score: 75 },
-  { case: 'Case 4', score: 95 },
-  { case: 'Case 5', score: 80 },
-  { case: 'Case 6', score: 75 },
-  { case: 'Case 7', score: 95 },
-  { case: 'Case 8', score: 80 },
-  { case: 'Case 9', score: 95 },
-  { case: 'Case 10', score: 80 },
-  { case: 'Case 11', score: 75 },
-  { case: 'Case 12', score: 95 },
-  { case: 'Case 13', score: 80 },
+// Mock Data for Verification (matches new Interface)
+const mockData: AnalyticsScoreEntry[] = [
+    {
+        caseId: 1, caseName: 'Case A',
+        classroomId: 101, classroomName: 'Section 1',
+        count: 1,
+        history_taking_synthesis: 85,
+        physical_exam_interpretation: 90,
+        differential_diagnosis_formulation: 88,
+        diagnostic_tests: 92,
+        management_reasoning: 85,
+        communication_empathy: 95,
+        reflection_metacognition: 89
+    },
+    {
+        caseId: 2, caseName: 'Case B',
+        classroomId: 101, classroomName: 'Section 1',
+        count: 1,
+        history_taking_synthesis: 78,
+        physical_exam_interpretation: 82,
+        differential_diagnosis_formulation: 80,
+        diagnostic_tests: 85,
+        management_reasoning: 79,
+        communication_empathy: 88,
+        reflection_metacognition: 84
+    }
 ]
-
-const index: keyof CaseScore = 'case'
-const categories: (keyof CaseScore)[] = ['score']
 </script>
