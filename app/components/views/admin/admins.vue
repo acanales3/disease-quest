@@ -10,12 +10,17 @@
       <InviteDialog dialog-type="administrator" />
     </div>
 
-    <!-- Fetch / action error banner -->
-    <div v-if="uiError" class="w-full py-2">
+    <!-- Success / Error banner -->
+    <div v-if="pageMessage" class="w-full py-2">
       <div
-        class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        class="rounded-md border px-4 py-3 text-sm"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
       >
-        {{ uiError }}
+        {{ pageMessage.text }}
       </div>
     </div>
 
@@ -56,15 +61,22 @@ import DeleteAdminModal from "@/components/DeleteAdminModal/DeleteAdminModal.vue
 // =======================
 // Data fetching
 // =======================
-const { data, pending, error, refresh } = await useFetch<Administrator[]>("/api/admins", {
-  default: () => [],
-});
-
-// UI error banner string (for delete failures, etc.)
-const uiError = ref<string>("");
+const { data, pending, error, refresh } = await useFetch<Administrator[]>(
+  "/api/admins",
+  {
+    default: () => [],
+  },
+);
 
 // =======================
-// Edit handling (frontend-only, as you already had)
+// Page banner message
+// =======================
+const pageMessage = ref<null | { type: "success" | "error"; text: string }>(
+  null,
+);
+
+// =======================
+// Edit handling
 // =======================
 const saveAdminEdits = async (admin: Administrator) => {
   data.value = data.value.map((a) => (a.userId === admin.userId ? admin : a));
@@ -80,17 +92,17 @@ const isDeleting = ref(false);
 
 // Called from dropdown "Delete"
 function handleDeleteClick(admin: Administrator) {
-  uiError.value = "";
+  pageMessage.value = null;
   adminToDelete.value = admin;
   isDeleteModalOpen.value = true;
 }
 
 // Confirm delete -> call backend API: DELETE /api/admins/:id
 async function handleDeleteConfirm(admin: Administrator) {
-  uiError.value = "";
+  pageMessage.value = null;
 
   if (!admin?.userId) {
-    uiError.value = "Missing admin id.";
+    pageMessage.value = { type: "error", text: "Missing admin id." };
     isDeleteModalOpen.value = false;
     adminToDelete.value = null;
     return;
@@ -99,23 +111,26 @@ async function handleDeleteConfirm(admin: Administrator) {
   try {
     isDeleting.value = true;
 
-    await $fetch(`/api/admins/${admin.userId}`, {
+    const res = await $fetch<any>(`/api/admins/${admin.userId}`, {
       method: "DELETE",
     });
 
-    // Optimistic UI update: remove deleted admin from list
     data.value = data.value.filter((a) => a.userId !== admin.userId);
-
-    // Close modal
     isDeleteModalOpen.value = false;
     adminToDelete.value = null;
+
+    pageMessage.value = {
+      type: "success",
+      text: res?.message || "Administrator deleted successfully.",
+    };
   } catch (e: any) {
-    // Keep modal closed (it already closes after confirm), but show error banner
-    const msg =
-      e?.data?.message ||
-      e?.message ||
-      "Failed to delete administrator. Please try again.";
-    uiError.value = msg;
+    pageMessage.value = {
+      type: "error",
+      text:
+        e?.data?.message ||
+        e?.message ||
+        "Failed to delete administrator. Please try again.",
+    };
 
     isDeleteModalOpen.value = false;
     adminToDelete.value = null;
@@ -124,10 +139,10 @@ async function handleDeleteConfirm(admin: Administrator) {
   }
 }
 
-// Columns: onDelete opens delete modal (Edit handled inside dropdown via modalBus)
+// Columns: onDelete opens delete modal
 const visibleColumns = computed(() =>
   getColumns("admin", {
     onDelete: handleDeleteClick,
-  })
+  }),
 );
 </script>
