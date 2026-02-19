@@ -9,21 +9,18 @@ type UserUpdate = TablesUpdate<"users">;
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
-  // @ts-ignore Supabase user shape can vary by runtime/library version
+  // @ts-ignore
   const actorUserId: string | undefined = user?.id || user?.sub;
 
-  if (!actorUserId) {
+  if (!actorUserId)
     throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
-  }
 
   const targetId = getRouterParam(event, "id");
-  if (!targetId) {
+  if (!targetId)
     throw createError({ statusCode: 400, statusMessage: "Missing admin id" });
-  }
 
   const client = serverSupabaseServiceRole(event);
 
-  // Authorize requester as admin.
   const { data: actorProfile, error: actorProfileError } = (await client
     .from("users")
     .select("role")
@@ -44,23 +41,19 @@ export default defineEventHandler(async (event) => {
       .select("user_id")
       .eq("user_id", actorUserId)
       .maybeSingle();
-
-    if (adminCheckError) {
+    if (adminCheckError)
       throw createError({
         statusCode: 500,
         statusMessage: `Failed to check admin access: ${adminCheckError.message}`,
       });
-    }
-
     isAdmin = !!adminRow;
   }
 
-  if (!isAdmin) {
+  if (!isAdmin)
     throw createError({
       statusCode: 403,
       statusMessage: "Forbidden: Admin access required",
     });
-  }
 
   const body = await readBody<{
     first_name?: string;
@@ -83,26 +76,22 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Verify target exists in admins table.
   const { data: targetAdmin, error: targetAdminError } = await client
     .from("admins")
     .select("user_id")
     .eq("user_id", targetId)
     .maybeSingle();
-
-  if (targetAdminError) {
+  if (targetAdminError)
     throw createError({
       statusCode: 500,
       statusMessage: `Failed to verify target admin: ${targetAdminError.message}`,
     });
-  }
-  if (!targetAdmin) {
+  if (!targetAdmin)
     throw createError({ statusCode: 404, statusMessage: "Admin not found" });
-  }
 
   const { data: targetUser, error: targetUserError } = (await client
     .from("users")
-    .select("id, first_name, last_name, email, school, name")
+    .select("id, first_name, last_name, email, school")
     .eq("id", targetId)
     .single()) as { data: any; error: any };
 
@@ -118,12 +107,6 @@ export default defineEventHandler(async (event) => {
   if (body.last_name !== undefined) userUpdate.last_name = body.last_name;
   if (body.school !== undefined) userUpdate.school = body.school;
 
-  if (body.first_name !== undefined || body.last_name !== undefined) {
-    const first = body.first_name ?? targetUser.first_name ?? "";
-    const last = body.last_name ?? targetUser.last_name ?? "";
-    userUpdate.name = `${first} ${last}`.trim();
-  }
-
   if (Object.keys(userUpdate).length === 0) {
     throw createError({
       statusCode: 400,
@@ -133,7 +116,7 @@ export default defineEventHandler(async (event) => {
 
   const { error: updateError } = await client
     .from("users")
-    // @ts-ignore Service-role typing mismatch in generated types
+    // @ts-ignore
     .update(userUpdate as any)
     .eq("id", targetId);
 
@@ -146,7 +129,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: updatedUser, error: fetchError } = (await client
     .from("users")
-    .select("id, first_name, last_name, email, school, name")
+    .select("id, first_name, last_name, email, school")
     .eq("id", targetId)
     .single()) as { data: any; error: any };
 
@@ -162,9 +145,9 @@ export default defineEventHandler(async (event) => {
     data: {
       userId: updatedUser.id,
       name:
-        `${updatedUser.first_name ?? ""} ${updatedUser.last_name ?? ""}`.trim() ||
-        updatedUser.name ||
-        "Unknown",
+        [updatedUser.first_name, updatedUser.last_name]
+          .filter(Boolean)
+          .join(" ") || "Unknown",
       email: updatedUser.email ?? "",
       school: updatedUser.school ?? "",
     },
