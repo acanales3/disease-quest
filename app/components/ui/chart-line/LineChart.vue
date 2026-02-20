@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<BaseChartProps<T> & {
 }>(), {
   curveType: CurveType.MonotoneX,
   filterOpacity: 0.2,
-  margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  margin: () => ({ top: 10, bottom: 50, left: 50, right: 20 }),
   showXAxis: true,
   showYAxis: true,
   showTooltip: true,
@@ -64,6 +64,13 @@ const isMounted = useMounted()
 function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
   emits("legendItemClick", d, i)
 }
+
+const resolveYFormatter = (tick: number | Date, i: number, ticks: number[] | Date[]) => {
+  if (props.yFormatter) {
+    return props.yFormatter(tick, i, ticks)
+  }
+  return `${tick}`
+}
 </script>
 
 <template>
@@ -80,14 +87,15 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
       <!-- Y-Axis Label -->
       <div
         v-if="props.yLabel"
-        class="absolute left-3 top-1/2 -translate-y-1/2 -rotate-90 text-2xl font-bold text-foreground"
+        class="absolute top-1/2 -translate-y-1/2 -rotate-90 text-sm font-medium text-muted-foreground whitespace-nowrap"
+        style="left: 12px; transform-origin: center;"
       >
         {{ props.yLabel }}
       </div>
 
       <!-- Main Chart -->
       <VisXYContainer
-        :margin="{ left: 50, right: 20, top: 10, bottom: 50 }"
+        :margin="props.margin"
         :data="data"
         :style="{ height: isMounted ? '100%' : 'auto' }"
       >
@@ -120,7 +128,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
           :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
           :tick-values="data.map((_, i) => i)"
           :grid-line="false"
-          :tick-line="false"
+          :tick-line="true"
           tick-text-color="hsl(var(--vis-text-color))"
         />
 
@@ -129,7 +137,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
           v-if="showYAxis"
           type="y"
           :tick-line="false"
-          :tick-format="yFormatter"
+          :tick-format="resolveYFormatter"
           :domain-line="false"
           :grid-line="showGridLine"
           :attributes="{ [Axis.selectors.grid]: { class: 'text-muted' } }"
@@ -142,7 +150,8 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
       <!-- X-Axis Label -->
       <div
         v-if="props.xLabel"
-        class="absolute bottom-3 text-2xl font-bold text-foreground"
+        class="absolute text-sm font-medium text-muted-foreground"
+        style="bottom: 12px; left: 50%; transform: translateX(-50%);"
       >
         {{ props.xLabel }}
       </div>

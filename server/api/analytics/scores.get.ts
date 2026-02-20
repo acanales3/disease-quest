@@ -199,7 +199,8 @@ export default defineEventHandler(async (event) => {
 
     // 5. Compute Averages
     const results = Array.from(aggregationMap.values()).map(entry => {
-        const avg = (nums: number[]) => nums.length ? Math.round(nums.reduce((a, b) => a + b, 0) / nums.length * 100) / 100 : 0
+        // Convert to percentage (mutiply raw floats by 100)
+        const avg = (nums: number[]) => nums.length ? Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100) : 0
 
         return {
             caseId: entry.caseId,

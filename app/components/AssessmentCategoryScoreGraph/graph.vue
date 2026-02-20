@@ -57,7 +57,8 @@
         showYAxis
         xLabel="Cases"
         yLabel="Average Score"
-        :margin="{ top: 20, right: 20, bottom: 80, left: 50 }"
+        :y-formatter="formatYAxis"
+        :margin="{ top: 20, right: 20, bottom: 80, left: 80 }"
       />
     </div>
      <div v-else-if="loading" class="text-center py-8 text-gray-500">
@@ -172,5 +173,7 @@ const activeCategories = computed(() => {
     if (selectedCategory.value) return [selectedCategory.value.name]
     return Object.values(KEY_TO_LABEL)
 })
+
+const formatYAxis = (tick: number | Date) => `${tick}%`
 
 </script>
