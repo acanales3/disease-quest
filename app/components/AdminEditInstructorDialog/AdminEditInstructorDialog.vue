@@ -1,22 +1,33 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import type { Classroom, ClassroomOptions } from '@/assets/interface/Classroom'
+import  MultiSelect  from '@/components/ui/MultiSelect.vue'
 import { ref, watch, computed } from 'vue';
 import type { Instructor } from '@/assets/interface/Instructor';
 
-const props = defineProps<{ show: boolean; data: Instructor | null }>();
+const props = defineProps<{ show: boolean; data: Instructor | null; classrooms: ClassroomOptions[] }>();
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'save', instructor: Instructor): void;
 }>();
 
 // reactive form data
-const form = ref({
+const form = ref<{
+  id: string,
+  first_name: string,
+  last_name: string,
+  email: string,
+  school: string,
+  classrooms: ClassroomOptions[],
+  status: 'active' | 'deactivated'
+}>
+  ({
   id: '',
   first_name: '',
   last_name: '',
   email: '',
   school: '',
-  classroom: null,
+  classrooms: [],
   status: 'active',
 });
 
@@ -39,7 +50,7 @@ watch(
       last_name: nameParts.slice(1).join(' ') ?? '',
       email: newData.email,
       school: newData.school,
-      classroom: newData.classroom,
+      classrooms: newData.classrooms ?? [],
       status: newData.status,
     }
   },
@@ -99,7 +110,7 @@ const handleSave = async () => {
     name: `${form.value.first_name} ${form.value.last_name}`.trim(),
     email: form.value.email,
     school: form.value.school,
-    classroom: form.value.classroom ?? 0,
+    classrooms: form.value.classrooms ?? [],
     status: form.value.status,
   });
   emit('close');
@@ -148,10 +159,29 @@ const handleSave = async () => {
           </p>
         </label>
 
-        <label class="flex flex-col">
-          Classroom
-          <input type="number" v-model.number="form.classroom" min="0" class="p-2 border rounded" />
-        </label>
+        <div class="flex flex-col">
+          <span class="mb-1 text-sm font-medium">
+            Classroom
+          </span>
+
+          <MultiSelect
+              :items="props.classrooms.map(c => ({
+              value: String(c.id),
+              label: c.name
+            }))"
+            :selected="form.classrooms.map(c => ({
+              value: String(c.id),
+              label: c.name
+            }))"
+            :selections-label="'classrooms'"
+            @update:selected="val => {
+              form.classrooms = val.map(v => ({
+                id: Number(v.value),
+                name: v.label
+              }))
+            }"
+          />
+        </div>
 
         <label class="flex flex-col">
           Status

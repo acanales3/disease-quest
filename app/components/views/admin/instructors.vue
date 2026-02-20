@@ -39,6 +39,7 @@
     <AdminEditInstructorDialog
       :show="modalBus.openEditModal"
       :data="modalBus.editData"
+      :classrooms="classrooms"
       @close="modalBus.closeEdit()"
       @save="saveInstructorEdits as any"
     />
