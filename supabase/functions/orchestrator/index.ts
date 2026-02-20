@@ -687,7 +687,7 @@ serve(async (req: Request) => {
     // ─── AI Clinical Engine: dynamic physiology ─────────────────
     // Call the clinical engine to determine realistic vital changes
     // based on the full clinical picture (replaces deterministic rules)
-    if (actionType !== "end_case" && actionType !== "update_differential" && actionType !== "submit_diagnosis") {
+    if (actionType !== "end_case" && actionType !== "update_differential" && actionType !== "submit_diagnosis" && actionType !== "get_results") {
       try {
         const physiology = (patientState.physiology ?? {}) as Record<string, unknown>;
         const vitals = (physiology.vitals ?? {}) as Record<string, unknown>;

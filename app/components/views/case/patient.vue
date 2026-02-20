@@ -161,7 +161,8 @@
           <div class="flex items-center justify-between">
             <h2 class="text-base font-semibold text-neutral-800">Physical Examination</h2>
             <button @click="handleExam" :disabled="loading"
-              class="px-5 py-2 text-sm font-medium bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 disabled:opacity-50 transition">
+              class="px-5 py-2 text-sm font-medium bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 disabled:opacity-50 transition flex items-center gap-2">
+              <svg v-if="loading" class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
               {{ loading ? 'Examining...' : 'Examine Patient' }}
             </button>
           </div>
@@ -226,21 +227,40 @@
               <div class="space-y-1.5">
                 <button v-for="test in availableTests" :key="test.id"
                   @click="handleOrderTest(test.id)"
-                  :disabled="loading || orderedTestIds.has(test.id)"
+                  :disabled="orderedTestIds.has(test.id) || loadingTests.has(test.id)"
                   class="w-full flex items-center justify-between px-4 py-3 text-sm rounded-lg border transition text-left"
                   :class="orderedTestIds.has(test.id)
                     ? 'bg-green-50 border-green-200 text-green-800'
-                    : 'bg-white hover:bg-neutral-50 border-neutral-200'">
+                    : loadingTests.has(test.id)
+                      ? 'bg-amber-50 border-amber-200 text-amber-800'
+                      : 'bg-white hover:bg-neutral-50 border-neutral-200'">
                   <span>{{ test.name }}</span>
-                  <span v-if="orderedTestIds.has(test.id)" class="text-[10px] font-semibold uppercase text-green-600">Ordered</span>
+                  <span v-if="loadingTests.has(test.id)" class="flex items-center gap-1.5 text-[10px] font-semibold uppercase text-amber-600">
+                    <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    Ordering...
+                  </span>
+                  <span v-else-if="orderedTestIds.has(test.id)" class="text-[10px] font-semibold uppercase text-green-600">Ordered</span>
                   <span v-else class="text-[10px] text-neutral-400">{{ test.cost_points }} pts</span>
                 </button>
               </div>
             </div>
             <!-- Results column - hospital lab report style -->
             <div>
-              <h2 class="text-base font-semibold text-neutral-800 mb-4">Results</h2>
-              <div v-if="testResultsList.length === 0" class="text-sm text-neutral-400 italic py-4">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-semibold text-neutral-800">Results</h2>
+                <button v-if="orderedTestIds.size > testResultsList.length"
+                  @click="manualRefreshResults"
+                  class="text-[10px] px-2 py-1 rounded border border-neutral-200 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50 transition">
+                  Refresh
+                </button>
+              </div>
+              <!-- Pending results indicators -->
+              <div v-for="testId in [...orderedTestIds].filter(id => !testResultsList.find(r => r.testId === id))" :key="'pending-'+testId"
+                class="flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-700">
+                <svg class="w-3.5 h-3.5 animate-spin flex-shrink-0" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                <span>{{ availableTests.find(t => t.id === testId)?.name ?? testId }} — results pending...</span>
+              </div>
+              <div v-if="testResultsList.length === 0 && orderedTestIds.size === 0" class="text-sm text-neutral-400 italic py-4">
                 No results yet.
               </div>
               <div v-for="r in testResultsList" :key="r.testId" class="border border-neutral-300 bg-white mb-4">
@@ -280,13 +300,19 @@
           <div class="space-y-1.5">
             <button v-for="i in availableInterventions" :key="i.id"
               @click="handleTreatment(i.name)"
-              :disabled="loading || administeredTreatments.has(i.name)"
+              :disabled="administeredTreatments.has(i.name) || loadingTreatments.has(i.name)"
               class="w-full flex items-center justify-between px-4 py-3 text-sm rounded-lg border transition text-left"
               :class="administeredTreatments.has(i.name)
                 ? 'bg-green-50 border-green-200 text-green-800'
-                : 'bg-white hover:bg-neutral-50 border-neutral-200'">
+                : loadingTreatments.has(i.name)
+                  ? 'bg-amber-50 border-amber-200 text-amber-800'
+                  : 'bg-white hover:bg-neutral-50 border-neutral-200'">
               <span>{{ i.name }}</span>
-              <span v-if="administeredTreatments.has(i.name)" class="text-[10px] font-semibold uppercase text-green-600">Administered</span>
+              <span v-if="loadingTreatments.has(i.name)" class="flex items-center gap-1.5 text-[10px] font-semibold uppercase text-amber-600">
+                <svg class="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                Administering...
+              </span>
+              <span v-else-if="administeredTreatments.has(i.name)" class="text-[10px] font-semibold uppercase text-green-600">Administered</span>
             </button>
           </div>
         </div>
@@ -426,6 +452,9 @@ const differentialSubmitted = ref(false)
 const deteriorationAlert = ref<string | null>(null)
 const orderedTestIds = ref(new Set<string>())
 const administeredTreatments = ref(new Set<string>())
+const loadingTreatments = ref(new Set<string>())
+const loadingTests = ref(new Set<string>())
+const pendingResultTests = ref(new Set<string>())
 const examFindings = ref<Record<string, unknown> | null>(null)
 const testResultsList = ref<Array<{ testId: string; testName: string; data: Record<string, unknown> }>>([])
 const expandedResults = ref(new Set<string>())
@@ -508,44 +537,65 @@ async function handleExam() {
 }
 
 async function handleOrderTest(testId: string) {
-  const r = await orderTest(testId)
-  if (r?.success) {
-    orderedTestIds.value.add(testId)
-    // Fetch results after a short delay (tests have 1-min TAT but simulation time advances)
-    fetchResultsWithRetry(testId, r?.test_name as string ?? testId)
+  loadingTests.value.add(testId)
+  try {
+    const r = await orderTest(testId)
+    if (r?.success) {
+      orderedTestIds.value.add(testId)
+      const tat = (r.turnaround_minutes as number) ?? 30
+      fetchResultsAfterDelay(testId, r?.test_name as string ?? testId, tat)
+    }
+    checkForAlerts(r)
+  } finally {
+    loadingTests.value.delete(testId)
   }
-  checkForAlerts(r)
 }
 
-async function fetchResultsWithRetry(testId: string, testName: string, attempts = 0) {
-  if (attempts > 5) return // give up after 5 tries
+async function fetchResultsAfterDelay(testId: string, testName: string, tatMinutes: number) {
+  pendingResultTests.value.add(testId)
 
-  // Wait a bit, then try to get results
-  await new Promise(resolve => setTimeout(resolve, attempts === 0 ? 2000 : 3000))
+  // Wait 10 real seconds, then advance simulation time to cover the TAT
+  await new Promise(resolve => setTimeout(resolve, 10_000))
+  await advanceTime(tatMinutes)
 
-  // Advance time by 1 min so the TAT is met
-  if (attempts === 0) {
-    await advanceTime(1)
-  }
-
-  const res = await getResults(testId)
-  if (res?.status === 'complete' && res?.results) {
-    const d = { ...res.results as Record<string, unknown> }
-    delete d.interpretation
-    delete d.wbc_value
-    // Avoid duplicates
-    if (!testResultsList.value.find(r => r.testId === testId)) {
-      testResultsList.value.push({ testId, testName, data: d })
-      expandedResults.value.add(testId)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await getResults(testId)
+    if (res?.status === 'complete' && res?.results) {
+      const d = { ...res.results as Record<string, unknown> }
+      delete d.interpretation
+      delete d.wbc_value
+      if (!testResultsList.value.find(r => r.testId === testId)) {
+        testResultsList.value.push({ testId, testName, data: d })
+        expandedResults.value.add(testId)
+      }
+      pendingResultTests.value.delete(testId)
+      return
     }
-  } else if (res?.status === 'pending') {
-    // Try again
-    fetchResultsWithRetry(testId, testName, attempts + 1)
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    await advanceTime(tatMinutes)
+  }
+  pendingResultTests.value.delete(testId)
+}
+
+async function manualRefreshResults() {
+  for (const testId of orderedTestIds.value) {
+    if (testResultsList.value.find(r => r.testId === testId)) continue
+    const testDef = availableTests.value.find(t => t.id === testId)
+    fetchResultsAfterDelay(testId, testDef?.name ?? testId, 60)
   }
 }
 
 function toggleResult(id: string) { expandedResults.value.has(id) ? expandedResults.value.delete(id) : expandedResults.value.add(id) }
-async function handleTreatment(t: string) { const r = await administerTreatment(t); if (r) administeredTreatments.value.add(t); checkForAlerts(r) }
+async function handleTreatment(t: string) {
+  loadingTreatments.value.add(t)
+  try {
+    const r = await administerTreatment(t)
+    if (r) administeredTreatments.value.add(t)
+    checkForAlerts(r)
+  } finally {
+    loadingTreatments.value.delete(t)
+  }
+}
 
 function addDifferentialRow() {
   differentialRows.value.push({ diagnosis: '', likelihood: 'medium', reasoning: '' })

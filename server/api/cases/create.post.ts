@@ -173,7 +173,7 @@ export default defineEventHandler(async (event) => {
       log("AI", `Previous error being fed back: ${lastAiError.substring(0, 300)}`);
     }
 
-    log("AI", "Calling OpenAI o3-mini... (this may take 30-60 seconds)");
+    log("AI", "Calling OpenAI o4-mini... (this may take 30-60 seconds)");
     const result = await generateCaseContent(
       pdfText,
       caseName,

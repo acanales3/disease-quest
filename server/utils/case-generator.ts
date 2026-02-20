@@ -1,7 +1,7 @@
 /**
  * AI Case Content Generator
  *
- * Uses OpenAI o3-mini (reasoning model) to generate a complete clinical
+ * Uses OpenAI o4-mini (reasoning model) to generate a complete clinical
  * simulation case JSON from extracted PDF text. Includes retry-aware
  * error feedback so the model can self-correct.
  */
@@ -304,12 +304,12 @@ ${userPrompt}`;
   }
 
   try {
-    console.log("[CASE-GEN] Sending request to OpenAI o3-mini...");
+    console.log("[CASE-GEN] Sending request to OpenAI o4-mini...");
     console.log(`[CASE-GEN] Prompt length: ${userPrompt.length} chars`);
     const callStart = Date.now();
 
     const response = await openai.chat.completions.create({
-      model: "o3-mini",
+      model: "o4-mini",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userPrompt },
