@@ -99,6 +99,7 @@ const handleApplyFilters = (filters: any) => {
           :show-msyear="false"
           :show-classroom="false"
           :show-status="false"
+          :balanced-basic-layout="true"
           @apply-filters="handleApplyFilters"
         />
 
