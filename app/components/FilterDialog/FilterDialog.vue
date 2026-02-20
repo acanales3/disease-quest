@@ -22,10 +22,14 @@ const emit = defineEmits<{
 const props = defineProps<{
   classrooms?: Classroom[];
   showMsyear?: boolean;
+  showClassroom?: boolean;
+  showStatus?: boolean;
   role?: "student" | "instructor"; // NEW: identify type
 }>();
 
 const showMsyear = props.showMsyear ?? true;
+const showClassroom = props.showClassroom ?? true;
+const showStatus = props.showStatus ?? true;
 
 interface FilterCriteria {
   name: string;
@@ -177,7 +181,7 @@ const onOpenChange = (open: boolean) => {
             <Input v-model="tempFilters.email" placeholder="Enter email" />
           </div>
 
-          <div class="flex flex-col gap-1.5">
+          <div v-if="showStatus" class="flex flex-col gap-1.5">
             <Label>Status</Label>
             <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
@@ -233,7 +237,7 @@ const onOpenChange = (open: boolean) => {
             </div>
           </div>
 
-          <div class="flex flex-col gap-1.5">
+          <div v-if="showClassroom" class="flex flex-col gap-1.5">
             <Label>Classroom</Label>
             <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
