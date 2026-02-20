@@ -30,6 +30,11 @@ const props = withDefaults(defineProps<Pick<BaseChartProps<T>, "data" | "colors"
    * Render custom tooltip component.
    */
   customTooltip?: Component
+
+  centralLabel: number
+  sublabel: string
+
+  renderLabels: boolean
 }>(), {
   margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   sortFunction: () => undefined,
@@ -55,9 +60,14 @@ const legendItems = computed(() => props.data.map((item, i) => ({
   inactive: false,
 })))
 
-const totalValue = computed(() => props.data.reduce((prev, curr) => {
-  return prev + curr[props.category]
-}, 0))
+const totalValue = computed(() => {
+  if (!props.data || props.data.length === 0) return 0
+  props.data.reduce((prev, curr) => {
+  const val = curr[props.category as string];
+  return prev + (typeof val === 'number' ? val : 0);
+}, 0)
+})
+
 </script>
 
 <template>
@@ -77,7 +87,8 @@ const totalValue = computed(() => props.data.reduce((prev, curr) => {
         :color="colors"
         :arc-width="type === 'donut' ? 20 : 0"
         :show-background="false"
-        :central-label="type === 'donut' ? valueFormatter(totalValue) : ''"
+        :central-label="type === 'donut' && props.renderLabels && props.data.length ? valueFormatter(props.centralLabel) : ''"
+        :central-sub-label="type === 'donut' && props.renderLabels ? props.sublabel : ''"
         :events="{
           [Donut.selectors.segment]: {
             click: (d: Data, ev: PointerEvent, i: number, elements: HTMLElement[]) => {
