@@ -33,7 +33,7 @@
     </div>
 
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable :columns="visibleColumns" :data="data" user-role="admin" />
     </div>
 
     <CreateClassroomModal
