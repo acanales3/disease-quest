@@ -60,12 +60,14 @@ export const baseColumns: ColumnDef<LeaderboardEntry>[] = [
     accessorKey: "averageScore",
     header: () =>
       h("div", { class: "text-center font-normal text-black" }, "Average Score"),
-    cell: ({ row }) =>
-      h(
+    cell: ({ row }) => {
+      const score = row.getValue("averageScore");
+      return h(
         "div",
         { class: "text-center font-normal text-gray-600" },
-        row.getValue("averageScore") ? `${row.getValue("averageScore")}%` : "-"
-      ),
+        typeof score === "number" ? `${score.toFixed(2)}%` : "-"
+      );
+    },
   },
 ];
 

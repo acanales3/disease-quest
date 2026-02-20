@@ -99,7 +99,7 @@ export default defineEventHandler(
         classroomName: row.leaderboards?.classrooms?.name || "Unknown",
         nickname: row.students?.nickname || "Anonymous",
         casesCompleted: row.cases_completed || 0,
-        averageScore: row.average_score || 0,
+        averageScore: row.average_score * 100 || 0,
         rank: row.rank || 0,
         studentName,
       } as LeaderboardEntry;
