@@ -1,42 +1,56 @@
 <template>
-    <div class="w-full">
-        <ClassroomScores class="mb-8" :data="mockData"/>
-        <AssessmentCategoryScoreGraph
-        :data="mockData"
-        /> 
+  <div class="w-full">
+
+    <!-- Loading -->
+    <div v-if="pending" class="p-6 text-gray-500">
+      Loading analytics...
     </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="p-6 text-red-500">
+      Failed to load analytics.
+    </div>
+
+    <!-- Charts -->
+    <template v-else>
+      <ClassroomScores
+        class="mb-8"
+        :data="analyticsData"
+      />
+
+      <AssessmentCategoryScoreGraph
+        :data="analyticsData"
+      />
+    </template>
+
+  </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import ClassroomScores from '../../graph/ScoresByCategoryGraph.vue'
 import AssessmentCategoryScoreGraph from '@/components/AssessmentCategoryScoreGraph/graph.vue'
 import type { AnalyticsScoreEntry } from '@/types/analytics'
 
-// Mock Data for Verification (matches new Interface)
-const mockData: AnalyticsScoreEntry[] = [
-    {
-        caseId: 1, caseName: 'Case A',
-        classroomId: 101, classroomName: 'Section 1',
-        count: 10,
-        history_taking_synthesis: 85,
-        physical_exam_interpretation: 90,
-        differential_diagnosis_formulation: 88,
-        diagnostic_tests: 92,
-        management_reasoning: 85,
-        communication_empathy: 95,
-        reflection_metacognition: 89
-    },
-     {
-        caseId: 1, caseName: 'Case A',
-        classroomId: 102, classroomName: 'Section 2',
-        count: 8,
-        history_taking_synthesis: 92,
-        physical_exam_interpretation: 88,
-        differential_diagnosis_formulation: 94,
-        diagnostic_tests: 90,
-        management_reasoning: 93,
-        communication_empathy: 91,
-        reflection_metacognition: 95
-    }
-]
+/**
+ * Fetch analytics
+ * API automatically filters based on role:
+ * - INSTRUCTOR → their classrooms only
+ * - STUDENT → their work
+ * - ADMIN → everything
+ */
+const { data, pending, error } = await useFetch<AnalyticsScoreEntry[]>(
+  '/api/analytics/scores',
+  {
+    server: true,
+    credentials: 'include'
+  }
+)
+
+/**
+ * Ensure charts always receive an array
+ */
+const analyticsData = computed<AnalyticsScoreEntry[]>(() => {
+  return data.value ?? []
+})
 </script>
