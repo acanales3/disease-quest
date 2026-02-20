@@ -1,131 +1,128 @@
 import { defineEventHandler, createError, getRouterParam } from "h3";
-import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
-import { createClient } from "@supabase/supabase-js";
+import {
+  serverSupabaseServiceRole,
+  serverSupabaseUser,
+} from "#supabase/server";
 
 export default defineEventHandler(async (event) => {
+  // 1) Authenticate actor
   const user = await serverSupabaseUser(event);
-  const authedClient = await serverSupabaseClient(event);
-
-  // @ts-ignore (supabase user shape can vary)
   const actorUserId: string | undefined =
     (user as any)?.id || (user as any)?.sub;
+
   if (!actorUserId) {
-    throw createError({ statusCode: 401, message: "Unauthorized" });
+    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
   }
 
   const targetId = getRouterParam(event, "id");
   if (!targetId) {
-    throw createError({ statusCode: 400, message: "Missing admin id" });
+    throw createError({ statusCode: 400, statusMessage: "Missing admin id" });
   }
 
-  // 1) Only admins can delete admins (check actor is admin)
-  const { data: actorIsAdminRow, error: actorIsAdminErr } = await authedClient
-    .from("admins")
-    .select("user_id")
-    .eq("user_id", actorUserId)
-    .maybeSingle();
-
-  if (actorIsAdminErr) {
-    throw createError({ statusCode: 500, message: actorIsAdminErr.message });
-  }
-  if (!actorIsAdminRow) {
-    throw createError({ statusCode: 403, message: "Forbidden: Admin only" });
-  }
-
-  // Optional: prevent self-delete
+  // Prevent self-delete
   if (actorUserId === targetId) {
     throw createError({
       statusCode: 400,
-      message: "Admins cannot delete themselves",
+      statusMessage: "Admins cannot delete themselves",
     });
   }
 
-  // 2) Service role client for destructive ops (bypass RLS)
-  const config = useRuntimeConfig();
+  // Single service-role client for all ops (bypasses RLS safely)
+  const client = serverSupabaseServiceRole(event);
 
-  const url =
-    (config as any)?.supabase?.url || (config as any)?.public?.supabase?.url;
+  // 2) Verify actor is an admin
+  const { data: actorProfile, error: actorProfileError } = await client
+    .from("users")
+    .select("role")
+    .eq("id", actorUserId)
+    .single();
 
-  const serviceKey =
-    (config as any)?.supabase?.serviceRoleKey ||
-    (config as any)?.supabase?.serviceKey ||
-    (config as any)?.supabase?.key;
-
-  if (!url || !serviceKey) {
+  if (actorProfileError || !actorProfile) {
     throw createError({
       statusCode: 500,
-      message:
-        "Missing Supabase service role config. Expected config.supabase.url and config.supabase.serviceRoleKey (or serviceKey).",
+      statusMessage: "Failed to verify requester",
     });
   }
 
-  const adminClient = createClient(url, serviceKey, {
-    auth: { persistSession: false },
-  });
+  let isAdmin = (actorProfile.role ?? "").toUpperCase() === "ADMIN";
+
+  if (!isAdmin) {
+    const { data: adminRow, error: adminCheckError } = await client
+      .from("admins")
+      .select("user_id")
+      .eq("user_id", actorUserId)
+      .maybeSingle();
+
+    if (adminCheckError) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: `Failed to check admin access: ${adminCheckError.message}`,
+      });
+    }
+    isAdmin = !!adminRow;
+  }
+
+  if (!isAdmin) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Forbidden: Admin access required",
+    });
+  }
 
   // 3) Ensure target exists as admin
-  const { data: targetAdmin, error: targetAdminErr } = await adminClient
+  const { data: targetAdmin, error: targetAdminErr } = await client
     .from("admins")
     .select("user_id")
     .eq("user_id", targetId)
     .maybeSingle();
 
   if (targetAdminErr) {
-    throw createError({ statusCode: 500, message: targetAdminErr.message });
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Failed to verify target admin: ${targetAdminErr.message}`,
+    });
   }
   if (!targetAdmin) {
-    throw createError({ statusCode: 404, message: "Admin not found" });
+    throw createError({ statusCode: 404, statusMessage: "Admin not found" });
   }
 
-  // 4) Snapshot target user info for response/audit
-  const { data: targetUser, error: targetUserErr } = await adminClient
+  // 4) Snapshot user info before deletion
+  const { data: targetUser } = await client
     .from("users")
     .select("id, email, first_name, last_name")
     .eq("id", targetId)
     .maybeSingle();
 
-  if (targetUserErr) {
-    throw createError({ statusCode: 500, message: targetUserErr.message });
-  }
-
-  const u = targetUser as null | {
-    id: string;
-    email: string | null;
-    first_name: string | null;
-    last_name: string | null;
-  };
-
   const displayName =
-    [u?.first_name, u?.last_name].filter(Boolean).join(" ") ||
-    u?.email ||
+    [targetUser?.first_name, targetUser?.last_name].filter(Boolean).join(" ") ||
+    targetUser?.email ||
     targetId;
 
-  // 5) Delete from Supabase Auth — cascades to public.users → public.admins automatically
+  // 5) Delete from Supabase Auth (cascades to public.users → public.admins)
   const { error: deleteAuthError } =
-    await adminClient.auth.admin.deleteUser(targetId);
+    await client.auth.admin.deleteUser(targetId);
+
   if (
     deleteAuthError &&
     !/user not found/i.test(deleteAuthError.message || "")
   ) {
     throw createError({
       statusCode: 500,
-      message: `Auth user deletion failed: ${deleteAuthError.message}`,
+      statusMessage: `Auth user deletion failed: ${deleteAuthError.message}`,
     });
   }
 
-  // 6) Audit/notify actor
+  // 6) Best-effort audit log — do NOT throw if this fails, deletion already succeeded
   const message = `Admin permanently deleted: ${displayName}.`;
 
-  const { error: notifErr } = await adminClient
+  await client
     .from("notifications")
-    .insert([{ user_id: actorUserId, message }]);
-
-  if (notifErr) {
-    throw createError({
-      statusCode: 500,
-      message: `Admin deleted, but notification/audit log failed: ${notifErr.message}`,
+    .insert([{ user_id: actorUserId, message }])
+    .then(({ error }) => {
+      if (error) {
+        console.warn("Audit log failed (non-fatal):", error.message);
+      }
     });
-  }
 
   return {
     ok: true,
