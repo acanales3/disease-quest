@@ -59,6 +59,13 @@ const legendItems = ref<BulletLegendItemInterface[]>(
   }))
 )
 
+const chartData = computed(() => {
+  if (props.data.length === 1) {
+    return [props.data[0], props.data[0]]
+  }
+  return props.data
+})
+
 const isMounted = useMounted()
 
 function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
@@ -96,7 +103,7 @@ const resolveYFormatter = (tick: number | Date, i: number, ticks: number[] | Dat
       <!-- Main Chart -->
       <VisXYContainer
         :margin="props.margin"
-        :data="data"
+        :data="chartData"
         :style="{ height: isMounted ? '100%' : 'auto' }"
       >
         <ChartCrosshair
@@ -125,8 +132,8 @@ const resolveYFormatter = (tick: number | Date, i: number, ticks: number[] | Dat
         <VisAxis
           v-if="showXAxis"
           type="x"
-          :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
-          :tick-values="data.map((_, i) => i)"
+          :tick-format="xFormatter ?? ((v: number) => props.data.length === 1 ? props.data[0]?.[index] : chartData[v]?.[index])"
+          :tick-values="props.data.length === 1 ? [0.5] : chartData.map((_, i) => i)"
           :grid-line="false"
           :tick-line="true"
           tick-text-color="hsl(var(--vis-text-color))"
