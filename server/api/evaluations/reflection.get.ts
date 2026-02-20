@@ -18,12 +18,14 @@ type EvaluationRow = {
 
 type UserProfileRow = {
   role: string;
-  name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
 };
 
 type UsersRow = {
   id: string;
-  name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
 };
 
 export default defineEventHandler(async (event) => {
@@ -46,10 +48,10 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Fetch user profile (role + name) using authed client (RLS applies)
+  // Fetch user profile using authed client (RLS applies)
   const { data: userProfile, error: profileError } = (await authedClient
     .from("users")
-    .select("role,name")
+    .select("role, first_name, last_name")
     .eq("id", userId)
     .single()) as { data: UserProfileRow | null; error: any };
 
@@ -84,13 +86,12 @@ export default defineEventHandler(async (event) => {
     created_at
   `;
 
-  // SCRUM-186 1) Production behavior: get the evaluation for THIS user + case
   const strictRes = (await authedClient
     .from("evaluations")
     .select(selectEval)
     .eq("student_id", userId)
     .eq("case_id", caseId)
-    .order("created_at", { ascending: false }) // supports multiple attempts later
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()) as { data: EvaluationRow | null; error: any };
 
@@ -102,10 +103,10 @@ export default defineEventHandler(async (event) => {
   }
 
   let evaluation: EvaluationRow | null = strictRes.data;
-  let studentName = userProfile.name || "";
+  let studentName =
+    [userProfile.first_name, userProfile.last_name].filter(Boolean).join(" ") ||
+    "";
 
-  // SCRUM-186 DEV fallback: if you only have 1 test row and it belongs to a different student,
-  // authed client can't read it due to RLS. Use service role on the server to prove the flow.
   if (!evaluation) {
     const config = useRuntimeConfig();
 
@@ -115,7 +116,6 @@ export default defineEventHandler(async (event) => {
     const isDev = process.env.NODE_ENV !== "production";
 
     if (!isDev) {
-      // In prod: do not leak other students' docs
       throw createError({
         statusCode: 404,
         message: "Reflection evaluation not found for this case",
@@ -123,7 +123,6 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!supabaseUrl || !serviceKey) {
-      // Tell you exactly what's missing
       throw createError({
         statusCode: 500,
         message:
@@ -161,24 +160,23 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Try to fetch the REAL student name for the row (nice for the PDF header)
+    // Fetch the real student name for the PDF header
     const userRes = (await service
       .from("users")
-      .select("id,name")
+      .select("id, first_name, last_name")
       .eq("id", evaluation.student_id)
       .maybeSingle()) as { data: UsersRow | null; error: any };
 
-    if (!userRes.error && userRes.data?.name) {
-      studentName = userRes.data.name;
-    } else {
-      studentName = studentName || "";
+    if (!userRes.error && userRes.data) {
+      const u = userRes.data;
+      studentName =
+        [u.first_name, u.last_name].filter(Boolean).join(" ") || studentName;
     }
   }
 
-  // Case title (optional)
   const { data: caseRow } = await authedClient
     .from("cases")
-    .select("id,title,name")
+    .select("id, title, name")
     .eq("id", caseId)
     .maybeSingle();
 
@@ -192,7 +190,6 @@ export default defineEventHandler(async (event) => {
     caseTitle,
     createdAt: evaluation.created_at,
     reflectionDocument: evaluation.reflection_document,
-
     scores: {
       historyTakingSynthesis: evaluation.history_taking_synthesis,
       physicalExamInterpretation: evaluation.physical_exam_interpretation,
@@ -203,7 +200,6 @@ export default defineEventHandler(async (event) => {
       communicationEmpathy: evaluation.communication_empathy,
       reflectionMetacognition: evaluation.reflection_metacognition,
     },
-
     student: {
       name: studentName,
     },

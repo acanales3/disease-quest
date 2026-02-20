@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   // ── Role check ────────────────────────────────────────────────────
   const { data: userProfile, error: profileError } = await client
     .from("users")
-    .select("role, school, name")
+    .select("role, school")
     .eq("id", userId)
     .single();
 
@@ -124,8 +124,10 @@ export default defineEventHandler(async (event) => {
       school: (userProfile.school as string) || "",
       invitation_code: inviteCode,
     })
-    .select("id, name, code, section, start_date, end_date, status, school, invitation_code")
-    .single()
+    .select(
+      "id, name, code, section, start_date, end_date, status, school, invitation_code",
+    )
+    .single();
 
   if (insertError || !classroom) {
     throw createError({

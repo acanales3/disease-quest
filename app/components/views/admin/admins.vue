@@ -63,8 +63,12 @@ const { data, pending, error, refresh } = await useFetch<Administrator[]>(
     },
 );
 
-// UI error banner string (for delete failures, etc.)
-const uiError = ref<string>("");
+// =======================
+// Page banner message
+// =======================
+const pageMessage = ref<null | { type: "success" | "error"; text: string }>(
+  null,
+);
 
 // =======================
 // Edit handling
@@ -160,7 +164,7 @@ async function handleDeleteConfirm(admin: Administrator) {
     }
 }
 
-// Columns: onDelete opens delete modal (Edit handled inside dropdown via modalBus)
+// Columns: onDelete opens delete modal
 const visibleColumns = computed(() =>
     getColumns("admin", {
         onDelete: handleDeleteClick,
