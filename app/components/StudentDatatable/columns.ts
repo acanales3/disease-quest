@@ -92,12 +92,14 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Stu
         // Get all classroom IDs for this student
         const classroomIds = student.classrooms && student.classrooms.length > 0
           ? student.classrooms
-          : [row.getValue("classroom") as number];
+          : student.classroom && student.classroom !== 0
+            ? [student.classroom]
+            : []
 
         // Map to names
         const roomNames = classroomIds.map(id => classroomsMap.get(id) || id.toString());
 
-        if (roomNames.length === 0) {
+        if (!roomNames || roomNames.length === 0) {
           return h(
             "div",
             { class: "text-center font-normal text-gray-600" },

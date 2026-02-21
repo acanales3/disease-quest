@@ -25,6 +25,7 @@
     <AdminEditStudentDialog
       :show="modalBus.openEditModal"
       :data="modalBus.editData"
+      :classrooms="classrooms"
       @close="modalBus.closeEdit()"
       @save="saveStudentEdits"
     />
@@ -238,6 +239,8 @@ const saveStudentEdits = async (updated: Student) => {
     };
   }
 };
+
+
 
 onMounted(async () => {
     await refreshStudents();

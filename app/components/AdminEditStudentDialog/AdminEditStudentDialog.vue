@@ -1,27 +1,42 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import type { Classroom, ClassroomOptions } from '@/assets/interface/Classroom'
 
+import MultiSelect from '@/components/ui/MultiSelect.vue'
 import type { Student } from '~/assets/interface/Student';
 
-const props = defineProps<{ show: boolean; data: Student }>();
+const props = defineProps<{ show: boolean; data: Student; classrooms: ClassroomOptions[] }>();
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'save', student: Student): void;
 }>();
 
 // reactive form data
-const form = ref<Student>({
-  name: '',
+const form = ref<{
+  id: string,
+  first_name: string,
+  last_name: string,
+  nickname: string,
+  email: string,
+  school: string,
+  msyear: number,
+  classrooms: ClassroomOptions[],
+  status: string
+}>({
+  id: '',
+  first_name: '',
+  last_name: '',
   nickname: '',
   email: '',
   school: '',
   msyear: 1,
-  classroom: 0,
+  classrooms: [],
   status: 'registered',
 });
 
 const errors = ref({
-  name: '',
+  first_name: '',
+  last_name: '',
   nickname: '',
   email: '',
   school: '',
@@ -31,12 +46,20 @@ watch(
   form,
   (val) => {
     // name validation
-    if (!val.name) {
-      errors.value.name = 'Name is required.';
-    } else if (val.name.length > 100) {
-      errors.value.name = 'Names cannot exceed 100 characters'
+    if (!val.first_name) {
+      errors.value.first_name = 'First name is required.';
+    } else if (val.first_name.length > 100) {
+      errors.value.first_name = 'First names cannot exceed 100 characters'
     } else {
-      errors.value.name = '';
+      errors.value.first_name = '';
+    }
+
+    if (!val.last_name) {
+      errors.value.last_name = 'Last name is required.';
+    } else if (val.last_name.length > 100) {
+      errors.value.last_name = 'Last names cannot exceed 100 characters'
+    } else {
+      errors.value.last_name = '';
     }
 
     // nickname validation
@@ -69,20 +92,35 @@ watch(
   { deep: true, immediate: true },
 );
 
+// When modal opens, populate with data.
+watch(
+  () => props.data, 
+  (newData) => {
+    if (!newData) return
+    const nameParts = newData.name.trim().split(/\s+/);
+    form.value = {
+      id: newData.id,
+      first_name: nameParts[0] ?? '',
+      last_name: nameParts.slice(1).join(' ') ?? '',
+      nickname: newData.nickname,
+      email: newData.email,
+      school: newData.school,
+      msyear: newData.msyear,
+      classrooms: (newData.classrooms ?? [])
+        .map((id: number) => {
+          const match = props.classrooms.find(c => c.id === id)
+          return match ? { id: match.id, name: match.name } : null
+        })
+        .filter(Boolean) as ClassroomOptions[],
+      status: newData.status,
+    }
+  }, { immediate: true },
+);
+
 const isInvalid = computed(() => {
   return Object.values(errors.value).some((err) => err !== '');
 });
 
-// when modal opens, populate form inputs with props.data
-watch(
-  () => props.data,
-  (newData) => {
-    if (newData) {
-      form.value = { ...newData };
-    }
-  },
-  { immediate: true },
-);
 
 // handle dialog close
 const handleOpenChange = (value: boolean) => {
@@ -91,7 +129,16 @@ const handleOpenChange = (value: boolean) => {
 
 // handle save
 const handleSave = () => {
-  emit('save', { ...form.value });
+  emit('save', { 
+    id: form.value.id,
+    name: `${form.value.first_name} ${form.value.last_name}`.trim(),
+    nickname: form.value.nickname,
+    email: form.value.email,
+    school: form.value.school,
+    msyear: form.value.msyear,
+    classrooms: form.value.classrooms ?? [],
+    status: form.value.status,
+   });
   emit('close');
 };
 </script>
@@ -100,7 +147,7 @@ const handleSave = () => {
   <Dialog :open="props.show" @update:open="handleOpenChange">
     <DialogContent class="max-h-[90vh] overflow-y-auto my-6">
       <DialogHeader>
-        <DialogTitle>Edit {{ props.data?.name || 'Student' }}</DialogTitle>
+        <DialogTitle>Edit {{ form.first_name }} {{ form.last_name }}</DialogTitle>
         <DialogDescription>
           Make changes to the student's profile here.
           <br />
@@ -111,11 +158,17 @@ const handleSave = () => {
       <!-- Input Form -->
       <div class="flex flex-col gap-3">
         <label class="flex flex-col">
-          Name
-          <input type="text" v-model="form.name" class="p-2 border rounded" :class="{ 'border-red-500': errors.name }" />
-          <p v-if="errors.name" class="text-red-500 text-xs mt-1">
-            {{ errors.name }}
+          First Name
+          <input type="text" v-model="form.first_name" class="p-2 border rounded" :class="{ 'border-red-500': errors.first_name }" />
+          <p v-if="errors.first_name" class="text-red-500 text-xs mt-1">
+            {{ errors.first_name }}
           </p>
+        </label>
+
+        <label class="flex flex-col">
+          Last Name
+          <input type="text" v-model="form.last_name" class="p-2 border rounded" :class="{ 'border-red-500': errors.last_name }" />
+          <p v-if="errors.last_name" class="text-red-500 text-xs mt-1">{{ errors.last_name }}</p>
         </label>
 
         <label class="flex flex-col">
@@ -147,10 +200,32 @@ const handleSave = () => {
           <input type="number" v-model.number="form.msyear" min="1" max="4" class="p-2 border rounded" />
         </label>
 
-        <label class="flex flex-col">
-          Classroom
-          <input type="number" v-model.number="form.classroom" min="0" class="p-2 border rounded" />
-        </label>
+        <div class="flex flex-col">
+          <span class="mb-1 text-sm font-medium">
+            Classroom
+          </span>
+
+          <MultiSelect
+            :items="props.classrooms.map(c => ({
+              value: String(c.id),
+              label: c.name
+            }))"
+
+            :selected="form.classrooms.map(c => ({
+              value: String(c.id),
+              label: c.name
+            }))"
+
+            selections-label="classrooms"
+
+            @update:selected="val => {
+              form.classrooms = val.map(v => ({
+                id: Number(v.value),
+                name: v.label
+              }))
+            }"
+          />
+        </div>
 
         <label class="flex flex-col">
           Status
