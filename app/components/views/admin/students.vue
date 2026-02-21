@@ -114,8 +114,15 @@ async function fetchStudents(): Promise<{ students: Student[], classrooms: Class
 
 async function refreshStudents() {
   const result = await fetchStudents();
-  data.value = result.students;
   classrooms.value = result.classrooms;
+
+  data.value = result.students.map(s => ({
+    ...s,
+    classrooms: (s.classrooms || []).map(id => {
+      const match = result.classrooms.find(c => c.id === id)
+      return match ? { id: match.id, name: match.name } : { id, name: String(id) }
+    })
+  }));
 }
 
 async function handleDeleteConfirm(s: Student, selectedClassroomIds?: number[]) {
@@ -199,16 +206,12 @@ const saveStudentEdits = async (updated: Student) => {
       throw new Error("Missing userId for student update.");
     }
 
-    // Split name into first/last for the admin endpoint
-    const [first_name, ...rest] = (updated.name ?? "").split(" ");
-    const last_name = rest.join(" ");
-
     // 1. Update user-level fields via the admin endpoint
     await $fetch(`/api/admin/users/${updated.userId}`, {
       method: "PUT",
       body: {
-        first_name,
-        last_name,
+        first_name: updated.first_name,
+        last_name: updated.last_name,
         email: updated.email,
         school: updated.school,
         status: updated.status,
@@ -224,10 +227,11 @@ const saveStudentEdits = async (updated: Student) => {
 
     // Update local ref array
     // Shadcn table requires passing a new reference to the `data` in order for it to reprocess. It's not reactive when you mutate rows in place
-    data.value = data.value.map(student => student.id === updated.id ? { ...updated } : student);
+    data.value = data.value.map(student => student.userId === updated.userId ? { ...student, ...updated } : student);
 
     // Close modal
     modalBus.closeEdit();
+    refreshStudents();
   } catch (error: any) {
     console.error("Error updating student:", error?.data || error);
     pageMessage.value = {

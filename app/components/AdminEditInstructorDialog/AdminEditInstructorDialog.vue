@@ -157,7 +157,18 @@ const changes = computed(() => {
 // HANDLING
 // ===========================================
 const handleOpenChange = (value: boolean) => {
-  if (!value) emit('close');
+  if (!value) {
+    step.value = STEPS.FORM
+
+    // Reset form back to original state
+    if (original.value) {
+      form.value = structuredClone(original.value)
+    }
+    
+    submitted.value = false
+
+    emit('close');
+  }
 };
 
 function onContinue() {

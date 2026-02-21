@@ -17,6 +17,7 @@ const emit = defineEmits<{
 // =========================================
 const form = ref<{
   id: string,
+  userId: string,
   first_name: string,
   last_name: string,
   nickname: string,
@@ -27,6 +28,7 @@ const form = ref<{
   status: string
 }>({
   id: '',
+  userId: '',
   first_name: '',
   last_name: '',
   nickname: '',
@@ -109,20 +111,21 @@ watch(
   (newData) => {
     if (!newData) return
     const nameParts = newData.name.trim().split(/\s+/);
+
+    console.log('MultiSelect selected:', form.value.classrooms.map(c => ({ value: String(c.id), label: c.name })));
     form.value = {
       id: newData.id,
+      userId: newData.userId,
       first_name: nameParts[0] ?? '',
       last_name: nameParts.slice(1).join(' ') ?? '',
       nickname: newData.nickname,
       email: newData.email,
       school: newData.school,
       msyear: newData.msyear,
-      classrooms: (newData.classrooms ?? [])
-        .map((id: number) => {
-          const match = props.classrooms.find(c => c.id === id)
-          return match ? { id: match.id, name: match.name } : null
-        })
-        .filter(Boolean) as ClassroomOptions[],
+      classrooms: (newData.classrooms ?? []).map(c => ({
+        id: c.id,
+        name: c.name,
+      })),
       status: newData.status
     }
 
@@ -178,10 +181,22 @@ const changes = computed(() => {
 // ========================================
 
 // handle dialog close
+let resetTimeout: number
 const handleOpenChange = (value: boolean) => {
-  if (!value) emit('close');
+  if (!value) {
+    emit('close');
+    // Set a small timeout to prevent user from seeing step change. Kind of a hack, but this is better than setting a watcher
+    // on props.show
+    clearTimeout(resetTimeout)
+    resetTimeout = window.setTimeout(() => {
+      step.value = STEPS.FORM;
+      if (original.value) {
+        form.value = structuredClone(toRaw(original.value));
+      }
+      submitted.value = false;
+    }, 400);
+  }
 };
-
 
 function onContinue() {
   submitted.value = true
@@ -199,16 +214,21 @@ const handleSave = () => {
   if (changes.value.length === 0) return;
 
   emit('save', { 
-    id: form.value.id,
-    name: `${form.value.first_name} ${form.value.last_name}`.trim(),
-    nickname: form.value.nickname,
-    email: form.value.email,
-    school: form.value.school,
-    msyear: form.value.msyear,
-    classrooms: form.value.classrooms ?? [],
-    status: form.value.status,
+    ...form.value,
+    userId: form.value.userId
    });
+
   emit('close');
+  // Set a small timeout to prevent user from seeing step change. Kind of a hack, but this is better than setting a watcher
+  // on props.show
+  clearTimeout(resetTimeout)
+  resetTimeout = window.setTimeout(() => {
+    step.value = STEPS.FORM;
+    if (original.value) {
+      form.value = structuredClone(toRaw(original.value));
+    }
+    submitted.value = false;
+  }, 400);
 };
 
 // ===============================

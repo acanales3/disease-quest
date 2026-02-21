@@ -97,7 +97,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Stu
             : []
 
         // Map to names
-        const roomNames = classroomIds.map(id => classroomsMap.get(id) || id.toString());
+        const roomNames = (student.classrooms || []).map(c => c.name || String(c.id));
 
         if (!roomNames || roomNames.length === 0) {
           return h(
