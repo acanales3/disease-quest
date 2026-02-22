@@ -19,11 +19,16 @@ interface Props {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'delete': [classroom: Classroom];
+  edit: [classroom: Classroom];
+  delete: [classroom: Classroom];
 }>();
 
+function handleEdit() {
+  emit("edit", props.classroom);
+}
+
 function handleDelete() {
-  emit('delete', props.classroom);
+  emit("delete", props.classroom);
 }
 </script>
 
@@ -38,23 +43,31 @@ function handleDelete() {
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">Edit</DropdownMenuItem>
-      <DropdownMenuItem 
-        v-if="props.role === 'admin'" 
+      <DropdownMenuItem
+        v-if="props.role === 'instructor' || props.role === 'admin'"
+        @click="handleEdit"
+      >
+        Edit
+      </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin' || props.role === 'student'">
+        View Analytics
+      </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
+        <NuxtLink
+          :to="props.role === 'admin'
+            ? `/admin/classrooms/${props.classroom.id}`
+            : `/instructor/classrooms/${props.classroom.id}`"
+        >
+          Manage Classroom
+        </NuxtLink>
+      </DropdownMenuItem>
+      <DropdownMenuSeparator v-if="props.role === 'admin' || props.role === 'instructor'" />
+      <DropdownMenuItem
+        v-if="props.role === 'admin' || props.role === 'instructor'"
         class="text-red-600 focus:text-red-600 focus:bg-red-50"
         @click="handleDelete"
       >
         Delete
-      </DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">View Analytics</DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
-        <NuxtLink 
-          :to="props.role === 'admin' 
-            ? `/admin/classrooms/${classroom.id}` 
-            : `/instructor/classrooms/${classroom.id}`"
-        >         
-          Manage Classroom
-        </NuxtLink>
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

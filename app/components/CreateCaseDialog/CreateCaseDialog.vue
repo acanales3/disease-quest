@@ -250,7 +250,7 @@ async function handleSubmit() {
             <span class="text-sm text-muted-foreground">{{ statusMessage }}</span>
           </div>
           <p class="text-xs text-muted-foreground text-center">
-            This may take 30-60 seconds. Please don't close this dialog.
+            This may take 3-4 minutes. Please don't close this dialog.
           </p>
         </div>
 

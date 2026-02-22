@@ -8,9 +8,9 @@
 
         <!-- Stats Row -->
         <div class="flex justify-between gap-4">
-            <TotalCount icon="mdi:check-circle" count="80%" label="Cases completed" />
-            <TotalCount icon="mdi:clock-outline" count="258+" label="Cases in progress" />
-            <TotalCount icon="mdi:circle-outline" count="64%" label="Cases not started" />
+            <TotalCount icon="mdi:check-circle" :count="`${stats?.completedPercent ?? 0}%`" label="Cases completed" />
+            <TotalCount icon="mdi:clock-outline" :count="stats?.inProgress ?? 0" label="Cases in progress" />
+            <TotalCount icon="mdi:circle-outline" :count="`${stats?.notStartedPercent ?? 0}%`" label="Cases not started" />
             <TotalCount icon="mdi:fire" count="245" label="Day Streak" />
         </div>
 
@@ -28,16 +28,27 @@ import { getColumns } from '../../CaseDatatable/columns'
 import DataTable from '../../CaseDatatable/data-table.vue'
 import type { Case } from '../../CaseDatatable/columns'
 import TotalCount from '@/components/ui/TotalCount.vue'
-import { cases } from "~/assets/interface/Case";
 import { onMounted, ref } from 'vue'
 import { computed } from 'vue'
 
-// Example user - replace with api data
-const user = {
-    name: 'Alex',
+type DashboardResponse = {
+    user: { name: string | null}
+    stats: any | null
+    cases: Case[]
 }
 
-const caseData = ref<Case[]>([])
+const { data, pending, error } = await useFetch<DashboardResponse>(
+    '/api/students/dashboard'
+)
+
+// Example user - replace with api data
+const user = computed(() => ({
+    name: data.value?.user.name ?? 'Student'
+}))
+
+const stats = computed(() => data.value?.stats)
+
+const caseData = computed(() => data.value?.cases ?? [])
 
 const visibleColumns = computed(() => {
   const columnsToShow = ['id', 'name', 'description', 'classroom', 'completionDate', 'status', 'actions'];
@@ -46,9 +57,4 @@ const visibleColumns = computed(() => {
     return key ? columnsToShow.includes(String(key)) : false;
   });
 });
-
-onMounted(async () => {
-    // Fetch data from your API here.
-    caseData.value = cases
-})
 </script>

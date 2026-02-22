@@ -7,7 +7,7 @@
         label="Total Cases"
         icon="si:book-line"
       />
-      <CreateCaseDialog :on-case-created="refresh" />
+      <CreateCaseDialog />
     </div>
 
     <div class="w-full py-2">

@@ -66,40 +66,131 @@ export type Database = {
         }
         Relationships: []
       }
+      case_sessions: {
+        Row: {
+          case_id: number
+          completed_at: string | null
+          created_at: string | null
+          differential_history: Json | null
+          elapsed_minutes: number | null
+          final_diagnosis: Json | null
+          flags: Json | null
+          id: string
+          management_plan: Json | null
+          patient_state: Json | null
+          phase: string
+          scoring: Json | null
+          started_at: string | null
+          status: string
+          student_id: string
+          unlocked_disclosures: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          case_id: number
+          completed_at?: string | null
+          created_at?: string | null
+          differential_history?: Json | null
+          elapsed_minutes?: number | null
+          final_diagnosis?: Json | null
+          flags?: Json | null
+          id?: string
+          management_plan?: Json | null
+          patient_state?: Json | null
+          phase?: string
+          scoring?: Json | null
+          started_at?: string | null
+          status?: string
+          student_id: string
+          unlocked_disclosures?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          case_id?: number
+          completed_at?: string | null
+          created_at?: string | null
+          differential_history?: Json | null
+          elapsed_minutes?: number | null
+          final_diagnosis?: Json | null
+          flags?: Json | null
+          id?: string
+          management_plan?: Json | null
+          patient_state?: Json | null
+          phase?: string
+          scoring?: Json | null
+          started_at?: string | null
+          status?: string
+          student_id?: string
+          unlocked_disclosures?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_sessions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       cases: {
         Row: {
-          classroom_id: number | null
-          completion_date: string | null
+          content: Json | null
           created_at: string | null
           description: string | null
           id: number
           name: string
-          start_date: string | null
-          status: Database["public"]["Enums"]["case_status"]
         }
         Insert: {
-          classroom_id?: number | null
-          completion_date?: string | null
+          content?: Json | null
           created_at?: string | null
           description?: string | null
           id?: never
           name: string
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["case_status"]
         }
         Update: {
-          classroom_id?: number | null
-          completion_date?: string | null
+          content?: Json | null
           created_at?: string | null
           description?: string | null
           id?: never
           name?: string
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["case_status"]
+        }
+        Relationships: []
+      }
+      classroom_cases: {
+        Row: {
+          case_id: number | null
+          classroom_id: number | null
+          id: number
+        }
+        Insert: {
+          case_id?: number | null
+          classroom_id?: number | null
+          id?: number
+        }
+        Update: {
+          case_id?: number | null
+          classroom_id?: number | null
+          id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "cases_classroom_id_fkey"
+            foreignKeyName: "classroom_cases_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classroom_cases_classroom_id_fkey"
             columns: ["classroom_id"]
             isOneToOne: false
             referencedRelation: "classrooms"
@@ -147,6 +238,7 @@ export type Database = {
           end_date: string | null
           id: number
           instructor_id: string
+          invitation_code: string | null
           name: string
           school: string | null
           section: string | null
@@ -159,6 +251,7 @@ export type Database = {
           end_date?: string | null
           id?: never
           instructor_id: string
+          invitation_code?: string | null
           name: string
           school?: string | null
           section?: string | null
@@ -171,6 +264,7 @@ export type Database = {
           end_date?: string | null
           id?: never
           instructor_id?: string
+          invitation_code?: string | null
           name?: string
           school?: string | null
           section?: string | null
@@ -270,23 +364,56 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          created_by: string
+          custom_message: string | null
+          email: string
+          expires_at: string
+          id: string
+          registration_link: string
+          role: Database["public"]["Enums"]["user_role"]
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          created_by: string
+          custom_message?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          registration_link: string
+          role: Database["public"]["Enums"]["user_role"]
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          created_by?: string
+          custom_message?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          registration_link?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: string
+        }
+        Relationships: []
+      }
       leaderboard_entries: {
         Row: {
           leaderboard_id: number
-          rank: number | null
-          score: number
           student_id: string
         }
         Insert: {
           leaderboard_id: number
-          rank?: number | null
-          score: number
           student_id: string
         }
         Update: {
           leaderboard_id?: number
-          rank?: number | null
-          score?: number
           student_id?: string
         }
         Relationships: [
@@ -357,6 +484,91 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_actions: {
+        Row: {
+          action_type: string
+          actor: string
+          created_at: string | null
+          elapsed_minutes: number | null
+          id: number
+          payload: Json | null
+          penalties: number | null
+          points_earned: number | null
+          response: Json | null
+          session_id: string
+          target: string | null
+        }
+        Insert: {
+          action_type: string
+          actor: string
+          created_at?: string | null
+          elapsed_minutes?: number | null
+          id?: never
+          payload?: Json | null
+          penalties?: number | null
+          points_earned?: number | null
+          response?: Json | null
+          session_id: string
+          target?: string | null
+        }
+        Update: {
+          action_type?: string
+          actor?: string
+          created_at?: string | null
+          elapsed_minutes?: number | null
+          id?: never
+          payload?: Json | null
+          penalties?: number | null
+          points_earned?: number | null
+          response?: Json | null
+          session_id?: string
+          target?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_actions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "case_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: number
+          metadata: Json | null
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: never
+          metadata?: Json | null
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: never
+          metadata?: Json | null
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "case_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -464,10 +676,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_view: {
+        Row: {
+          cases_completed: number | null
+          leaderboard_id: number | null
+          rank: number | null
+          student_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_entries_leaderboard_id_fkey"
+            columns: ["leaderboard_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_entries_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      hook_require_accepted_invite: { Args: { event: Json }; Returns: Json }
     }
     Enums: {
       case_status: "not started" | "in progress" | "completed"

@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     const { data, error } = await client
       .from('cases')
       .select('id, name, description, created_at')
-      .order('id', { ascending: true })
+      .order('created_at', { ascending: false })
 
     if (error) {
       throw createError({ statusCode: 500, message: error.message })

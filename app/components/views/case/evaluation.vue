@@ -41,6 +41,11 @@
           <div class="text-center space-y-2">
             <p class="text-[10px] uppercase tracking-[0.3em] text-neutral-400 font-medium">Case Complete</p>
             <h1 class="text-2xl font-bold text-neutral-900">Evaluation</h1>
+            <button @click="downloadPdf"
+              class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 transition mt-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a2 2 0 002 2h14a2 2 0 002-2v-3" /></svg>
+              Download PDF
+            </button>
           </div>
 
           <!-- Score ring -->
@@ -194,6 +199,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import pdfMake from 'pdfmake/build/pdfmake'
 
 const route = useRoute()
 const router = useRouter()
@@ -269,6 +275,118 @@ const quickQuestions = [
   'What did I miss?',
   'How to improve?',
 ]
+
+function downloadPdf() {
+  if (!evaluation.value || !evalData.value) return
+
+  const ev = evalData.value
+  const scores = competencyScores.value ?? {}
+  const totalScore = (evaluation.value.total_score ?? 0) as number
+  const maxScore = (evaluation.value.max_score ?? 100) as number
+
+  const competencyRows = Object.entries(scores).map(([key, score]) => [
+    { text: formatName(key), style: 'tableCell' },
+    { text: `${score.earned ?? 0} / ${score.max ?? 15}`, style: 'tableCell', alignment: 'center' as const },
+    { text: score.feedback ?? '—', style: 'tableCellSmall' },
+  ])
+
+  const content: any[] = [
+    { text: 'DiseaseQuest — Case Evaluation Report', style: 'title' },
+    { text: `Score: ${percentage.value}% (${totalScore}/${maxScore})`, style: 'subtitle', margin: [0, 0, 0, 16] as [number, number, number, number] },
+  ]
+
+  if (competencyRows.length > 0) {
+    content.push(
+      { text: 'Competency Scores', style: 'sectionHeader' },
+      {
+        table: {
+          headerRows: 1,
+          widths: ['30%', '12%', '*'],
+          body: [
+            [
+              { text: 'Domain', style: 'tableHeader' },
+              { text: 'Score', style: 'tableHeader', alignment: 'center' as const },
+              { text: 'Feedback', style: 'tableHeader' },
+            ],
+            ...competencyRows,
+          ],
+        },
+        layout: 'lightHorizontalLines',
+        margin: [0, 0, 0, 16] as [number, number, number, number],
+      }
+    )
+  }
+
+  const strengths = (ev.strengths ?? []) as string[]
+  if (strengths.length > 0) {
+    content.push(
+      { text: 'Strengths', style: 'sectionHeader', color: '#16a34a' },
+      { ul: strengths, style: 'listItem', margin: [0, 0, 0, 12] as [number, number, number, number] }
+    )
+  }
+
+  const improvements = (ev.improvements ?? []) as string[]
+  if (improvements.length > 0) {
+    content.push(
+      { text: 'Areas for Improvement', style: 'sectionHeader', color: '#d97706' },
+      { ul: improvements, style: 'listItem', margin: [0, 0, 0, 12] as [number, number, number, number] }
+    )
+  }
+
+  const missed = (ev.missed_critical_actions ?? []) as Array<{ action: string; learning_point?: string }>
+  if (missed.length > 0) {
+    content.push(
+      { text: 'Missed Critical Actions', style: 'sectionHeader', color: '#dc2626' },
+      ...missed.map(m => ({
+        stack: [
+          { text: m.action, bold: true, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] },
+          ...(m.learning_point ? [{ text: m.learning_point, italics: true, fontSize: 9, color: '#2563eb', margin: [0, 1, 0, 4] as [number, number, number, number] }] : []),
+        ],
+      })),
+      { text: '', margin: [0, 0, 0, 8] as [number, number, number, number] }
+    )
+  }
+
+  const reflections = (ev.reflection_prompts ?? []) as Array<string | { prompt: string }>
+  if (reflections.length > 0) {
+    content.push(
+      { text: 'Reflection Questions', style: 'sectionHeader' },
+      { ol: reflections.map(r => typeof r === 'string' ? r : r.prompt), style: 'listItem', margin: [0, 0, 0, 12] as [number, number, number, number] }
+    )
+  }
+
+  const overall = ev.overall_feedback as string | undefined
+  if (overall) {
+    content.push(
+      { text: 'Overall Summary', style: 'sectionHeader' },
+      { text: overall, fontSize: 10, lineHeight: 1.5, margin: [0, 0, 0, 12] as [number, number, number, number] }
+    )
+  }
+
+  const docDefinition = {
+    content,
+    styles: {
+      title: { fontSize: 18, bold: true, color: '#171717', margin: [0, 0, 0, 4] as [number, number, number, number] },
+      subtitle: { fontSize: 12, color: '#525252' },
+      sectionHeader: { fontSize: 12, bold: true, color: '#171717', margin: [0, 8, 0, 6] as [number, number, number, number] },
+      tableHeader: { fontSize: 9, bold: true, color: '#525252', fillColor: '#f5f5f5', margin: [0, 4, 0, 4] as [number, number, number, number] },
+      tableCell: { fontSize: 10, margin: [0, 3, 0, 3] as [number, number, number, number] },
+      tableCellSmall: { fontSize: 9, color: '#525252', margin: [0, 3, 0, 3] as [number, number, number, number] },
+      listItem: { fontSize: 10, lineHeight: 1.4 },
+    },
+    defaultStyle: { font: 'Roboto' },
+    pageMargins: [40, 40, 40, 40] as [number, number, number, number],
+    footer: (currentPage: number, pageCount: number) => ({
+      text: `DiseaseQuest Evaluation — Page ${currentPage} of ${pageCount}`,
+      alignment: 'center' as const,
+      fontSize: 8,
+      color: '#a3a3a3',
+      margin: [0, 10, 0, 0] as [number, number, number, number],
+    }),
+  }
+
+  pdfMake.createPdf(docDefinition).download(`evaluation-case-${caseId}.pdf`)
+}
 
 // Debrief chat
 async function sendDebrief() {

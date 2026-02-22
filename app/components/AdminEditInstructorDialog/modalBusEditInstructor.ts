@@ -1,15 +1,15 @@
 import { reactive } from 'vue';
-import type { Instructor } from '@/assets/interface/Instructor';
+import type { Instructor } from '~/assets/interface/Instructor';
 
 export interface EditModalBus {
-  editData: any | null;
+  editData: Instructor | null;
   openEditModal: boolean;
   openEdit: (data: Instructor) => void;
   closeEdit: () => void;
 }
 
 export const modalBus: EditModalBus = reactive ({
-  editData: null as any,
+  editData: null,
   openEditModal: false,
 
   openEdit(data: Instructor) {

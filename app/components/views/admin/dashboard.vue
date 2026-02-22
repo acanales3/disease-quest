@@ -8,18 +8,24 @@
 
     <!-- Data Cards -->
     <div class="flex justify-between gap-4">
-      <TotalCount icon="hugeicons:students" count="153" label="Students" />
-      <TotalCount icon="hugeicons:teacher" count="10" label="Instructors" />
-      <TotalCount icon="simple-icons:googleclassroom" count="5" label="Classrooms" />
-      <TotalCount icon="si:book-line" count="22" label="Cases" />
+      <TotalCount icon="hugeicons:students" :count="counts.students" label="Students" />
+      <TotalCount icon="hugeicons:teacher" :count="counts.instructors" label="Instructors" />
+      <TotalCount icon="simple-icons:googleclassroom" :count="counts.classrooms" label="Classrooms" />
+      <TotalCount icon="si:book-line" :count="counts.cases" label="Cases" />
     </div>
   </div>
 </template>
 
 <script setup>
 import TotalCount from "@/components/ui/TotalCount.vue";
-// Example user - replace with api data
-const user = {
-  name: "Admin",
-}
+
+const { data: stats, pending } = await useFetch('/api/admin/stats')
+
+const user = computed(() => stats.value?.user || { name: 'Admin' })
+const counts = computed(() => stats.value?.counts || {
+  students: 0,
+  instructors: 0,
+  classrooms: 0,
+  cases: 0
+})
 </script>

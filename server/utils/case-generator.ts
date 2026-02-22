@@ -160,10 +160,20 @@ Your output must contain ALL of the following top-level fields:
 
   "test_results": {
     "<test_id>": {
-      // detailed result values with interpretation
-      "interpretation": "<clinical interpretation>"
+      // MUST include one key-value pair for EVERY field listed in this test's result_schema.
+      // Each key must match a result_schema field name exactly; each value is a string
+      // with the numeric result, units, and (if abnormal) a flag like "(HIGH)" or "(LOW)".
+      // Example for a Chem7 with result_schema ["na","k","cl","hco3","bun","creatinine","glucose"]:
+      //   "na": "128 mEq/L (LOW)",
+      //   "k": "3.8 mEq/L",
+      //   "cl": "110 mEq/L (HIGH)",
+      //   "hco3": "22 mEq/L",
+      //   "bun": "7 mg/dL",
+      //   "creatinine": "0.3 mg/dL",
+      //   "glucose": "70 mg/dL",
+      "interpretation": "<clinical interpretation summary>"
     }
-    // one entry per diagnostic_test id
+    // one entry per diagnostic_test id — every result_schema field MUST appear as a key
   },
 
   "interventions": [
@@ -358,7 +368,7 @@ Example deterioration rules:
 1. Every field listed above is REQUIRED. Do not omit any.
 2. All string values inside the JSON that contain single quotes must use double single-quotes ('') for PostgreSQL compatibility.
 3. The "disclosures" array is the HEART of the case — each disclosure should contain rich narrative content and structured clinical data relevant to that stage of the case.
-4. The "test_results" object MUST have an entry for EVERY id listed in "diagnostic_tests".
+4. The "test_results" object MUST have an entry for EVERY id listed in "diagnostic_tests". Each entry MUST include a key-value pair for EVERY field in that test's result_schema (e.g., "na": "128 mEq/L (LOW)") PLUS an "interpretation" string. Do NOT return only an interpretation — the UI renders each result_schema field as a row in a lab report table.
 5. Disclosure unlock types: START, ACTION, TIME, STATE, EVENT, ACTION_OR_TIME, ACTION_OR_STAGE, TIME_OR_ACTION.
 6. Generate medically accurate, evidence-based content.
 7. Make introduction paragraphs vivid and narrative-style (like a clinical vignette).

@@ -1,7 +1,6 @@
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h } from "vue";
-// @ts-ignore - Vue SFC import in .ts file
-import DropdownAction from "~/components/CaseDatatable/data-table-dropdown.vue";
+import DropdownAction from "@/components/CaseDatatable/data-table-dropdown.vue";
 import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 
@@ -9,7 +8,7 @@ export interface Case {
   id: number;
   name: string;
   description: string;
-  classroom: number;
+  classroom: string;
   completionDate: string;
   status: "not started" | "in progress" | "completed";
   // action column still needed
@@ -33,22 +32,19 @@ export function getColumns(role: string): ColumnDef<Case>[] {
   {
     accessorKey: "name",
     header: () =>
-      h("div", { class: "text-left font-normal text-black" }, "Name"),
+      h("div", { class: "text-center font-normal text-black" }, "Name"),
     cell: ({ row }) => {
       const name = row.getValue("name") as string;
-      return h("div", { class: "text-left font-medium text-gray-700 max-w-[200px] truncate", title: name }, name);
+      return h("div", { class: "text-center font-normal text-gray-600" }, name);
     },
   },
   {
     accessorKey: "description",
     header: () =>
-      h("div", { class: "text-left font-normal text-black" }, "Description"),
+      h("div", { class: "text-center font-normal text-black" }, "Description"),
     cell: ({ row }) => {
       const description = row.getValue("description") as string;
-      const truncated = description && description.length > 60
-        ? description.slice(0, 60) + "..."
-        : description ?? "";
-      return h("div", { class: "text-left font-normal text-gray-600 max-w-[250px]", title: description }, truncated);
+      return h("div", { class: "text-center font-normal text-gray-600" }, description);
     },
   },
   {

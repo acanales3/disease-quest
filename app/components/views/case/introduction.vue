@@ -71,6 +71,12 @@
         </ol>
       </div>
 
+      <!-- Error -->
+      <div v-if="startError" class="border border-red-200 bg-red-50 rounded-xl p-4 text-center">
+        <p class="text-sm text-red-700 font-medium">Failed to start case</p>
+        <p class="text-xs text-red-500 mt-1">{{ startError }}</p>
+      </div>
+
       <!-- Start -->
       <div class="flex justify-center pt-4 pb-8">
         <button @click="startCase" :disabled="starting"
@@ -90,12 +96,12 @@ import { useCaseSession } from '@/composables/useCaseSession'
 const route = useRoute()
 const router = useRouter()
 const caseId = route.params.caseId as string
-const { createSession } = useCaseSession()
+const { createSession, error: sessionError } = useCaseSession()
 const starting = ref(false)
+const startError = ref<string | null>(null)
 
 const { data: caseData, pending, error: fetchError } = useFetch(`/api/cases/${caseId}`)
 
-// Video URL — from API if available, otherwise check Supabase storage
 const videoUrl = computed(() => {
   const cd = caseData.value as Record<string, unknown> | null
   if (cd?.video_url) return cd.video_url as string
@@ -105,9 +111,19 @@ const videoUrl = computed(() => {
 
 async function startCase() {
   starting.value = true
+  startError.value = null
   try {
     const sessionId = await createSession(parseInt(caseId))
-    if (sessionId) { useState('currentSessionId', () => sessionId).value = sessionId; router.push(`/case/${caseId}/mentor`) }
-  } finally { starting.value = false }
+    if (sessionId) {
+      useState('currentSessionId', () => sessionId).value = sessionId
+      router.push(`/case/${caseId}/mentor`)
+    } else {
+      startError.value = sessionError.value || 'Session creation failed. Check the server logs for details.'
+    }
+  } catch (err: any) {
+    startError.value = err?.data?.message || err?.message || 'An unexpected error occurred.'
+  } finally {
+    starting.value = false
+  }
 }
 </script>

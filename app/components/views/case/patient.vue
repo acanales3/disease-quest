@@ -561,9 +561,15 @@ async function fetchResultsAfterDelay(testId: string, testName: string, tatMinut
   for (let attempt = 0; attempt < 3; attempt++) {
     const res = await getResults(testId)
     if (res?.status === 'complete' && res?.results) {
-      const d = { ...res.results as Record<string, unknown> }
-      delete d.interpretation
-      delete d.wbc_value
+      const raw = { ...res.results as Record<string, unknown> }
+      const interpretation = raw.interpretation as string | undefined
+      delete raw.interpretation
+      delete raw.wbc_value
+      const d = Object.keys(raw).length > 0
+        ? raw
+        : interpretation
+          ? { summary: interpretation }
+          : { result: 'No detailed values available' }
       if (!testResultsList.value.find(r => r.testId === testId)) {
         testResultsList.value.push({ testId, testName, data: d })
         expandedResults.value.add(testId)

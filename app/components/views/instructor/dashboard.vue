@@ -40,8 +40,19 @@
 
     <!-- Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" :row-length="5" />
+      <DataTable
+        :columns="visibleColumns"
+        :data="data"
+        :row-length="5"
+        @edit="handleEditClassroom"
+      />
     </div>
+
+    <EditClassroomModal
+      v-model:open="isEditModalOpen"
+      :classroom="selectedClassroom"
+      @updated="handleClassroomUpdated"
+    />
   </div>
 </template>
 
@@ -50,6 +61,7 @@ import PieChart from "../../PieChart/pie-chart.vue";
 
 import { getColumns } from "../../ClassroomDatatable/columns";
 import DataTable from "../../ClassroomDatatable/data-table.vue";
+import EditClassroomModal from "../../EditClassroomModal/EditClassroomModal.vue";
 import { classrooms } from "../../../assets/interface/Classroom";
 import type { Classroom } from "../../ClassroomDatatable/columns";
 import TotalCount from "@/components/ui/TotalCount.vue";
@@ -67,6 +79,8 @@ const user = {
 };
 
 const data = ref<Classroom[]>([]);
+const isEditModalOpen = ref(false);
+const selectedClassroom = ref<Classroom | null>(null);
 
 const visibleColumns = computed(() => {
   const columnsToShow = [
@@ -79,11 +93,29 @@ const visibleColumns = computed(() => {
     "status",
     "actions",
   ];
-  return getColumns('instructor').filter(column => {
+  return getColumns('instructor', {
+    onEdit: handleEditClassroom,
+  }).filter(column => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
 });
+
+
+function handleEditClassroom(classroom: Classroom) {
+  selectedClassroom.value = classroom;
+  isEditModalOpen.value = true;
+}
+
+function handleClassroomUpdated(updatedClassroom: Classroom) {
+  data.value = data.value.map((classroom) =>
+    String(classroom.id) === String(updatedClassroom.id)
+      ? { ...classroom, ...updatedClassroom }
+      : classroom
+  );
+  selectedClassroom.value = updatedClassroom;
+  isEditModalOpen.value = false;
+}
 
 async function getData(): Promise<Classroom[]> {
   try {

@@ -294,15 +294,43 @@ export function validateCaseSchema(content: unknown): ValidationResult {
 
   // ------ test_results keys should match diagnostic_tests ids ------
   if (isObject(c.test_results) && isNonEmptyArray(c.diagnostic_tests)) {
-    const testIds = (c.diagnostic_tests as Record<string, unknown>[]).map(
-      (t) => t.id as string
-    );
-    const resultKeys = Object.keys(c.test_results as Record<string, unknown>);
-    for (const id of testIds) {
+    const tests = c.diagnostic_tests as Record<string, unknown>[];
+    const results = c.test_results as Record<string, unknown>;
+    const resultKeys = Object.keys(results);
+
+    for (const test of tests) {
+      const id = test.id as string;
       if (!resultKeys.includes(id)) {
         errors.push(
           `test_results is missing an entry for diagnostic test "${id}"`
         );
+        continue;
+      }
+
+      const entry = results[id];
+      if (!isObject(entry)) {
+        errors.push(`test_results["${id}"] must be an object`);
+        continue;
+      }
+
+      const entryObj = entry as Record<string, unknown>;
+      const entryKeys = Object.keys(entryObj).filter(k => k !== "interpretation");
+
+      if (entryKeys.length === 0) {
+        errors.push(
+          `test_results["${id}"] has no component values — must include keys from result_schema, not just "interpretation"`
+        );
+      }
+
+      const schema = test.result_schema;
+      if (isNonEmptyArray(schema)) {
+        for (const field of schema as string[]) {
+          if (!(field in entryObj)) {
+            errors.push(
+              `test_results["${id}"] is missing result_schema field "${field}"`
+            );
+          }
+        }
       }
     }
   }

@@ -41,10 +41,12 @@ import {
 } from "~/components/ui/table";
 
 import FilterDialog from "@/components/FilterDialog/FilterDialog.vue";
+import type { Classroom } from "../ClassroomDatatable/columns"; // Import Classroom type
 
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  classrooms?: Classroom[]; // Add classrooms prop
 }>();
 
 const sorting = ref<SortingState>([]);
@@ -60,17 +62,25 @@ const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
     return true;
   }
 
-  const cellValue = row.getValue(columnId);
+      const cellValue = row.getValue(columnId);
+      
+      // Special handling for classroom filter which checks against the classrooms array
+      if (columnId === 'classroom' && (row.original as any).classrooms) {
+        if (Array.isArray(filterValue)) {
+            // Check if any of the student's classroom IDs match any of the filter values
+            return (row.original as any).classrooms.some((id: number) => filterValue.includes(String(id)));
+        }
+      }
 
-  // For array filters, check if cellValue is in the array
-  if (Array.isArray(filterValue)) {
-    // Convert cellValue to string for comparison
-    return filterValue.includes(String(cellValue));
-  }
+      // For array filters, check if cellValue is in the array
+      if (Array.isArray(filterValue)) {
+        // Convert cellValue to string for comparison
+        return filterValue.includes(String(cellValue));
+      }
 
-  // Fallback for non-array filters (shouldn't happen with this function)
-  return true;
-};
+      // Fallback for non-array filters (shouldn't happen with this function)
+      return true;
+    };
 
 // Modify columns to add filterFn for status, msyear, and classroom
 const modifiedColumns = computed(() => {
@@ -151,6 +161,18 @@ const handleApplyFilters = (filters: any) => {
       filters.status && filters.status.length > 0 ? filters.status : undefined,
     );
 };
+
+// Handle classroom dropdown selection
+const selectedClassroom = ref<Classroom | null>(null);
+
+const handleClassroomSelect = (classroom: Classroom | null) => {
+  selectedClassroom.value = classroom;
+  if (classroom) {
+    table.getColumn("classroom")?.setFilterValue([String(classroom.id)]);
+  } else {
+    table.getColumn("classroom")?.setFilterValue(undefined);
+  }
+};
 </script>
 <template>
   <div
@@ -164,7 +186,7 @@ const handleApplyFilters = (filters: any) => {
       <!-- Right: search input + dropdowns -->
       <div class="flex items-center space-x-4">
         <!-- Filter Dialog component -->
-        <FilterDialog @apply-filters="handleApplyFilters" />
+        <FilterDialog :classrooms="props.classrooms || []" @apply-filters="handleApplyFilters" />
 
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
@@ -178,27 +200,26 @@ const handleApplyFilters = (filters: any) => {
             <Button
               class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
             >
-              All Classes
+              {{ selectedClassroom ? selectedClassroom.name : "All Classes" }}
               <ChevronDown class="w-4 h-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            class="bg-white rounded-md shadow-md flex flex-col"
+            class="bg-white rounded-md shadow-md flex flex-col max-h-60 overflow-y-auto"
           >
             <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block cursor-pointer"
+              @click="handleClassroomSelect(null)"
             >
-              Example Class 0
+              All Classes
             </DropdownMenuItem>
             <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+              v-for="classroom in props.classrooms"
+              :key="classroom.id"
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block cursor-pointer"
+              @click="handleClassroomSelect(classroom)"
             >
-              Example Class 1
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 2
+              {{ classroom.name }}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
