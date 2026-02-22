@@ -112,7 +112,6 @@ watch(
     if (!newData) return
     const nameParts = newData.name.trim().split(/\s+/);
 
-    console.log('MultiSelect selected:', form.value.classrooms.map(c => ({ value: String(c.id), label: c.name })));
     form.value = {
       id: newData.id,
       userId: newData.userId,
@@ -219,7 +218,7 @@ const handleSave = () => {
    });
 
   emit('close');
-  // Set a small timeout to prevent user from seeing step change. Kind of a hack, but this is better than setting a watcher
+  // Set a small timeout to prevent user from seeing step change. Kind of a hack, but probably better than setting a watcher
   // on props.show
   clearTimeout(resetTimeout)
   resetTimeout = window.setTimeout(() => {

@@ -232,6 +232,12 @@ const saveStudentEdits = async (updated: Student) => {
     // Close modal
     modalBus.closeEdit();
     refreshStudents();
+    pageMessage.value = { type: 'success', text: `Successfully updated ${updated.first_name} ${updated.last_name}` };
+
+    // Change to animated fade in / fade-out if time permits
+    setTimeout(() => {
+      pageMessage.value = null
+    }, 5000);
   } catch (error: any) {
     console.error("Error updating student:", error?.data || error);
     pageMessage.value = {

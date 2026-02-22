@@ -68,6 +68,8 @@ import DeleteInstructorModal from "@/components/DeleteInstructorModal/DeleteInst
 // ------------------
 // Fetch instructors
 // ------------------
+
+
 const { data, pending, error } = await useFetch<Instructor[]>("/api/instructors", {
   default: () => [],
 });
@@ -151,25 +153,39 @@ const saveInstructorEdits = async (instructor: Instructor) => {
   pageMessage.value = null;
 
   try {
-    const [first_name, ...rest] = instructor.name.split(" ");
-    const last_name = rest.join(" ");
+    if (!instructor.id) throw new Error("Missing userId for instructor update.")
 
-    await $fetch(`/api/admin/users/${instructor.id}`, {
+    // 1. Update user-level fields
+    const res = await $fetch(`/api/admin/users/${instructor.id}`, {
       method: "PUT",
       body: {
-        first_name,
-        last_name,
+        first_name: instructor.first_name,
+        last_name: instructor.last_name,
         email: instructor.email,
         school: instructor.school,
         status: instructor.status,
+        classroomIds: instructor.classrooms.map(c => c.id)
       },
     });
 
-    data.value = data.value.map((i) =>
-      i.id === instructor.id ? instructor : i
+    const updatedInstructor = res.data;
+
+    data.value = data.value.map(i =>
+      i.id === updatedInstructor.id ? updatedInstructor : i
     );
 
+    await refreshData()
+
+    pageMessage.value = {
+      type: "success",
+      text: `Successfully updated ${updatedInstructor.name}`,
+    };
+
     modalBus.closeEdit();
+    // Change to animated fade in / fade out if time permits
+    setTimeout(() => {
+      pageMessage.value = null
+    }, 5000);
   } catch (err: any) {
     console.error("Error updating instructor:", err?.data || err);
 
@@ -179,6 +195,30 @@ const saveInstructorEdits = async (instructor: Instructor) => {
         err?.data?.statusMessage ||
         err?.message ||
         "Failed to update instructor. Please try again.",
+    };
+  }
+};
+
+// ------------------
+// Refresh datatable
+// ------------------
+const refreshData = async () => {
+  pageMessage.value = null;
+
+  try {
+    // Refetch instructors
+    const instructors = await $fetch<Instructor[]>("/api/instructors");
+    data.value = instructors;
+
+    // Refetch classrooms
+    const classroomList = await $fetch<Classroom[]>("/api/classrooms");
+    classrooms.value = classroomList;
+  } catch (err: any) {
+    console.error("Failed to refresh data:", err);
+
+    pageMessage.value = {
+      type: "error",
+      text: "Failed to refresh instructors and classrooms. Please try again.",
     };
   }
 };

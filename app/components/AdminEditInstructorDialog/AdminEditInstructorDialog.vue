@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import type { Classroom, ClassroomOptions } from '@/assets/interface/Classroom'
+import type { Classroom } from '@/assets/interface/Classroom'
 import  MultiSelect  from '@/components/ui/MultiSelect.vue'
 import { ref, watch, computed, toRaw } from 'vue';
 import type { Instructor } from '@/assets/interface/Instructor';
 
+
+interface ClassroomOptions {
+  id: number
+  name: string
+  instructor_id?: string | null
+  instructor_name?: string | null
+}
 
 // ================================
 // PROPS / EMITS
@@ -156,18 +163,24 @@ const changes = computed(() => {
 // ===========================================
 // HANDLING
 // ===========================================
+
+// handle dialog close
+let resetTimeout: number
 const handleOpenChange = (value: boolean) => {
   if (!value) {
-    step.value = STEPS.FORM
-
-    // Reset form back to original state
-    if (original.value) {
-      form.value = structuredClone(original.value)
-    }
-    
-    submitted.value = false
-
     emit('close');
+    // Set a small timeout to prevent user from seeing step change
+    clearTimeout(resetTimeout)
+    resetTimeout = window.setTimeout(() => {
+      step.value = STEPS.FORM
+
+      // Reset form back to original state
+      if (original.value) {
+        form.value = structuredClone(original.value)
+      }
+      
+      submitted.value = false
+    }, 400);
   }
 };
 
@@ -188,13 +201,26 @@ const handleSave = async () => {
 
   emit('save', {
     id: form.value.id,
-    name: `${form.value.first_name} ${form.value.last_name}`.trim(),
+    first_name: form.value.first_name,
+    last_name: form.value.last_name,
+    name: `${form.value.first_name} ${form.value.last_name}`,
     email: form.value.email,
     school: form.value.school,
     classrooms: form.value.classrooms ?? [],
     status: form.value.status,
   });
   emit('close');
+
+  // Set a small timeout to prevent user from seeing step change. Kind of a hack, but probably better than setting a watcher
+  // on props.show
+  clearTimeout(resetTimeout)
+  resetTimeout = window.setTimeout(() => {
+    step.value = STEPS.FORM;
+    if (original.value) {
+      form.value = structuredClone(toRaw(original.value));
+    }
+    submitted.value = false;
+  }, 400);
 };
 
 
@@ -207,6 +233,24 @@ function formatValue(val: any) {
   }
   return val || '-'
 }
+
+const classroomConflicts = computed(() => {
+  if (!original.value) return []
+
+  return form.value.classrooms.map(c => {
+     const fullClassroom = props.classrooms.find(pc => pc.id === c.id)
+    
+     if (
+      fullClassroom?.instructor_id && fullClassroom.instructor_id !== form.value.id
+     ) {
+      return {
+        classroomName: fullClassroom.name,
+        instructorName: fullClassroom.instructor_name
+      }
+     }
+    return null
+  }).filter(Boolean)
+})
 
 </script>
 
@@ -290,6 +334,23 @@ function formatValue(val: any) {
           <div v-else key="summary" class="space-y-4 text-sm">
             <div v-if="changes.length === 0" class="text-muted-foreground">
               <strong>No changes were made.</strong>
+            </div>
+
+            <div
+              v-if="classroomConflicts.length > 0"
+              class="p-3 rounded bg-yellow-50 border border-yellow-300 text-yellow-800 text-sm"
+            >
+              <div class="font-semibold mb-2">
+                The following classrooms already have an instructor:
+              </div>
+
+              <div
+                v-for="conflict in classroomConflicts"
+                :key="conflict.classroomName"
+              >
+                • {{ conflict.classroomName }} —
+                {{ conflict.instructorName }} will be removed and replaced.
+              </div>
             </div>
 
             <div
