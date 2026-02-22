@@ -195,23 +195,119 @@ Your output must contain ALL of the following top-level fields:
   ],
 
   "evaluation_rubrics": [
+    // STANDARDIZED ASSESSMENT RUBRIC (Version 0.1)
+    // Aligned with AAMC Core EPAs (EPA 1–4, EPA 9) and R2T principles.
+    // Four performance levels: Emerging, Developing, Proficient, Exemplary.
+    // Point allocations per domain are DYNAMIC — adjust based on case complexity
+    // and clinical emphasis. The domains below are REQUIRED for every case.
+    // If Team-Based Collaboration is not applicable (single-player), omit it
+    // and redistribute its points across other domains.
+    //
+    // IMPORTANT: Write descriptions that are CASE-SPECIFIC — reference the
+    // actual clinical scenario, expected findings, and key decision points.
+    // Do NOT use generic boilerplate.
     {
-      "id": "<rubric_id>",
-      "name": "<rubric name>",
-      "max_points": <number>,
-      "db_column": "<snake_case_column_name>",
-      "emerging_range": [<min>, <max>],
-      "emerging_description": "<description>",
-      "developing_range": [<min>, <max>],
-      "developing_description": "<description>",
-      "proficient_range": [<min>, <max>],
-      "proficient_description": "<description>",
-      "exemplary_range": [<min>, <max>],
-      "exemplary_description": "<description>"
+      "id": "history_taking_synthesis",
+      "name": "History Taking and Synthesis",
+      "max_points": <15 — adjust based on case>,
+      "db_column": "history_taking_synthesis",
+      "emerging_range": [0, <~33% of max>],
+      "emerging_description": "History is incomplete or disorganized, missing many critical details relevant to this case; little to no synthesis of information.",
+      "developing_range": [<emerging_max+1>, <~60% of max>],
+      "developing_description": "Gathers basic history including some relevant details but misses others; somewhat organized but limited synthesis or linking of information.",
+      "proficient_range": [<developing_max+1>, <~87% of max>],
+      "proficient_description": "Obtains a thorough and organized history covering most key details; synthesizes findings into a coherent summary with minor omissions.",
+      "exemplary_range": [<proficient_max+1>, <max_points>],
+      "exemplary_description": "Elicits a comprehensive, focused history covering all pertinent information; highly organized, with clear synthesis into an accurate problem representation."
+    },
+    {
+      "id": "physical_exam_interpretation",
+      "name": "Physical Exam Interpretation",
+      "max_points": <10 — adjust based on case>,
+      "db_column": "physical_exam_interpretation",
+      "emerging_range": [0, <~30% of max>],
+      "emerging_description": "Identifies few exam findings or misinterprets key physical signs; lacks understanding of findings'' significance.",
+      "developing_range": [<emerging_max+1>, <~60% of max>],
+      "developing_description": "Recognizes obvious exam findings but misses subtler cues; demonstrates partial understanding of their significance and may misinterpret some findings.",
+      "proficient_range": [<developing_max+1>, <~80% of max>],
+      "proficient_description": "Correctly identifies and interprets important physical exam findings; understands their significance for the diagnosis, with only minor gaps.",
+      "exemplary_range": [<proficient_max+1>, <max_points>],
+      "exemplary_description": "Accurately interprets all pertinent exam findings, including subtle abnormalities; fully understands their implications and integrates them into diagnostic reasoning."
+    },
+    {
+      "id": "differential_diagnosis_formulation",
+      "name": "Differential Diagnosis Formulation",
+      "max_points": <15 — adjust based on case>,
+      "db_column": "differential_diagnosis_formulation",
+      "emerging_range": [0, <~33% of max>],
+      "emerging_description": "Offers an incomplete or incorrect differential (few or irrelevant possibilities); misses obvious diagnoses and provides no clear reasoning.",
+      "developing_range": [<emerging_max+1>, <~60% of max>],
+      "developing_description": "Lists some plausible diagnoses but misses important ones or includes unrelated options; limited prioritization with vague or minimal justification.",
+      "proficient_range": [<developing_max+1>, <~87% of max>],
+      "proficient_description": "Generates a solid differential with most likely diagnoses and some less-common considerations; prioritizes diagnoses based on patient data and provides reasoning for each choice.",
+      "exemplary_range": [<proficient_max+1>, <max_points>],
+      "exemplary_description": "Provides a comprehensive, well-prioritized differential including all likely and relevant alternate diagnoses; clearly articulates evidence-based reasoning for each possibility, demonstrating a systematic and rigorous approach."
+    },
+    {
+      "id": "diagnostic_tests",
+      "name": "Diagnostic Tests (Labs/Imaging)",
+      "max_points": <10 — adjust based on case>,
+      "db_column": "diagnostic_tests",
+      "emerging_range": [0, <~30% of max>],
+      "emerging_description": "Selects diagnostic tests unsystematically or misses key investigations; may order unnecessary tests and fails to interpret results correctly.",
+      "developing_range": [<emerging_max+1>, <~60% of max>],
+      "developing_description": "Chooses some appropriate labs/imaging but omits important tests or includes low-yield ones; shows basic result interpretation but misses finer points; limited prioritization.",
+      "proficient_range": [<developing_max+1>, <~80% of max>],
+      "proficient_description": "Selects appropriate, high-yield tests with minimal unnecessary investigations; interprets results accurately, recognizing most significant findings; uses results to refine the differential diagnosis effectively.",
+      "exemplary_range": [<proficient_max+1>, <max_points>],
+      "exemplary_description": "Strategically selects tests based on clinical evidence and priorities (avoids unnecessary investigations); interprets all results (including subtle findings) correctly; seamlessly integrates data to confirm or narrow diagnoses with exceptional efficiency."
+    },
+    {
+      "id": "management_reasoning",
+      "name": "Management Reasoning (Treatment Plan)",
+      "max_points": <15 — adjust based on case>,
+      "db_column": "management_reasoning",
+      "emerging_range": [0, <~33% of max>],
+      "emerging_description": "Proposes an incomplete or inappropriate management plan; misses critical interventions or orders; reasoning is unclear, not evidence-based, or unsafe.",
+      "developing_range": [<emerging_max+1>, <~60% of max>],
+      "developing_description": "Outlines a basic treatment plan addressing some issues, but important components (e.g., specific therapies, follow-up, patient education) are missing or poorly prioritized; reasoning shows partial understanding of standard care.",
+      "proficient_range": [<developing_max+1>, <~87% of max>],
+      "proficient_description": "Formulates a generally sound treatment plan covering major aspects of care (acute management, further workup, patient education, follow-up); plan is mostly evidence-based and appropriately prioritized, with only minor omissions or sequencing issues.",
+      "exemplary_range": [<proficient_max+1>, <max_points>],
+      "exemplary_description": "Develops a comprehensive, evidence-based treatment plan addressing immediate and long-term needs; prioritizes interventions logically (urgent issues first), including appropriate consultations, education, and follow-up; provides clear rationale for decisions, aligned with best practices."
+    },
+    {
+      "id": "communication_empathy",
+      "name": "Communication and Empathy",
+      "max_points": <15 — adjust based on case>,
+      "db_column": "communication_empathy",
+      "emerging_range": [0, <~33% of max>],
+      "emerging_description": "Communication is unclear or overly clinical; shows minimal empathy or listening, failing to address patient concerns or build rapport.",
+      "developing_range": [<emerging_max+1>, <~60% of max>],
+      "developing_description": "Communicates adequately with some lay language and occasional empathy, but consistency is lacking; addresses patient questions or emotions partially, with moderate rapport and some missed opportunities to reassure or clarify.",
+      "proficient_range": [<developing_max+1>, <~87% of max>],
+      "proficient_description": "Clearly and respectfully communicates in patient-friendly language; consistently demonstrates empathy and active listening, addresses the patient''s concerns and emotions; establishes good rapport and trust.",
+      "exemplary_range": [<proficient_max+1>, <max_points>],
+      "exemplary_description": "Exhibits outstanding communication that is patient-centered and compassionate; uses clear, jargon-free language with exceptional empathy, responding to patient concerns and emotional cues effectively; builds a strong therapeutic alliance."
+    },
+    {
+      "id": "reflection_metacognition",
+      "name": "Reflection and Metacognition",
+      "max_points": <10 — adjust based on case>,
+      "db_column": "reflection_metacognition",
+      "emerging_range": [0, <~30% of max>],
+      "emerging_description": "Shows little to no reflection on decisions or outcomes; fails to identify errors, knowledge gaps, or areas for improvement in their approach.",
+      "developing_range": [<emerging_max+1>, <~60% of max>],
+      "developing_description": "Demonstrates some reflection after the case, identifying a few basic lessons or obvious mistakes, but insights are superficial or need prompting; limited analysis of reasoning process.",
+      "proficient_range": [<developing_max+1>, <~80% of max>],
+      "proficient_description": "Thoughtfully reflects on performance and reasoning, identifying important successes and mistakes; offers clear insights into how to improve future practice or fill knowledge gaps; shows growing self-awareness.",
+      "exemplary_range": [<proficient_max+1>, <max_points>],
+      "exemplary_description": "Engages in deep, critical reflection on decision-making and outcomes; insightfully identifies subtle gaps in knowledge or reasoning and formulates concrete strategies for improvement; demonstrates rigorous self-assessment and commitment to continuous learning."
     }
-    // Required rubrics: history_taking_synthesis, physical_exam_interpretation,
-    // differential_diagnosis_formulation, diagnostic_tests, management_reasoning,
-    // communication_empathy, reflection_metacognition
+    // NOTE: Use the EXACT ids and db_columns above. Compute concrete integer
+    // ranges from the max_points you choose — do NOT leave angle-bracket
+    // placeholders. Example for 15 pts: emerging [0,5], developing [6,9],
+    // proficient [10,13], exemplary [14,15].
   ],
 
   "deterioration_rules": [
@@ -232,7 +328,22 @@ Your output must contain ALL of the following top-level fields:
 5. Disclosure unlock types: START, ACTION, TIME, STATE, EVENT, ACTION_OR_TIME, ACTION_OR_STAGE, TIME_OR_ACTION.
 6. Generate medically accurate, evidence-based content.
 7. Make introduction paragraphs vivid and narrative-style (like a clinical vignette).
-8. Return ONLY the JSON object — no markdown code fences, no preamble, no trailing text.`;
+8. Return ONLY the JSON object — no markdown code fences, no preamble, no trailing text.
+
+## EVALUATION RUBRIC RULES (CRITICAL)
+
+The evaluation_rubrics array must follow these rules precisely:
+
+9. All 7 rubric domains are REQUIRED: history_taking_synthesis, physical_exam_interpretation, differential_diagnosis_formulation, diagnostic_tests, management_reasoning, communication_empathy, reflection_metacognition.
+10. Each rubric MUST use the EXACT id and db_column values listed above — these map to database columns.
+11. Point allocations are DYNAMIC per case. Adjust max_points based on the clinical emphasis of the case. Suggested defaults: Hx=15, PE=10, DDx=15, Dx Tests=10, Mgmt=15, Comm=15, Reflection=10 (total 90). You may redistribute points based on case complexity (e.g., a case emphasizing management may weight Mgmt higher).
+12. All range values must be CONCRETE INTEGERS — no placeholders. Ranges must cover 0 through max_points with no gaps or overlaps. Use this pattern:
+    - For 15-point domains: emerging [0,5], developing [6,9], proficient [10,13], exemplary [14,15]
+    - For 10-point domains: emerging [0,3], developing [4,6], proficient [7,8], exemplary [9,10]
+    - Scale proportionally for other point values.
+13. Performance level descriptions must be CASE-SPECIFIC — reference actual clinical findings, expected diagnoses, and key decision points from the case being generated. Do NOT use generic boilerplate.
+14. The rubric is aligned with AAMC Core Entrustable Professional Activities: EPA 1 (history & physical), EPA 2 (differential diagnosis), EPA 3 (diagnostic tests), EPA 4 (orders/management), EPA 9 (teamwork/collaboration). Ensure the rubric descriptions reflect these competency expectations.
+15. The rubric emphasizes Rigor, Reproducibility, and Transparency (R2T) in clinical reasoning — descriptions should reward systematic approaches and evidence-based justification.`;
 
 // ---------------------------------------------------------------------------
 // Generator function

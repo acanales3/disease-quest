@@ -88,7 +88,39 @@ const PATIENT_STATE_REQUIRED_KEYS = [
 // ---------------------------------------------------------------------------
 // Evaluation rubric required keys
 // ---------------------------------------------------------------------------
-const RUBRIC_REQUIRED_KEYS = ["id", "name", "max_points"] as const;
+const RUBRIC_REQUIRED_KEYS = [
+  "id", "name", "max_points", "db_column",
+  "emerging_range", "emerging_description",
+  "developing_range", "developing_description",
+  "proficient_range", "proficient_description",
+  "exemplary_range", "exemplary_description",
+] as const;
+
+const REQUIRED_RUBRIC_IDS = [
+  "history_taking_synthesis",
+  "physical_exam_interpretation",
+  "differential_diagnosis_formulation",
+  "diagnostic_tests",
+  "management_reasoning",
+  "communication_empathy",
+  "reflection_metacognition",
+] as const;
+
+const RUBRIC_DB_COLUMN_MAP: Record<string, string> = {
+  history_taking_synthesis: "history_taking_synthesis",
+  physical_exam_interpretation: "physical_exam_interpretation",
+  differential_diagnosis_formulation: "differential_diagnosis_formulation",
+  diagnostic_tests: "diagnostic_tests",
+  management_reasoning: "management_reasoning",
+  communication_empathy: "communication_empathy",
+  reflection_metacognition: "reflection_metacognition",
+};
+
+function isValidRange(v: unknown): v is [number, number] {
+  return Array.isArray(v) && v.length === 2
+    && typeof v[0] === "number" && typeof v[1] === "number"
+    && v[0] <= v[1] && v[0] >= 0;
+}
 
 // ---------------------------------------------------------------------------
 // Main Validator
@@ -250,6 +282,8 @@ export function validateCaseSchema(content: unknown): ValidationResult {
 
   // ------ evaluation_rubrics items ------
   if (isNonEmptyArray(c.evaluation_rubrics)) {
+    const rubricIds = new Set<string>();
+
     for (let i = 0; i < (c.evaluation_rubrics as unknown[]).length; i++) {
       const r = (c.evaluation_rubrics as unknown[])[i];
       if (!isObject(r)) {
@@ -257,10 +291,75 @@ export function validateCaseSchema(content: unknown): ValidationResult {
         continue;
       }
       const obj = r as Record<string, unknown>;
+
       for (const key of RUBRIC_REQUIRED_KEYS) {
         if (obj[key] === undefined || obj[key] === null) {
           errors.push(`evaluation_rubrics[${i}].${key} is missing`);
         }
+      }
+
+      if (isNonEmptyString(obj.id)) {
+        rubricIds.add(obj.id as string);
+      }
+
+      // Validate db_column matches the expected mapping
+      if (isNonEmptyString(obj.id) && isNonEmptyString(obj.db_column)) {
+        const expectedCol = RUBRIC_DB_COLUMN_MAP[obj.id as string];
+        if (expectedCol && obj.db_column !== expectedCol) {
+          errors.push(
+            `evaluation_rubrics[${i}].db_column should be "${expectedCol}" for id "${obj.id}", got "${obj.db_column}"`
+          );
+        }
+      }
+
+      // Validate max_points is a positive number
+      if (typeof obj.max_points === "number" && obj.max_points > 0) {
+        const maxPts = obj.max_points as number;
+
+        // Validate ranges are well-formed [min, max] tuples
+        for (const level of ["emerging", "developing", "proficient", "exemplary"] as const) {
+          const rangeKey = `${level}_range` as string;
+          if (!isValidRange(obj[rangeKey])) {
+            errors.push(
+              `evaluation_rubrics[${i}].${rangeKey} must be [min, max] with 0 <= min <= max`
+            );
+          }
+        }
+
+        // Validate exemplary range ends at max_points
+        if (isValidRange(obj.exemplary_range) &&
+            (obj.exemplary_range as [number, number])[1] !== maxPts) {
+          errors.push(
+            `evaluation_rubrics[${i}].exemplary_range max should equal max_points (${maxPts})`
+          );
+        }
+
+        // Validate emerging range starts at 0
+        if (isValidRange(obj.emerging_range) &&
+            (obj.emerging_range as [number, number])[0] !== 0) {
+          errors.push(
+            `evaluation_rubrics[${i}].emerging_range should start at 0`
+          );
+        }
+
+        // Validate descriptions are non-empty strings
+        for (const level of ["emerging", "developing", "proficient", "exemplary"] as const) {
+          const descKey = `${level}_description` as string;
+          if (!isNonEmptyString(obj[descKey])) {
+            errors.push(
+              `evaluation_rubrics[${i}].${descKey} must be a non-empty string`
+            );
+          }
+        }
+      }
+    }
+
+    // Validate all required rubric domains are present
+    for (const requiredId of REQUIRED_RUBRIC_IDS) {
+      if (!rubricIds.has(requiredId)) {
+        errors.push(
+          `evaluation_rubrics is missing required domain: "${requiredId}"`
+        );
       }
     }
   }
