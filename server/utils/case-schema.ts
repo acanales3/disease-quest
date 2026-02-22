@@ -265,6 +265,33 @@ export function validateCaseSchema(content: unknown): ValidationResult {
     }
   }
 
+  // ------ interventions items ------
+  const VALID_INTERVENTION_CATEGORIES = [
+    "antibiotics", "fluids", "vasopressors", "airway",
+    "anticonvulsant", "anti_inflammatory", "analgesic", "general",
+  ];
+  if (isNonEmptyArray(c.interventions)) {
+    for (let i = 0; i < (c.interventions as unknown[]).length; i++) {
+      const inter = (c.interventions as unknown[])[i];
+      if (!isObject(inter)) {
+        errors.push(`interventions[${i}] must be an object`);
+        continue;
+      }
+      const obj = inter as Record<string, unknown>;
+      if (!isNonEmptyString(obj.id))
+        errors.push(`interventions[${i}].id is missing`);
+      if (!isNonEmptyString(obj.display_name))
+        errors.push(`interventions[${i}].display_name is missing`);
+      if (!isNonEmptyString(obj.category)) {
+        errors.push(`interventions[${i}].category is missing`);
+      } else if (!VALID_INTERVENTION_CATEGORIES.includes(obj.category as string)) {
+        errors.push(
+          `interventions[${i}].category "${obj.category}" is not valid. Must be one of: ${VALID_INTERVENTION_CATEGORIES.join(", ")}`
+        );
+      }
+    }
+  }
+
   // ------ test_results keys should match diagnostic_tests ids ------
   if (isObject(c.test_results) && isNonEmptyArray(c.diagnostic_tests)) {
     const testIds = (c.diagnostic_tests as Record<string, unknown>[]).map(

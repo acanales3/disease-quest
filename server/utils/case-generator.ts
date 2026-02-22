@@ -170,9 +170,13 @@ Your output must contain ALL of the following top-level fields:
     {
       "id": "<intervention_id>",
       "display_name": "<human-readable name>",
-      "options": [<array of options if applicable>]
+      "category": "<one of: antibiotics, fluids, vasopressors, airway, anticonvulsant, anti_inflammatory, analgesic, general>",
+      "options": [<array of specific drug/treatment names if applicable>]
     }
-    // all relevant interventions for this case
+    // all relevant interventions for this case.
+    // The "category" field is REQUIRED and maps to universal treatment categories
+    // used by the orchestrator for dynamic treatment effect handling.
+    // The "options" array should list specific drug names (e.g., ["ceftriaxone", "vancomycin"]).
   ],
 
   "scoring_categories": {
@@ -312,12 +316,42 @@ Your output must contain ALL of the following top-level fields:
 
   "deterioration_rules": [
     {
-      "if": "<condition expression>",
-      "then": { "event": "<event name>", "notes": "<notes>" }
+      "if": "<condition expression using flag_name == true/false AND time >= N>",
+      "then": {
+        "event": "<event name>",
+        "notes": "<clinical description of what happens>",
+        "effects": {
+          "vitals": { <optional: specific vital changes, e.g. "bp_systolic": 45, "hr_bpm": 200> },
+          "flags": { <optional: boolean flags to set, e.g. "has_shock": true, "has_seizure": true> },
+          "mental_status": "<optional: new mental status>"
+        }
+      }
     }
-    // 2-4 deterioration rules
+    // 2-4 deterioration rules. The "effects" object is optional but recommended
+    // for critical events. If omitted, the orchestrator applies generic severity escalation.
   ]
 }
+
+## DETERIORATION & FLAG RULES
+
+The orchestrator evaluates deterioration conditions using a generic parser.
+Condition strings MUST follow the pattern: flag_name == true/false AND time >= N
+
+Standard flag names the orchestrator sets automatically:
+- correct_diagnosis_suspected: set when the student's DDx matches the correct diagnosis
+- antibiotics_ordered / antibiotics_started: set when any antibiotic treatment is given
+- shock_addressed: set when vasopressors or fluids are administered
+- seizure_addressed: set when an anticonvulsant is given
+- airway_addressed: set when intubation/ventilation is performed
+- cultures_before_antibiotics: set when culture tests are ordered before antibiotics
+
+You may reference these flags or define custom ones. For custom flags, the student's
+differential diagnosis check will also set <primary_diagnosis_keyword>_suspected (e.g.,
+meningitis_suspected, pneumonia_suspected) based on the correct_diagnosis field.
+
+Example deterioration rules:
+  {"if": "correct_diagnosis_suspected == false AND time >= 5", "then": {"event": "clinical_worsening", ...}}
+  {"if": "antibiotics_started == false AND time >= 8", "then": {"event": "sepsis_progression", ...}}
 
 ## IMPORTANT RULES
 

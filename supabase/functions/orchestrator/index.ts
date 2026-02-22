@@ -130,14 +130,49 @@ function checkDisclosureUnlocks(
   return newlyUnlocked;
 }
 
-// ── Helper: check deterioration rules ───────────────────────────
+// ── Helper: generic condition evaluator ──────────────────────────
+// Parses condition strings like "flag_name == false AND time >= 5"
+// from the case content's deterioration_rules. Works with ANY case.
+function evaluateCondition(
+  condition: string,
+  flags: Record<string, boolean>,
+  elapsedMinutes: number
+): boolean {
+  const clauses = condition.split(/\s+AND\s+/i);
+
+  for (const clause of clauses) {
+    const trimmed = clause.trim();
+
+    const timeMatch = trimmed.match(/time\s*>=\s*(\d+)/);
+    if (timeMatch) {
+      if (elapsedMinutes < parseInt(timeMatch[1])) return false;
+      continue;
+    }
+
+    const flagFalseMatch = trimmed.match(/(\w+)\s*==\s*false/);
+    if (flagFalseMatch) {
+      if (flags[flagFalseMatch[1]]) return false;
+      continue;
+    }
+
+    const flagTrueMatch = trimmed.match(/(\w+)\s*==\s*true/);
+    if (flagTrueMatch) {
+      if (!flags[flagTrueMatch[1]]) return false;
+      continue;
+    }
+  }
+
+  return true;
+}
+
+// ── Helper: check deterioration rules (generic) ─────────────────
 function checkDeteriorationRules(
   rules: Array<Record<string, unknown>>,
   flags: Record<string, boolean>,
   elapsedMinutes: number,
   triggeredEvents: string[]
-): Array<{ event: string; notes: string }> {
-  const newEvents: Array<{ event: string; notes: string }> = [];
+): Array<{ event: string; notes: string; rule: Record<string, unknown> }> {
+  const newEvents: Array<{ event: string; notes: string; rule: Record<string, unknown> }> = [];
 
   for (const rule of rules) {
     const condition = (rule.if ?? "") as string;
@@ -145,59 +180,51 @@ function checkDeteriorationRules(
 
     if (triggeredEvents.includes(then.event)) continue;
 
-    if (
-      condition.includes("suspected_meningitis_flagged == false") &&
-      condition.includes("time >= 5")
-    ) {
-      if (!flags.meningitis_suspected && elapsedMinutes >= 5) {
-        newEvents.push(then);
-      }
-    } else if (
-      condition.includes("antibiotics_started == false") &&
-      condition.includes("time >= 8")
-    ) {
-      if (!flags.antibiotics_ordered && elapsedMinutes >= 8) {
-        newEvents.push(then);
-      }
-    } else if (
-      condition.includes("shock_unaddressed == true") &&
-      condition.includes("time >= 12")
-    ) {
-      if (!flags.shock_addressed && elapsedMinutes >= 12) {
-        newEvents.push(then);
-      }
+    if (evaluateCondition(condition, flags, elapsedMinutes)) {
+      newEvents.push({ ...then, rule });
     }
   }
 
   return newEvents;
 }
 
-// ── Helper: apply deterioration to patient state ────────────────
+// ── Helper: apply deterioration to patient state (generic) ──────
+// Reads optional `effects` from the rule; falls back to generic
+// severity escalation when effects are not defined.
 function applyDeterioration(
   patientState: Record<string, unknown>,
-  event: string
+  _event: string,
+  rule?: Record<string, unknown>
 ): Record<string, unknown> {
   const ps = { ...patientState };
   const physiology = { ...(ps.physiology as Record<string, unknown>) };
   const vitals = { ...(physiology.vitals as Record<string, unknown>) };
 
-  if (event === "clinical_worsening_warning") {
-    vitals.hr_bpm = Math.min(((vitals.hr_bpm as number) ?? 180) + 10, 220);
-    vitals.temp_f = Math.min(((vitals.temp_f as number) ?? 103.5) + 0.5, 106);
-    physiology.mental_status = "obtunded";
-  } else if (event === "seizure_and_shock_event") {
-    vitals.bp_systolic = 45;
-    vitals.bp_diastolic = 25;
-    vitals.hr_bpm = 200;
-    vitals.spo2_percent = 85;
-    physiology.has_shock = true;
-    physiology.has_seizure = true;
-    physiology.mental_status = "obtunded";
-  } else if (event === "multi_organ_risk") {
-    vitals.bp_systolic = 40;
-    vitals.spo2_percent = 78;
-    physiology.has_respiratory_failure = true;
-    physiology.mental_status = "comatose";
+  const thenBlock = (rule?.then ?? {}) as Record<string, unknown>;
+  const effects = thenBlock.effects as Record<string, unknown> | undefined;
+
+  if (effects) {
+    const vitalEffects = effects.vitals as Record<string, unknown> | undefined;
+    if (vitalEffects) {
+      for (const [k, v] of Object.entries(vitalEffects)) vitals[k] = v;
+    }
+    if (effects.mental_status) physiology.mental_status = effects.mental_status;
+    const boolFlags = effects.flags as Record<string, boolean> | undefined;
+    if (boolFlags) {
+      for (const [k, v] of Object.entries(boolFlags)) physiology[k] = v;
+    }
+  } else {
+    // Generic severity escalation
+    vitals.hr_bpm = Math.min(((vitals.hr_bpm as number) ?? 120) + 15, 220);
+    vitals.temp_f = Math.min(((vitals.temp_f as number) ?? 100) + 0.5, 106);
+    vitals.bp_systolic = Math.max(((vitals.bp_systolic as number) ?? 90) - 15, 40);
+    vitals.bp_diastolic = Math.max(((vitals.bp_diastolic as number) ?? 60) - 10, 20);
+    vitals.spo2_percent = Math.max(((vitals.spo2_percent as number) ?? 98) - 5, 70);
+    const statusOrder = ["alert", "drowsy", "lethargic", "obtunded", "stuporous", "comatose"];
+    const currentIdx = statusOrder.indexOf((physiology.mental_status as string) ?? "alert");
+    if (currentIdx >= 0 && currentIdx < statusOrder.length - 1) {
+      physiology.mental_status = statusOrder[currentIdx + 1];
+    }
   }
 
   physiology.vitals = vitals;
@@ -206,59 +233,117 @@ function applyDeterioration(
   return ps;
 }
 
-// ── Helper: apply treatment to patient state ────────────────────
+// ── Treatment category keywords (universal medical categories) ──
+const TREATMENT_CATEGORIES: Record<string, string[]> = {
+  antibiotics: [
+    "antibiotic", "antimicrobial", "empiric", "ceftriaxone", "vancomycin",
+    "ampicillin", "penicillin", "meropenem", "cefotaxime", "gentamicin",
+    "amoxicillin", "azithromycin", "ciprofloxacin", "metronidazole",
+    "piperacillin", "tazobactam", "doxycycline", "linezolid", "clindamycin",
+    "cephalosporin", "carbapenem", "fluoroquinolone", "acyclovir", "antiviral",
+    "fluconazole", "amphotericin", "antifungal", "trimethoprim", "sulfamethoxazole",
+  ],
+  fluids: [
+    "fluid", "bolus", "saline", "lactated ringer", "crystalloid", "colloid",
+    "albumin", "normal saline", "resuscitat", "volume expan",
+  ],
+  vasopressors: [
+    "dopamine", "epinephrine", "norepinephrine", "vasopressor", "vasopressin",
+    "phenylephrine", "dobutamine", "milrinone", "inotrope", "pressor",
+  ],
+  airway: [
+    "intubat", "ventilat", "mechanical ventilation", "cpap", "bipap",
+    "high flow", "nasal cannula", "airway management",
+  ],
+  anticonvulsant: [
+    "diazepam", "lorazepam", "midazolam", "phenytoin", "fosphenytoin",
+    "levetiracetam", "phenobarbital", "benzodiazepine", "anticonvuls",
+    "antiepileptic", "valproate", "seizure",
+  ],
+  anti_inflammatory: [
+    "dexamethasone", "methylprednisolone", "prednisolone", "prednisone",
+    "hydrocortisone", "steroid", "corticosteroid",
+  ],
+};
+
+// ── Helper: classify treatment into a category ──────────────────
+function classifyTreatment(
+  treatmentText: string,
+  caseInterventions: Array<Record<string, unknown>>
+): string {
+  const lower = treatmentText.toLowerCase();
+
+  // First: match against case-defined interventions (most specific)
+  for (const intervention of caseInterventions) {
+    const category = (intervention.category ?? "") as string;
+    if (!category) continue;
+    const options = ((intervention.options ?? []) as string[]).map((o) => o.toLowerCase());
+    if (options.some((opt) => lower.includes(opt))) return category;
+  }
+
+  // Second: match against universal keyword categories
+  for (const [category, keywords] of Object.entries(TREATMENT_CATEGORIES)) {
+    if (keywords.some((kw) => lower.includes(kw))) return category;
+  }
+
+  return "unknown";
+}
+
+// ── Helper: apply treatment to patient state (generic) ──────────
 function applyTreatment(
   patientState: Record<string, unknown>,
-  treatment: string
+  treatment: string,
+  caseInterventions: Array<Record<string, unknown>>
 ): Record<string, unknown> {
   const ps = { ...patientState };
   const physiology = { ...(ps.physiology as Record<string, unknown>) };
   const vitals = { ...(physiology.vitals as Record<string, unknown>) };
-  const lower = treatment.toLowerCase();
+  const category = classifyTreatment(treatment, caseInterventions);
 
-  if (["ceftriaxone", "vancomycin", "antibiotic", "empiric"].some((a) => lower.includes(a))) {
-    physiology.antibiotics_started = true;
-    // Antibiotics begin treating the infection — gradual HR improvement
-    vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 200) - 20, 150);
-    // Fever starts to come down slowly
-    vitals.temp_f = Math.max(((vitals.temp_f as number) ?? 104) - 0.5, 101);
-  }
-  if (lower.includes("fluid") || lower.includes("bolus")) {
-    physiology.fluids_given = true;
-    vitals.bp_systolic = Math.min(((vitals.bp_systolic as number) ?? 45) + 15, 80);
-    vitals.bp_diastolic = Math.min(((vitals.bp_diastolic as number) ?? 25) + 10, 50);
-    vitals.cap_refill_sec = Math.max(((vitals.cap_refill_sec as number) ?? 6) - 1, 3);
-    // Fluids help reduce tachycardia
-    vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 200) - 15, 140);
-  }
-  if (["dopamine", "epinephrine", "vasopressor"].some((v) => lower.includes(v))) {
-    physiology.vasopressors_started = true;
-    // Vasopressors address shock — BP improves, HR comes down
-    vitals.bp_systolic = Math.min(((vitals.bp_systolic as number) ?? 45) + 25, 85);
-    vitals.bp_diastolic = Math.min(((vitals.bp_diastolic as number) ?? 25) + 15, 55);
-    vitals.cap_refill_sec = Math.max(((vitals.cap_refill_sec as number) ?? 6) - 2, 2);
-    vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 200) - 25, 130);
-    physiology.has_shock = false;
-  }
-  if (lower.includes("dexamethasone")) {
-    physiology.dexamethasone_given = true;
-    // Anti-inflammatory — helps reduce fever and inflammation
-    vitals.temp_f = Math.max(((vitals.temp_f as number) ?? 104) - 1, 100);
-    vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 200) - 10, 140);
-  }
-  if (lower.includes("intubat") || lower.includes("ventilat") || lower.includes("mechanical")) {
-    physiology.is_intubated = true;
-    physiology.has_respiratory_failure = false;
-    vitals.spo2_percent = 98;
-    vitals.rr_bpm = 25; // Ventilator-controlled
-  }
-  if (lower.includes("diazepam") || lower.includes("lorazepam") || lower.includes("seizure") || lower.includes("benzodiazepine")) {
-    physiology.has_seizure = false;
-    // Post-seizure: HR drops, mental status improves
-    vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 200) - 20, 140);
-    if (physiology.mental_status === "obtunded") {
-      physiology.mental_status = "lethargic";
-    }
+  switch (category) {
+    case "antibiotics":
+      physiology.antibiotics_started = true;
+      vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 150) - 20, 100);
+      vitals.temp_f = Math.max(((vitals.temp_f as number) ?? 102) - 0.5, 98.6);
+      break;
+
+    case "fluids":
+      physiology.fluids_given = true;
+      vitals.bp_systolic = Math.min(((vitals.bp_systolic as number) ?? 80) + 15, 120);
+      vitals.bp_diastolic = Math.min(((vitals.bp_diastolic as number) ?? 50) + 10, 80);
+      vitals.cap_refill_sec = Math.max(((vitals.cap_refill_sec as number) ?? 4) - 1, 2);
+      vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 150) - 15, 80);
+      break;
+
+    case "vasopressors":
+      physiology.vasopressors_started = true;
+      vitals.bp_systolic = Math.min(((vitals.bp_systolic as number) ?? 60) + 25, 110);
+      vitals.bp_diastolic = Math.min(((vitals.bp_diastolic as number) ?? 40) + 15, 70);
+      vitals.cap_refill_sec = Math.max(((vitals.cap_refill_sec as number) ?? 5) - 2, 2);
+      vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 150) - 25, 80);
+      physiology.has_shock = false;
+      break;
+
+    case "anti_inflammatory":
+      physiology.dexamethasone_given = true;
+      vitals.temp_f = Math.max(((vitals.temp_f as number) ?? 102) - 1, 98.6);
+      vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 150) - 10, 80);
+      break;
+
+    case "airway":
+      physiology.is_intubated = true;
+      physiology.has_respiratory_failure = false;
+      vitals.spo2_percent = 98;
+      vitals.rr_bpm = 20;
+      break;
+
+    case "anticonvulsant":
+      physiology.has_seizure = false;
+      vitals.hr_bpm = Math.max(((vitals.hr_bpm as number) ?? 150) - 20, 80);
+      if (physiology.mental_status === "obtunded") {
+        physiology.mental_status = "lethargic";
+      }
+      break;
   }
 
   physiology.vitals = vitals;
@@ -387,13 +472,21 @@ serve(async (req: Request) => {
       const physiology = (patientState.physiology ?? {}) as Record<string, unknown>;
       const vitals = (physiology.vitals ?? {}) as Record<string, unknown>;
 
+      const mentalStatusDescriptions: Record<string, string> = {
+        alert: "Alert and oriented, appropriate affect",
+        drowsy: "Drowsy but arousable, responds to verbal stimuli",
+        lethargic: "Lethargic, minimally responsive to stimulation",
+        obtunded: "Obtunded, responds only to vigorous stimulation",
+        stuporous: "Stuporous, minimal response to painful stimuli",
+        comatose: "Unresponsive, no purposeful movements",
+      };
+      const currentStatus = (physiology.mental_status ?? "unknown") as string;
+
       responseData = {
         type: "exam_findings",
         exam_type: payload.content ?? "complete",
         findings: {
-          general_appearance: physiology.mental_status === "lethargic"
-            ? "Lethargic, minimally responsive to stimulation; appears flushed and warm to touch"
-            : "See current mental status",
+          general_appearance: mentalStatusDescriptions[currentStatus] ?? `Mental status: ${currentStatus}`,
           vitals: {
             temperature: `${vitals.temp_f ?? "?"}°F`,
             heart_rate: `${vitals.hr_bpm ?? "?"} bpm`,
@@ -416,8 +509,8 @@ serve(async (req: Request) => {
     else if (actionType === "order_test") {
       const testId = payload.testId ?? payload.content ?? "";
 
-      // Track cultures before antibiotics
-      if (testId === "blood_cultures" && !flags.antibiotics_ordered) {
+      // Track cultures ordered before antibiotics (generic — any culture test)
+      if (testId.includes("culture") && !flags.antibiotics_ordered) {
         flags.cultures_before_antibiotics = true;
       }
 
@@ -433,10 +526,11 @@ serve(async (req: Request) => {
 
       if ((responseData as Record<string, unknown>).success) {
         triggeredActions.push(`student_orders_${testId}`);
-        if (testId === "lp_csf_panel") {
-          triggeredActions.push("student_orders_lp_and_csf_panel");
+        // Also push a normalized version for disclosure unlock matching
+        const normalizedAction = `student_orders_${testId.replace(/_/g, "_")}`;
+        if (!triggeredActions.includes(normalizedAction)) {
+          triggeredActions.push(normalizedAction);
         }
-        // Store the order in orderedTests for future reference
         if ((responseData as Record<string, unknown>).order) {
           orderedTests[testId] = (responseData as Record<string, unknown>).order as {
             testId: string; orderedAt: number; resultAvailableAt: number;
@@ -460,8 +554,10 @@ serve(async (req: Request) => {
 
       if ((responseData as Record<string, unknown>).status === "complete") {
         triggeredActions.push(`student_reviews_${testId}`);
-        if (testId === "lp_csf_panel") {
-          triggeredActions.push("student_reviews_csf_results");
+        // Push a normalized review action for disclosure matching
+        const normalizedReview = `student_reviews_${testId.replace(/_/g, "_")}_results`;
+        if (!triggeredActions.includes(normalizedReview)) {
+          triggeredActions.push(normalizedReview);
         }
       }
       actionTypeDb = "interpret";
@@ -469,39 +565,44 @@ serve(async (req: Request) => {
 
     else if (actionType === "administer_treatment") {
       const treatment = payload.treatment ?? payload.content ?? "";
-      patientState = applyTreatment(patientState, treatment);
+      const caseInterventions = (caseContent.interventions ?? []) as Array<Record<string, unknown>>;
+      const treatmentCategory = classifyTreatment(treatment, caseInterventions);
+      patientState = applyTreatment(patientState, treatment, caseInterventions);
 
-      const lower = (treatment as string).toLowerCase();
-      if (["ceftriaxone", "vancomycin", "antibiotic", "empiric"].some((a) => lower.includes(a))) {
+      // Set flags dynamically based on treatment category
+      if (treatmentCategory === "antibiotics") {
         flags.antibiotics_ordered = true;
+        flags.antibiotics_started = true;
         triggeredActions.push("antibiotics_started");
       }
-      if (["dopamine", "epinephrine", "vasopressor", "fluid", "bolus"].some((v) => lower.includes(v))) {
+      if (treatmentCategory === "vasopressors" || treatmentCategory === "fluids") {
         flags.shock_addressed = true;
       }
-      if (["seizure", "diazepam", "lorazepam", "benzodiazepine"].some((s) => lower.includes(s))) {
+      if (treatmentCategory === "anticonvulsant") {
         flags.seizure_addressed = true;
       }
-      if (lower.includes("intubat") || lower.includes("ventilat") || lower.includes("mechanical")) {
+      if (treatmentCategory === "airway") {
         flags.airway_addressed = true;
       }
+      triggeredActions.push(`treatment_${treatmentCategory}`);
 
       if (!managementPlan.includes(treatment as string)) {
         managementPlan.push(treatment as string);
       }
 
-      // Build response message based on what was given
+      // Build response message based on physiological effects
       const physiology = (patientState.physiology ?? {}) as Record<string, unknown>;
       const vitals = (physiology.vitals ?? {}) as Record<string, unknown>;
-      const statusUpdate = [];
+      const statusUpdate: string[] = [];
       if (vitals.bp_systolic) statusUpdate.push(`BP now ${vitals.bp_systolic}/${vitals.bp_diastolic}`);
-      if (physiology.has_shock === false && lower.includes("vasopressor")) statusUpdate.push("Shock resolving");
-      if (physiology.has_seizure === false && (lower.includes("seizure") || lower.includes("diazepam"))) statusUpdate.push("Seizure aborted");
-      if (physiology.is_intubated === true && lower.includes("intubat")) statusUpdate.push("Patient intubated, SpO2 improving");
+      if (physiology.has_shock === false && treatmentCategory === "vasopressors") statusUpdate.push("Shock resolving");
+      if (physiology.has_seizure === false && treatmentCategory === "anticonvulsant") statusUpdate.push("Seizure aborted");
+      if (physiology.is_intubated === true && treatmentCategory === "airway") statusUpdate.push("Patient intubated, SpO2 improving");
 
       responseData = {
         type: "treatment_administered",
         treatment,
+        category: treatmentCategory,
         message: `${treatment} has been administered.${statusUpdate.length ? ' ' + statusUpdate.join('. ') + '.' : ''}`,
         patient_response: "Treatment administered. Monitor for response.",
       };
@@ -545,11 +646,24 @@ serve(async (req: Request) => {
         diagnoses: differential,
       });
 
-      // Check if meningitis is suspected
+      // Check if the student's DDx includes the correct diagnosis
+      // Extract key diagnostic terms from correct_diagnosis for matching
+      const correctDiagnosis = ((caseContent.correct_diagnosis ?? "") as string).toLowerCase();
+      const diagnosisKeywords = correctDiagnosis
+        .split(/[\s,—–\-()\/]+/)
+        .filter((w) => w.length > 3)
+        .filter((w) => !["acute", "chronic", "with", "due", "from", "type", "stage"].includes(w));
+
       for (const dx of differential) {
-        if ((dx.diagnosis ?? "").toLowerCase().includes("meningitis")) {
-          flags.meningitis_suspected = true;
-          triggeredActions.push("student_flags_meningitis");
+        const dxLower = ((dx.diagnosis ?? "") as string).toLowerCase();
+        const matchesCorrect = diagnosisKeywords.some((keyword) => dxLower.includes(keyword));
+        if (matchesCorrect && !flags.correct_diagnosis_suspected) {
+          flags.correct_diagnosis_suspected = true;
+          // Also set a case-specific flag using the first significant keyword
+          const primaryKeyword = diagnosisKeywords[0] ?? "diagnosis";
+          flags[`${primaryKeyword}_suspected`] = true;
+          triggeredActions.push(`student_flags_${primaryKeyword}`);
+          triggeredActions.push("student_suspects_correct_diagnosis");
           break;
         }
       }
@@ -668,7 +782,7 @@ serve(async (req: Request) => {
     const deteriorationMessages: string[] = [];
     for (const evt of newDetEvents) {
       triggeredEvents.push(evt.event);
-      patientState = applyDeterioration(patientState, evt.event);
+      patientState = applyDeterioration(patientState, evt.event, evt.rule);
       deteriorationMessages.push(evt.notes);
 
       // Unlock any event-triggered disclosures
@@ -692,25 +806,21 @@ serve(async (req: Request) => {
         const physiology = (patientState.physiology ?? {}) as Record<string, unknown>;
         const vitals = (physiology.vitals ?? {}) as Record<string, unknown>;
 
-        // Build full case context for the clinical engine
+        // Build full case context for the clinical engine (all values from case content)
+        const initialVitals = (caseContent.initial_vitals ?? {}) as Record<string, unknown>;
         const caseContext = {
-          correct_diagnosis: caseContent.correct_diagnosis ?? "Acute Bacterial Meningitis",
-          setting: caseContent.setting ?? "Emergency Department → PICU",
-          difficulty: caseContent.difficulty ?? "High acuity",
+          correct_diagnosis: caseContent.correct_diagnosis ?? "Unknown",
+          setting: caseContent.setting ?? "Unknown",
+          difficulty: caseContent.difficulty ?? "Unknown",
           key_findings: caseContent.key_findings ?? [],
-          // Include deterioration rules so the engine knows the thresholds
           deterioration_rules: (caseContent.deterioration_rules ?? []) as Array<Record<string, unknown>>,
-          // Include available interventions so engine knows what's possible
           interventions: ((caseContent.interventions ?? []) as Array<Record<string, unknown>>).map(
-            (i) => ({ id: i.id, name: i.display_name })
+            (i) => ({ id: i.id, name: i.display_name, category: i.category })
           ),
-          // Include the patient's initial state for baseline comparison
-          initial_vitals: caseContent.initial_vitals ?? {},
-          // Include unlocked disclosure content so engine knows what's been revealed
+          initial_vitals: initialVitals,
           unlocked_disclosure_content: disclosures
             .filter((d) => unlockedDisclosures.includes(d.id as string))
             .map((d) => ({ id: d.id, title: d.title, content: d.content })),
-          // Scoring rules so engine can factor in clinical priorities
           scoring_categories: caseContent.scoring_categories ?? {},
         };
 
@@ -721,15 +831,15 @@ serve(async (req: Request) => {
           },
           patientState: {
             vitals: {
-              hr_bpm: vitals.hr_bpm ?? 180,
-              bp_systolic: vitals.bp_systolic ?? 70,
-              bp_diastolic: vitals.bp_diastolic ?? 50,
-              temp_f: vitals.temp_f ?? 103.5,
-              rr_bpm: vitals.rr_bpm ?? 50,
-              spo2_percent: vitals.spo2_percent ?? 98,
-              cap_refill_sec: vitals.cap_refill_sec ?? 6,
+              hr_bpm: vitals.hr_bpm ?? initialVitals.hr_bpm ?? 100,
+              bp_systolic: vitals.bp_systolic ?? initialVitals.bp_systolic ?? 90,
+              bp_diastolic: vitals.bp_diastolic ?? initialVitals.bp_diastolic ?? 60,
+              temp_f: vitals.temp_f ?? initialVitals.temp_f ?? 98.6,
+              rr_bpm: vitals.rr_bpm ?? initialVitals.rr_bpm ?? 18,
+              spo2_percent: vitals.spo2_percent ?? initialVitals.spo2_percent ?? 98,
+              cap_refill_sec: vitals.cap_refill_sec ?? initialVitals.cap_refill_sec ?? 2,
             },
-            mental_status: physiology.mental_status ?? "lethargic",
+            mental_status: physiology.mental_status ?? "alert",
             has_shock: (physiology.has_shock ?? false) as boolean,
             has_seizure: (physiology.has_seizure ?? false) as boolean,
             has_respiratory_failure: (physiology.has_respiratory_failure ?? false) as boolean,
@@ -743,11 +853,7 @@ serve(async (req: Request) => {
           testsOrdered: Object.keys(orderedTests),
           elapsedMinutes,
           caseContext,
-          flags: {
-            meningitis_suspected: !!flags.meningitis_suspected,
-            antibiotics_ordered: !!flags.antibiotics_ordered,
-            shock_addressed: !!flags.shock_addressed,
-          },
+          flags,
         });
 
         // Apply AI-determined vitals, but preserve treatment effects
@@ -796,9 +902,11 @@ serve(async (req: Request) => {
             updatedPhysiology.has_shock = er.has_shock;
           }
 
-          // If benzodiazepines/seizure treatment given, seizure MUST clear
-          if (actionType === "administer_treatment" && 
-              ["seizure", "diazepam", "lorazepam", "benzodiazepine"].some(s => (payload.treatment ?? "").toLowerCase().includes(s))) {
+          // If anticonvulsant treatment given, seizure MUST clear
+          const treatmentCat = actionType === "administer_treatment"
+            ? classifyTreatment(payload.treatment ?? "", (caseContent.interventions ?? []) as Array<Record<string, unknown>>)
+            : "";
+          if (treatmentCat === "anticonvulsant") {
             updatedPhysiology.has_seizure = false;
           } else if (er.has_seizure !== undefined) {
             updatedPhysiology.has_seizure = er.has_seizure;
@@ -815,12 +923,12 @@ serve(async (req: Request) => {
         }
 
         // Handle new clinical events from the engine
-        // But only if the corresponding treatment hasn't been given
         if (er.new_event && typeof er.new_event === "string") {
-          // Don't trigger shock event if vasopressors already running
-          const isShockEvent = (er.new_event as string).toLowerCase().includes("shock");
-          const isSeizureEvent = (er.new_event as string).toLowerCase().includes("seizure");
-          
+          const eventLower = (er.new_event as string).toLowerCase();
+          const isShockEvent = eventLower.includes("shock");
+          const isSeizureEvent = eventLower.includes("seizure");
+
+          // Don't trigger events that are already being treated
           if (isShockEvent && physiology.vasopressors_started) {
             // Ignore — shock can't recur with pressors running
           } else if (isSeizureEvent && (er.has_seizure === false)) {
@@ -828,7 +936,7 @@ serve(async (req: Request) => {
           } else {
             deteriorationMessages.push(er.new_event as string);
             if (er.has_shock === true && !physiology.vasopressors_started) flags.shock_addressed = false;
-            if (er.has_seizure === true) triggeredEvents.push("seizure_and_shock_event");
+            if (er.has_seizure === true) triggeredEvents.push(er.new_event as string);
           }
         }
 
