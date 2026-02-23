@@ -725,17 +725,48 @@ serve(async (req: Request) => {
 
       // Write evaluation to evaluations table
       const dbScores = (evalResult as Record<string, unknown>).db_scores as Record<string, number | null>;
-      if (dbScores) {
-        await db.from("evaluations").insert({
+      console.log("[ORCHESTRATOR] dbScores from evaluator:", JSON.stringify(dbScores));
+
+      if (dbScores && Object.keys(dbScores).length > 0) {
+        const evalPayload = {
           student_id: session.student_id,
           case_id: session.case_id,
           ...dbScores,
           reflection_document: JSON.stringify((evalResult as Record<string, unknown>).evaluation ?? {}),
-        });
+        };
+        console.log("[ORCHESTRATOR] Inserting evaluation:", JSON.stringify({
+          student_id: evalPayload.student_id,
+          case_id: evalPayload.case_id,
+          score_keys: Object.keys(dbScores),
+        }));
+
+        // Delete any existing evaluation for this student+case, then insert fresh
+        const { error: delErr } = await db
+          .from("evaluations")
+          .delete()
+          .eq("student_id", session.student_id)
+          .eq("case_id", session.case_id);
+
+        if (delErr) {
+          console.error("[ORCHESTRATOR] Failed to delete old evaluation:", delErr.message);
+        }
+
+        const { data: evalData, error: evalErr } = await db
+          .from("evaluations")
+          .insert(evalPayload)
+          .select();
+
+        if (evalErr) {
+          console.error("[ORCHESTRATOR] EVALUATION INSERT FAILED:", evalErr.message, evalErr.details, evalErr.hint);
+        } else {
+          console.log("[ORCHESTRATOR] Evaluation saved successfully, id:", (evalData as any)?.[0]?.id);
+        }
+      } else {
+        console.error("[ORCHESTRATOR] No dbScores returned from evaluator — skipping evaluation save");
       }
 
       // Update student_cases
-      await db
+      const { error: scErr } = await db
         .from("student_cases")
         .upsert({
           student_id: session.student_id,
@@ -743,6 +774,10 @@ serve(async (req: Request) => {
           started_at: session.started_at ?? session.created_at,
           completed_at: new Date().toISOString(),
         });
+
+      if (scErr) {
+        console.error("[ORCHESTRATOR] student_cases upsert failed:", scErr.message);
+      }
 
       scoring = (evalResult as Record<string, unknown>).evaluation as Record<string, unknown> ?? {};
 
