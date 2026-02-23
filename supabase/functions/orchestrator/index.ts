@@ -784,6 +784,7 @@ serve(async (req: Request) => {
       responseData = {
         type: "case_completed",
         evaluation: (evalResult as Record<string, unknown>).evaluation ?? {},
+        db_scores: dbScores ?? {},
         total_score: (evalResult as Record<string, unknown>).total_score ?? 0,
         max_score: (evalResult as Record<string, unknown>).max_score ?? 100,
         percentage: (evalResult as Record<string, unknown>).percentage ?? 0,
