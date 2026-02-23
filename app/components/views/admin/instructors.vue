@@ -156,7 +156,7 @@ const saveInstructorEdits = async (instructor: Instructor) => {
     if (!instructor.id) throw new Error("Missing userId for instructor update.")
 
     // 1. Update user-level fields
-    const res = await $fetch(`/api/admin/users/${instructor.id}`, {
+    const res = await $fetch(`/api/admins/users/${instructor.id}`, {
       method: "PUT",
       body: {
         first_name: instructor.first_name,
