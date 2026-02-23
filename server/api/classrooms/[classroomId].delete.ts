@@ -1,4 +1,5 @@
 import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
+import { logNotification } from '../../utils/notifications'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
@@ -92,6 +93,14 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       message: `Error deleting classroom: ${deleteError.message}`,
     })
+  }
+
+  const notifErr = await logNotification(client, {
+    recipientUserId: requesterId,
+    message: `${role === 'ADMIN' ? 'Admin' : 'Instructor'} deleted classroom ${classroomId}.`,
+  })
+  if (notifErr) {
+    console.warn('Classroom delete notification log failed:', notifErr.message)
   }
 
   return {

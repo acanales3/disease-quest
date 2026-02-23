@@ -1,5 +1,6 @@
 import { serverSupabaseClient } from "#supabase/server";
 import { Database, TablesUpdate } from "@/assets/types/supabase";
+import { logNotification } from "../../utils/notifications";
 
 type UserUpdate = TablesUpdate<"users">;
 type InstructorUpdate = TablesUpdate<"instructors">;
@@ -97,6 +98,16 @@ export default defineEventHandler(async (event) => {
         statusMessage: instructorError.message,
       });
     }
+  }
+
+  const notifErr = await logNotification(supabase, {
+    recipientUserId: user.id,
+    message: `${
+      isAdmin ? "Admin" : "Instructor"
+    } updated instructor profile: ${instructorId}.`,
+  });
+  if (notifErr) {
+    console.warn("Instructor update notification log failed:", notifErr.message);
   }
 
   return { success: true };

@@ -4,6 +4,7 @@ import {
   serverSupabaseServiceRole,
 } from "#supabase/server";
 import type { Database, TablesUpdate } from "@/assets/types/supabase";
+import { logNotification } from "../../../utils/notifications";
 
 type UserUpdate = TablesUpdate<"users">;
 type UserRole = Database["public"]["Enums"]["user_role"];
@@ -224,6 +225,18 @@ export default defineEventHandler(async (event) => {
       .eq("user_id", userId)
       .maybeSingle()) as { data: { status: string } | null; error: any };
     status = student?.status ?? null;
+  }
+
+  const displayName =
+    [updatedUser.first_name, updatedUser.last_name].filter(Boolean).join(" ") ||
+    updatedUser.email ||
+    userId;
+  const notifErr = await logNotification(client, {
+    recipientUserId: actorUserId,
+    message: `Admin updated ${updatedRole.toLowerCase()} account: ${displayName}.`,
+  });
+  if (notifErr) {
+    console.warn("Admin user update notification log failed:", notifErr.message);
   }
 
   return {

@@ -1,4 +1,5 @@
 import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
+import { logNotification } from "../../utils/notifications";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -29,6 +30,8 @@ export default defineEventHandler(async (event) => {
   const role = userProfile.role?.toUpperCase();
   if (role !== "ADMIN")
     throw createError({ statusCode: 403, message: "Forbidden: access denied" });
+
+  let classroomActionMessage = "";
 
   const { error: userUpdateError } = await (client.from("users") as any)
     .update({
@@ -85,6 +88,19 @@ export default defineEventHandler(async (event) => {
           message: `Error assigning student to classroom ${classroomId}: ${insertError.message}`,
         });
     }
+
+    classroomActionMessage =
+      classroomId > 0
+        ? ` Assigned to classroom ${classroomId}.`
+        : " Removed from classroom assignment.";
+  }
+
+  const notifErr = await logNotification(client, {
+    recipientUserId: userId,
+    message: `Admin updated student profile: ${id}.${classroomActionMessage}`,
+  });
+  if (notifErr) {
+    console.warn("Student update notification log failed:", notifErr.message);
   }
 
   return { success: true };

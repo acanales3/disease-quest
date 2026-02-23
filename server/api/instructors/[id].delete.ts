@@ -1,6 +1,7 @@
 import { defineEventHandler, createError, getRouterParam } from "h3";
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 import { createClient } from "@supabase/supabase-js";
+import { logNotification } from "../../utils/notifications";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -176,10 +177,10 @@ export default defineEventHandler(async (event) => {
     `Students unenrolled (enrollment rows removed): ${enrollmentsRemoved}. ` +
     `Classroom-case links deleted: ${classroomCasesDeleted}.`;
 
-  const { error: notifErr } = await adminClient
-    .from("notifications")
-    .insert([{ user_id: actorUserId, message }]);
-
+  const notifErr = await logNotification(adminClient, {
+    recipientUserId: actorUserId,
+    message,
+  });
   if (notifErr) {
     throw createError({
       statusCode: 500,
