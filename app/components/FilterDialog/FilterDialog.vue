@@ -19,13 +19,24 @@ const emit = defineEmits<{
   (e: "apply-filters", filters: FilterCriteria): void;
 }>();
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   classrooms?: Classroom[];
   showMsyear?: boolean;
+  showClassroom?: boolean;
+  showStatus?: boolean;
+  balancedBasicLayout?: boolean;
   role?: "student" | "instructor"; // NEW: identify type
-}>();
+}>(), {
+  showMsyear: true,
+  showClassroom: true,
+  showStatus: true,
+  balancedBasicLayout: false,
+});
 
-const showMsyear = props.showMsyear ?? true;
+const showMsyear = props.showMsyear;
+const showClassroom = props.showClassroom;
+const showStatus = props.showStatus;
+const useBalancedBasicLayout = props.balancedBasicLayout;
 
 interface FilterCriteria {
   name: string;
@@ -160,6 +171,34 @@ const onOpenChange = (open: boolean) => {
       </DialogHeader>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
+        <template v-if="useBalancedBasicLayout">
+          <!-- LEFT COLUMN (2 fields) -->
+          <div class="flex flex-col gap-5">
+            <div class="flex flex-col gap-1.5">
+              <Label>First Name</Label>
+              <Input v-model="tempFilters.firstName" placeholder="Enter first name" />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <Label>Last Name</Label>
+              <Input v-model="tempFilters.lastName" placeholder="Enter last name" />
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN (2 fields) -->
+          <div class="flex flex-col gap-5">
+            <div class="flex flex-col gap-1.5">
+              <Label>Email</Label>
+              <Input v-model="tempFilters.email" placeholder="Enter email" />
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <Label>School</Label>
+              <Input v-model="tempFilters.school" placeholder="Enter school" />
+            </div>
+          </div>
+        </template>
+        <template v-else>
         <!-- LEFT COLUMN -->
         <div class="flex flex-col gap-5">
           <div class="flex flex-col gap-1.5">
@@ -177,7 +216,7 @@ const onOpenChange = (open: boolean) => {
             <Input v-model="tempFilters.email" placeholder="Enter email" />
           </div>
 
-          <div class="flex flex-col gap-1.5">
+          <div v-if="showStatus" class="flex flex-col gap-1.5">
             <Label>Status</Label>
             <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
@@ -233,7 +272,7 @@ const onOpenChange = (open: boolean) => {
             </div>
           </div>
 
-          <div class="flex flex-col gap-1.5">
+          <div v-if="showClassroom" class="flex flex-col gap-1.5">
             <Label>Classroom</Label>
             <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
               <div
@@ -256,6 +295,7 @@ const onOpenChange = (open: boolean) => {
             </div>
           </div>
         </div>
+        </template>
       </div>
 
       <DialogFooter class="w-full flex items-center">

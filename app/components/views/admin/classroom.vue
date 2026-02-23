@@ -144,7 +144,12 @@ const caseColumns = computed(() => {
 });
 
 async function getCases(): Promise<Case[]> {
-  return cases;
+  try {
+    return await $fetch<Case[]>(`/api/classrooms/${classroomId}/cases`)
+  } catch (error) {
+    console.error("Failed to fetch cases:", caseData);
+    return [];
+  }
 }
 
 /* ===== SAVE ===== */

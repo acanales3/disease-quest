@@ -1,16 +1,16 @@
-import { reactive } from 'vue';
-import type { Student } from '@/assets/interface/Student'
+import { reactive } from "vue";
+import type { Student } from "@/assets/interface/Student";
 
 export interface EditModalBus {
-  editData: any | null;
+  editData: Student | null;
   openEditModal: boolean;
   openEdit: (data: Student) => void;
   closeEdit: () => void;
 }
 
-export const modalBus: EditModalBus = reactive({
-  editData: null as any, // data to edit
-  openEditModal: false,     // controls visibility
+export const modalBus = reactive<EditModalBus>({
+  editData: null,
+  openEditModal: false,
 
   openEdit(data: Student) {
     this.editData = data;

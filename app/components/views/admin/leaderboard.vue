@@ -37,6 +37,7 @@
         :columns="columns"
         :data="data"
         :classrooms="classrooms"
+        :selected-classroom-id="selectedClassroomId"
         @classroom-selected="handleClassroomSelected"
       />
     </div>
@@ -56,57 +57,54 @@ const allData = ref<LeaderboardEntry[]>([]);
 const data = ref<LeaderboardEntry[]>([]);
 const top3 = ref<LeaderboardEntry[]>([]);
 
-const classrooms = ref([
-  { id: 1, name: "Classroom 1" },
-  { id: 2, name: "Classroom 2" },
-  { id: 3, name: "Classroom 3" },
+const classrooms = ref<{id: number, name: string}[]>([
+  { id: -1, name: "All Classrooms" },
 ]);
+
+async function fetchClassrooms() {
+    try {
+        const data = await $fetch<{id: number, name: string}[]>('/api/classrooms');
+        if (data) {
+            classrooms.value = [
+                { id: -1, name: "All Classrooms" },
+                ...data.map((c: any) => ({ id: c.id, name: c.name }))
+            ];
+        }
+    } catch (e) {
+        console.error("Failed to fetch classrooms", e);
+    }
+}
 
 const columns = computed(() => adminColumns);
 
-function getPositions(entries: LeaderboardEntry[]): LeaderboardEntry[] {
-  const sorted = [...entries].sort((a, b) => b.score - a.score);
-  let rank = 1;
-  let previousScore = sorted[0]?.score ?? 0;
-
-  return sorted.map((entry, index) => {
-    if (index === 0) {
-      entry.position = rank;
-    } else {
-      if (entry.score === previousScore) {
-        entry.position = rank;
-      } else {
-        rank = index + 1;
-        entry.position = rank;
-        previousScore = entry.score;
-      }
-    }
-    return entry;
-  });
+async function getData(classroomId?: number): Promise<LeaderboardEntry[]> {
+    const query = classroomId && classroomId !== -1 ? { classroomId } : {};
+    return await $fetch<LeaderboardEntry[]>('/api/leaderboards', { query });
 }
 
-function handleClassroomSelected(classroomId: number) {
-  const filtered = allData.value.filter(
-    (entry) => entry.classroomId === classroomId
-  );
-  const positions = getPositions(filtered);
-  data.value = positions;
-  top3.value = positions.slice(0, 3);
+const selectedClassroomId = ref<number>(-1);
+
+async function handleClassroomSelected(classroomId: number) {
+    if (classroomId === undefined) return;
+    
+    selectedClassroomId.value = classroomId;
+    data.value = await getData(classroomId);
+    top3.value = data.value.slice(0, 3);
+    allData.value = data.value;
 }
 
 function displayName(entry?: LeaderboardEntry) {
   return entry?.studentName ?? entry?.nickname ?? "-";
 }
 
-async function getData(): Promise<LeaderboardEntry[]> {
-  return leaderboard;
-}
-
 onMounted(async () => {
-  allData.value = await getData();
-  const firstClassroom = classrooms.value[0];
-  if (firstClassroom) {
-    handleClassroomSelected(firstClassroom.id);
-  }
+    await Promise.all([
+        getData().then(d => {
+            data.value = d;
+            top3.value = d.slice(0, 3);
+            allData.value = d;
+        }),
+        fetchClassrooms()
+    ]);
 });
 </script>

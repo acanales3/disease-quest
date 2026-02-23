@@ -1,37 +1,65 @@
 <template>
-    <div class="w-full">
-        <ClassroomScores class="mb-8" v-if="user" :student-id="user.id"/>
-        <AssessmentCategoryScoreGraph
-        :data="mockData"
-        :index="index"
-        :categories="categories"
-        /> 
+  <div class="w-full">
+
+    <!-- Not logged in -->
+    <div v-if="!user" class="p-6 text-gray-500">
+      Please log in to view your analytics.
     </div>
+
+    <!-- Loading -->
+    <div v-else-if="pending" class="p-6 text-gray-500">
+      Loading your analytics...
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="p-6 text-red-500">
+      Failed to load analytics.
+    </div>
+
+    <!-- Charts -->
+    <template v-else>
+      <ClassroomScores
+        class="mb-8"
+        :data="analyticsData"
+      />
+
+      <AssessmentCategoryScoreGraph
+        :data="analyticsData"
+      />
+    </template>
+
+  </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import ClassroomScores from '../../graph/ScoresByCategoryGraph.vue'
 import AssessmentCategoryScoreGraph from '@/components/AssessmentCategoryScoreGraph/graph.vue'
-import type { CaseScore } from '@/components/AssessmentCategoryScoreGraph/types'
+import type { AnalyticsScoreEntry } from '@/types/analytics'
 
+/**
+ * Supabase user session
+ */
 const user = useSupabaseUser()
 
-const mockData: CaseScore[] = [
-  { case: 'Case 1', score: 85 },
-  { case: 'Case 2', score: 90 },
-  { case: 'Case 3', score: 75 },
-  { case: 'Case 4', score: 95 },
-  { case: 'Case 5', score: 80 },
-  { case: 'Case 6', score: 75 },
-  { case: 'Case 7', score: 95 },
-  { case: 'Case 8', score: 80 },
-  { case: 'Case 9', score: 95 },
-  { case: 'Case 10', score: 80 },
-  { case: 'Case 11', score: 75 },
-  { case: 'Case 12', score: 95 },
-  { case: 'Case 13', score: 80 },
-]
+/**
+ * Fetch analytics
+ * API automatically filters:
+ * - STUDENT → only their evaluations
+ */
+const { data, pending, error } = await useFetch<AnalyticsScoreEntry[]>(
+  '/api/analytics/scores',
+  {
+    server: true,
+    credentials: 'include',
+    watch: [user] // refetch if user changes
+  }
+)
 
-const index: keyof CaseScore = 'case'
-const categories: (keyof CaseScore)[] = ['score']
+/**
+ * Ensure charts always receive an array
+ */
+const analyticsData = computed<AnalyticsScoreEntry[]>(() => {
+  return data.value ?? []
+})
 </script>

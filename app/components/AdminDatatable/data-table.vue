@@ -24,6 +24,7 @@ import {
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import FilterDialog from "@/components/FilterDialog/FilterDialog.vue";
 
 import { ChevronDown } from "lucide-vue-next";
 import { computed, ref } from "vue";
@@ -79,6 +80,12 @@ const table = useVueTable({
 const hideableColumns = computed(() =>
   table.getAllColumns().filter((column) => column.getCanHide())
 );
+
+const handleApplyFilters = (filters: any) => {
+  table.getColumn("name")?.setFilterValue(filters.name || undefined);
+  table.getColumn("email")?.setFilterValue(filters.email || undefined);
+  table.getColumn("school")?.setFilterValue(filters.school || undefined);
+};
 </script>
 
 <template>
@@ -88,11 +95,13 @@ const hideableColumns = computed(() =>
       <div class="text-md font-light text-black">All Administrators List</div>
 
       <div class="flex items-center space-x-4">
-        <div
-          class="flex items-center justify-center w-8 h-8 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
-        >
-          <Icon name="lets-icons:filter" />
-        </div>
+        <FilterDialog
+          :show-msyear="false"
+          :show-classroom="false"
+          :show-status="false"
+          :balanced-basic-layout="true"
+          @apply-filters="handleApplyFilters"
+        />
 
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
@@ -100,21 +109,6 @@ const hideableColumns = computed(() =>
           :model-value="table.getColumn('email')?.getFilterValue() as string"
           @update:model-value="table.getColumn('email')?.setFilterValue($event)"
         />
-
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button
-              class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
-            >
-              All Classes
-              <ChevronDown class="w-4 h-4 ml-2" />
-            </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent class="bg-white rounded-md shadow-md flex flex-col">
-            <!-- Intentionally empty (your real API will populate later) -->
-          </DropdownMenuContent>
-        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
