@@ -56,19 +56,61 @@ import DeleteAdminModal from "@/components/DeleteAdminModal/DeleteAdminModal.vue
 // =======================
 // Data fetching
 // =======================
-const { data, pending, error, refresh } = await useFetch<Administrator[]>("/api/admins", {
-  default: () => [],
-});
+const { data, pending, error, refresh } = await useFetch<Administrator[]>(
+  "/api/admins",
+  {
+    default: () => [],
+  },
+);
 
-// UI error banner string (for delete failures, etc.)
-const uiError = ref<string>("");
+const uiError = ref("");
 
 // =======================
-// Edit handling (frontend-only, as you already had)
+// Page banner message
+// =======================
+const pageMessage = ref<null | { type: "success" | "error"; text: string }>(
+  null,
+);
+
+// =======================
+// Edit handling
 // =======================
 const saveAdminEdits = async (admin: Administrator) => {
-  data.value = data.value.map((a) => (a.userId === admin.userId ? admin : a));
-  modalBus.closeEdit();
+  uiError.value = "";
+
+  try {
+    const [first_name, ...rest] = (admin.name ?? "").trim().split(" ");
+    const last_name = rest.join(" ");
+
+    const response = await $fetch<{
+      success: boolean;
+      data: Partial<Administrator>;
+    }>(`/api/admins/${admin.userId}`, {
+      method: "PUT",
+      body: {
+        first_name,
+        last_name,
+        school: admin.school,
+      },
+    });
+
+    data.value = data.value.map((a) =>
+      a.userId === admin.userId
+        ? {
+            ...a,
+            ...admin,
+            ...response?.data,
+          }
+        : a,
+    );
+    modalBus.closeEdit();
+  } catch (e: any) {
+    uiError.value =
+      e?.data?.statusMessage ||
+      e?.data?.message ||
+      e?.message ||
+      "Failed to update administrator. Please try again.";
+  }
 };
 
 // =======================
@@ -124,10 +166,10 @@ async function handleDeleteConfirm(admin: Administrator) {
   }
 }
 
-// Columns: onDelete opens delete modal (Edit handled inside dropdown via modalBus)
+// Columns: onDelete opens delete modal
 const visibleColumns = computed(() =>
   getColumns("admin", {
     onDelete: handleDeleteClick,
-  })
+  }),
 );
 </script>

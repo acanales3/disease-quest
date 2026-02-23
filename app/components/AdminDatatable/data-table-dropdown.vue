@@ -47,7 +47,7 @@ function onDeleteClick() {
         Edit
       </DropdownMenuItem>
 
-      <DropdownMenuItem v-if="props.role === 'admin'" @click="onDeleteClick">
+      <DropdownMenuItem v-if="props.role === 'admin'" class="text-red-600 focus:text-red-600 focus:bg-red-50" @click="onDeleteClick">
         Delete
       </DropdownMenuItem>
     </DropdownMenuContent>

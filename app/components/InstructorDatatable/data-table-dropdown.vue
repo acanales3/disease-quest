@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import type { Instructor } from "./columns";
+import type { Instructor } from "@/components/InstructorDatatable/columns";
 import { modalBus } from "@/components/AdminEditInstructorDialog/modalBusEditInstructor";
 
 interface Props {
@@ -26,7 +26,7 @@ function onEdit() {
     name: props.instructor.name,
     email: props.instructor.email,
     school: props.instructor.school,
-    classroom: props.instructor.classroom,
+    classrooms: props.instructor.classrooms,
     status: props.instructor.status as "active" | "deactivated",
   });
 }
@@ -55,7 +55,7 @@ function onDeleteClick() {
       <DropdownMenuSeparator />
       <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
 
-      <DropdownMenuItem v-if="props.role === 'admin'" @click="onDeleteClick">
+      <DropdownMenuItem v-if="props.role === 'admin'"class="text-red-600 focus:text-red-600 focus:bg-red-50" @click="onDeleteClick">
         Delete
       </DropdownMenuItem>
     </DropdownMenuContent>

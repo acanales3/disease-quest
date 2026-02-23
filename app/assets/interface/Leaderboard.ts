@@ -1,11 +1,12 @@
 export interface LeaderboardEntry {
   id: number;
-  studentId: number;
-  classroomId: number;
+  studentId: string;
+  classroomName: string;
   nickname: string;
-  score: number;
-  position?: number;
+  casesCompleted: number;
+  averageScore: number;
+  rank: number;
   studentName?: string;
 }
 
-export const leaderboard: LeaderboardEntry[] = []
+export const leaderboard: LeaderboardEntry[] = [];
