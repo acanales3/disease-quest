@@ -51,6 +51,7 @@ const visibleColumns = computed(() => {
     "id",
     "name",
     "code",
+    "instructor",
     "section",
     "startDate",
     "endDate",

@@ -32,6 +32,7 @@ onMounted(() => {
 
 function onLegendItemClick(d: BulletLegendItemInterface, i: number) {
   emits("legendItemClick", d, i)
+  if (!props.items || !props.items[i]) return
   const isBulletActive = !props.items[i].inactive
   const isFilterApplied = props.items.some(i => i.inactive)
   if (isFilterApplied && isBulletActive) {
@@ -48,7 +49,7 @@ function onLegendItemClick(d: BulletLegendItemInterface, i: number) {
 
 <template>
   <div
-    ref="elRef" class="w-max" :style="{
+    ref="elRef" class="flex flex-wrap gap-4" :style="{
       '--vis-legend-bullet-size': '16px',
     }"
   >

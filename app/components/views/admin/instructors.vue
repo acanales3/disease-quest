@@ -153,7 +153,7 @@ const saveInstructorEdits = async (instructor: Instructor) => {
     const [first_name, ...rest] = instructor.name.split(" ");
     const last_name = rest.join(" ");
 
-    await $fetch(`/api/admin/users/${instructor.id}`, {
+    await $fetch(`/api/admins/users/${instructor.id}`, {
       method: "PUT",
       body: {
         first_name,

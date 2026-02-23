@@ -121,6 +121,7 @@ export default defineEventHandler(async (event) => {
     recipientUserId: actorUserId,
     message,
   });
+
   if (notifErr) {
     throw createError({
       statusCode: 500,
