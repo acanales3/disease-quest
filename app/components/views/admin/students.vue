@@ -203,7 +203,7 @@ const saveStudentEdits = async (updated: Student) => {
     const last_name = rest.join(" ");
 
     // 1. Update user-level fields via the admin endpoint
-    await $fetch(`/api/admin/users/${updated.userId}`, {
+    await $fetch(`/api/admins/users/${updated.userId}`, {
       method: "PUT",
       body: {
         first_name,
