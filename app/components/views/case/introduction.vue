@@ -1,41 +1,129 @@
 <template>
-    <div class="flex flex-col w-full mx-auto px-4 pb-10">
-        <!-- Header -->
-    <div class="flex flex-col items-center w-full">
-      <h1 class="text-lg font-bold pt-12">{{ caseData.title }}</h1>
-    </div>
-        <!-- Main Content -->
-        <div class="flex-1 overflow-y-auto p-8">
-            <!-- Content Paragraphs -->
-            <div class="space-y-4 text-foreground leading-relaxed">
-                <p
-                    v-for="(paragraph, index) in caseData.content"
-                    :key="index"
-                    class="text-justify"
-                >
-                    {{ paragraph }}
-                </p>
-            </div>
+  <div class="min-h-[calc(100vh-80px)] bg-white flex justify-center py-12 px-6">
+    <p v-if="pending" class="text-neutral-400 mt-20">Loading case...</p>
+    <p v-else-if="fetchError" class="text-red-500 mt-20">{{ fetchError.message }}</p>
+
+    <div v-else-if="caseData" class="w-full max-w-2xl space-y-10">
+
+      <!-- Title -->
+      <div class="text-center space-y-3">
+        <p class="text-[10px] uppercase tracking-[0.3em] text-neutral-400 font-medium">Clinical Simulation</p>
+        <h1 class="text-2xl font-bold text-neutral-900">{{ caseData.title ?? caseData.name }}</h1>
+        <p class="text-sm text-neutral-500">
+          {{ caseData.setting }}<span v-if="caseData.estimated_minutes"> &middot; ~{{ caseData.estimated_minutes }} min</span>
+        </p>
+        <div v-if="caseData.learner_level?.length" class="flex justify-center gap-2 pt-1">
+          <span v-for="l in caseData.learner_level" :key="l"
+            class="text-[10px] font-medium text-neutral-500 border border-neutral-200 rounded-full px-2.5 py-0.5">{{ l }}</span>
         </div>
+      </div>
+
+      <!-- Case Video -->
+      <div v-if="videoUrl" class="rounded-xl overflow-hidden border border-neutral-200">
+        <video
+          :src="videoUrl"
+          controls
+          playsinline
+          preload="metadata"
+          class="w-full"
+          poster=""
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
+
+      <hr class="border-neutral-100" />
+
+      <!-- Story -->
+      <div v-if="caseData.introduction_paragraphs?.length" class="space-y-5">
+        <p v-for="(p, i) in caseData.introduction_paragraphs" :key="i"
+          class="text-sm text-neutral-700 leading-7 text-justify">{{ p }}</p>
+      </div>
+      <p v-else-if="caseData.description" class="text-sm text-neutral-700 leading-7 text-justify">{{ caseData.description }}</p>
+
+      <!-- Patient -->
+      <div v-if="caseData.patient_name" class="border border-neutral-200 rounded-xl p-6">
+        <p class="text-[10px] uppercase tracking-[0.2em] text-neutral-400 font-medium mb-4">Patient</p>
+        <div class="grid grid-cols-2 gap-y-4 text-sm">
+          <div>
+            <p class="text-neutral-400 text-xs mb-0.5">Name</p>
+            <p class="font-medium text-neutral-900">{{ caseData.patient_name }}</p>
+          </div>
+          <div>
+            <p class="text-neutral-400 text-xs mb-0.5">Age</p>
+            <p class="font-medium text-neutral-900">{{ caseData.patient_age }}</p>
+          </div>
+          <div class="col-span-2">
+            <p class="text-neutral-400 text-xs mb-0.5">Chief Complaint</p>
+            <p class="font-medium text-neutral-900">{{ caseData.chief_complaint }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instructions -->
+      <div v-if="caseData.introduction_instructions?.length" class="border border-blue-100 bg-blue-50/30 rounded-xl p-6">
+        <p class="text-[10px] uppercase tracking-[0.2em] text-blue-600 font-medium mb-4">Your Task</p>
+        <ol class="space-y-3">
+          <li v-for="(inst, i) in caseData.introduction_instructions" :key="i" class="flex gap-3 text-sm text-neutral-700">
+            <span class="w-5 h-5 rounded-full border border-blue-200 text-blue-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{{ i + 1 }}</span>
+            <span>{{ inst }}</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Error -->
+      <div v-if="startError" class="border border-red-200 bg-red-50 rounded-xl p-4 text-center">
+        <p class="text-sm text-red-700 font-medium">Failed to start case</p>
+        <p class="text-xs text-red-500 mt-1">{{ startError }}</p>
+      </div>
+
+      <!-- Start -->
+      <div class="flex justify-center pt-4 pb-8">
+        <button @click="startCase" :disabled="starting"
+          class="px-10 py-3 bg-neutral-900 text-white rounded-lg font-medium text-sm hover:bg-neutral-800 transition disabled:opacity-50">
+          {{ starting ? 'Starting...' : 'Begin Case' }}
+        </button>
+      </div>
     </div>
+  </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useCaseSession } from '@/composables/useCaseSession'
 
-// Mock data - replace with API call later
-const caseData = ref({
-    title: 'Amelia Thompson Case',
-    content: [
-        `On a seemingly ordinary day, enriched by the vibrant pulse of city life, 9-month-old Amelia's parents, encased in the sanctuary of their modest home, were met with alarming signs. Despite the ambient glow of health that typically surrounded their daughter, they discovered her radiating an unsettling warmth. A rectal thermometer reading revealed a fever spiking to 103°F, unresponsive to acetaminophen, marking the onset of a deepening concern. Amelia's condition, weighed of the common markers of a simple cold, propelled her family into a state of heightened anxiety. Urged by a pediatrician's advice, they navigated their way to the emergency department, a journey fraught with the weight of Amelia's sudden illness and the broader concern of their life's stability.`,
+const route = useRoute()
+const router = useRouter()
+const caseId = route.params.caseId as string
+const { createSession, error: sessionError } = useCaseSession()
+const starting = ref(false)
+const startError = ref<string | null>(null)
 
-        `Amelia's mother, balancing the demands of a minimum-wage job devoid of health benefits, faced the harrowing reality of a child in distress amidst a landscape where primary care was a luxury. The reliance on telehealth recommendations and the convenience of over-the-counter medications highlighted the gaps in a system struggling to meet the needs of its most vulnerable. The backdrop of a rural setting, with its limited access to healthcare, well water usage, and reliance on a wood-burning stove were the environmental factors that could influence Amelia's condition.`,
+const { data: caseData, pending, error: fetchError } = useFetch(`/api/cases/${caseId}`)
 
-        `The day unfolded with an air of anxiety as Amelia's mother, a 27-year-old woman embodying both the strength and worries of parenthood, found herself confronting the possibility that her daughter's condition might be more serious than a simple fever. Her intuition, honed by months of nurturing and caring for Amelia, whispered that something was amiss, a sentiment echoed by the pediatrician's urgent recommendation to seek immediate medical attention.`,
-
-        `Amelia's medical history pointed a picture of a typically healthy infant, thriving under the watchful eyes of her devoted parents. Her diet, consisting of baby food, cereal, and iron-fortified formula, had been momentarily cast aside by her lack of appetite, an unusual deviation from her normal routine. Remarkably, her vaccinations were up to date, providing a shield against the common threats that loom over the early years of life. The family's home, free from the presence of pets and the haze of tobacco, offered a safe haven for Amelia's growth and development, further supported by a community of healthy relatives and a childcare environment shared with other young children.`,
-    ],
+const videoUrl = computed(() => {
+  const cd = caseData.value as Record<string, unknown> | null
+  if (cd?.video_url) return cd.video_url as string
+  if (cd?.introduction_video) return cd.introduction_video as string
+  return null
 })
-</script>
 
-<style scoped></style>
+async function startCase() {
+  starting.value = true
+  startError.value = null
+  try {
+    const sessionId = await createSession(parseInt(caseId))
+    if (sessionId) {
+      useState('currentSessionId', () => sessionId).value = sessionId
+      router.push(`/case/${caseId}/mentor`)
+    } else {
+      startError.value = sessionError.value || 'Session creation failed. Check the server logs for details.'
+    }
+  } catch (err: any) {
+    startError.value = err?.data?.message || err?.message || 'An unexpected error occurred.'
+  } finally {
+    starting.value = false
+  }
+}
+</script>
