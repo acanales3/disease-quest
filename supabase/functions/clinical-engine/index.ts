@@ -137,6 +137,16 @@ CRITICAL TIMING RULES (MUST FOLLOW):
 - ONLY after 12+ minutes with unaddressed shock: multi-organ risk.
 - If antibiotics ARE given at any point: patient stabilizes, then GRADUALLY improves over the next several actions.
 
+ABSOLUTE PHYSIOLOGICAL LIMITS (a living patient MUST stay within these):
+  - HR: 30–220 bpm (NEVER 0 — a heart rate of 0 means death, which is NOT allowed)
+  - BP systolic: 35–220 mmHg (NEVER 0)
+  - BP diastolic: 20–130 mmHg (NEVER 0)
+  - Temp: 92.0–107.0°F
+  - RR: 6–55 breaths/min (NEVER 0)
+  - SpO2: 55–100%
+  - Cap refill: 0.5–10.0s
+  - The patient CANNOT die. Even in the worst deterioration, vitals reach critical lows but never zero.
+
 CHANGE MAGNITUDE RULES:
 - Each action should change vitals by SMALL amounts only:
   - HR: change by 3-10 bpm per action (not 20-30)
@@ -145,6 +155,7 @@ CHANGE MAGNITUDE RULES:
   - SpO2: change by 1-2% per action (unless intubated)
   - Cap refill: change by 0.5s per action
 - NEVER make dramatic vital swings in a single action
+- The maximum change from CURRENT vitals in any single action is: HR ±15, BP ±10, Temp ±0.5, SpO2 ±3, RR ±5
 - If the student is just talking to the patient or ordering tests, vitals should barely change (±1-2 on any value)
 
 WHEN TO TRIGGER COMPLICATIONS:

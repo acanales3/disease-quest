@@ -899,6 +899,24 @@ serve(async (req: Request) => {
           const updatedPhysiology = { ...(patientState.physiology as Record<string, unknown>) };
           const currentVitals = { ...(updatedPhysiology.vitals as Record<string, unknown>) };
 
+          // Hard physiological clamps — the patient cannot die
+          const clamp = (v: unknown, min: number, max: number) => Math.max(min, Math.min(max, Number(v) || min));
+          const maxDelta = (newVal: unknown, curVal: unknown, limit: number, floor: number, ceil: number) => {
+            const n = Number(newVal) || 0;
+            const c = Number(curVal) || 0;
+            const clamped = Math.max(floor, Math.min(ceil, n));
+            const delta = clamped - c;
+            return c + Math.max(-limit, Math.min(limit, delta));
+          };
+
+          newVitals.hr_bpm = maxDelta(newVitals.hr_bpm, currentVitals.hr_bpm, 15, 30, 220);
+          newVitals.bp_systolic = maxDelta(newVitals.bp_systolic, currentVitals.bp_systolic, 10, 35, 220);
+          newVitals.bp_diastolic = maxDelta(newVitals.bp_diastolic, currentVitals.bp_diastolic, 10, 20, 130);
+          newVitals.temp_f = maxDelta(newVitals.temp_f, currentVitals.temp_f, 0.5, 92.0, 107.0);
+          newVitals.rr_bpm = maxDelta(newVitals.rr_bpm, currentVitals.rr_bpm, 5, 6, 55);
+          newVitals.spo2_percent = maxDelta(newVitals.spo2_percent, currentVitals.spo2_percent, 3, 55, 100);
+          newVitals.cap_refill_sec = clamp(newVitals.cap_refill_sec, 0.5, 10.0);
+
           // Only accept AI vitals if they're reasonable improvements when treatments were given
           // If vasopressors/fluids were given, BP must not go LOWER than what deterministic rules set
           if (physiology.vasopressors_started || physiology.fluids_given) {
