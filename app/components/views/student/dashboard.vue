@@ -11,7 +11,7 @@
             <TotalCount icon="mdi:check-circle" :count="`${stats?.completedPercent ?? 0}%`" label="Cases completed" />
             <TotalCount icon="mdi:clock-outline" :count="stats?.inProgress ?? 0" label="Cases in progress" />
             <TotalCount icon="mdi:circle-outline" :count="`${stats?.notStartedPercent ?? 0}%`" label="Cases not started" />
-            <TotalCount icon="mdi:fire" count="245" label="Day Streak" />
+            <TotalCount icon="mdi:fire" :count="stats?.login_streak ?? 0" label="Login Streak" />
         </div>
 
         <!-- Attempted Cases Table -->
