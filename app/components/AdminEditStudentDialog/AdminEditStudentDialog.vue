@@ -8,8 +8,8 @@ import type { Student } from '~/assets/interface/Student';
 
 const props = defineProps<{ show: boolean; data: Student; classrooms: ClassroomOptions[] }>();
 const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'save', student: Student): void;
+  (e: "close"): void;
+  (e: "save", student: Student): void;
 }>();
 
 // =========================================
@@ -207,7 +207,6 @@ function backToEdit() {
   step.value = STEPS.FORM
 }
 
-// handle save
 const handleSave = () => {
   if (isInvalid.value) return;
   if (changes.value.length === 0) return;
@@ -242,7 +241,7 @@ function formatValue(val: any) {
 </script>
 
 <template>
-  <Dialog :open="props.show" @update:open="handleOpenChange">
+  <Dialog :open="show" @update:open="handleOpenChange">
     <DialogContent class="max-h-[90vh] overflow-y-auto my-6">
       <DialogHeader>
         <DialogTitle>Edit {{ original?.first_name }} {{ original?.last_name }}</DialogTitle>

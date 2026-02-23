@@ -18,8 +18,8 @@ interface ClassroomOptions {
 // ================================
 const props = defineProps<{ show: boolean; data: Instructor | null; classrooms: ClassroomOptions[] }>();
 const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'save', instructor: Instructor): void;
+  (e: "close"): void;
+  (e: "save", instructor: Instructor): void;
 }>();
 
 
@@ -49,10 +49,10 @@ const form = ref<{
 const original = ref<typeof form.value | null>(null); // Stores data prior to any changes for user review
 
 const errors = ref({
-  first_name: '',
-  last_name: '',
-  email: '',
-  school: '',
+  first_name: "",
+  last_name: "",
+  school: "",
+  email: "",
 });
 
 // =================================================
@@ -61,13 +61,15 @@ const errors = ref({
 watch(
   () => props.data,
   (newData) => {
-    if (!newData) return
+    if (!newData) return;
+
     const nameParts = newData.name.trim().split(/\s+/);
+
     form.value = {
       id: newData.id,
-      first_name: nameParts[0] ?? '',
-      last_name: nameParts.slice(1).join(' ') ?? '',
       email: newData.email,
+      first_name: nameParts[0] ?? "",
+      last_name: nameParts.slice(1).join(" "),
       school: newData.school,
       status: newData.status,
 
@@ -88,38 +90,36 @@ watch(
 watch(
   form,
   (val) => {
-    if (!val.first_name) errors.value.first_name = 'First name is required';
-    else if (val.first_name.length > 50) errors.value.first_name = '';
-    else errors.value.first_name = '';
+    errors.value.first_name = !val.first_name
+      ? "First name is required"
+      : val.first_name.length > 50
+        ? "First name cannot exceed 50 characters"
+        : "";
 
-    if (!val.last_name) errors.value.last_name = 'Last name is required';
-    else if (val.last_name.length > 50) errors.value.last_name = '';
-    else errors.value.last_name = '';
+    errors.value.last_name = !val.last_name
+      ? "Last name is required"
+      : val.last_name.length > 50
+        ? "Last name cannot exceed 50 characters"
+        : "";
 
-    // email validation
-    if (!val.email) {
-      errors.value.email = 'Email is required';
-    } else if (!val.email.endsWith('.edu')) {
-      errors.value.email = 'Email must be a .edu address';
-    } else {
-      errors.value.email = '';
-    }
+    errors.value.school = !val.school
+      ? "School is required"
+      : val.school.length > 255
+        ? "School name cannot exceed 255 characters"
+        : "";
 
-    // school validation
-    if (!val.school) {
-      errors.value.school = 'School is required';
-    } else if (val.school.length > 255) {
-      errors.value.school = 'School name cannot exceed 255 characters';
-    } else {
-      errors.value.school = '';
-    }
+    errors.value.email = !val.email
+      ? "Email is required"
+      : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.email)
+        ? "Invalid email format"
+        : "";
   },
   { deep: true, immediate: true },
 );
 
-const isInvalid = computed(() => {
-  return Object.values(errors.value).some((err) => err !== '');
-});
+const isInvalid = computed(() =>
+  Object.values(errors.value).some((err) => err !== ""),
+);
 
 
 // ===========================================
@@ -194,12 +194,11 @@ function backToEdit() {
   step.value = STEPS.FORM
 }
 
-// handle save
-const handleSave = async () => {
+const handleSave = () => {
   if (isInvalid.value) return;
   if (changes.value.length == 0) return;
 
-  emit('save', {
+  emit("save", {
     id: form.value.id,
     first_name: form.value.first_name,
     last_name: form.value.last_name,
@@ -269,7 +268,7 @@ const classroomsToBeDeleted = computed(() => {
 </script>
 
 <template>
-  <Dialog :open="props.show" @update:open="handleOpenChange">
+  <Dialog :open="show" @update:open="handleOpenChange">
     <DialogContent class="max-h-[90vh] overflow-y-auto my-6">
       <DialogHeader>
         <DialogTitle>Edit {{ original?.first_name }} {{ original?.last_name }}</DialogTitle>

@@ -24,10 +24,11 @@ const props = withDefaults(defineProps<BaseChartProps<T> & {
    */
   xLabel?: string
   yLabel?: string
+  legendPosition?: 'top' | 'bottom'
 }>(), {
   curveType: CurveType.MonotoneX,
   filterOpacity: 0.2,
-  margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  margin: () => ({ top: 10, bottom: 50, left: 50, right: 20 }),
   showXAxis: true,
   showYAxis: true,
   showTooltip: true,
@@ -35,6 +36,7 @@ const props = withDefaults(defineProps<BaseChartProps<T> & {
   showGridLine: true,
   xLabel: '',
   yLabel: '',
+  legendPosition: 'top',
 })
 
 const emits = defineEmits<{
@@ -57,18 +59,32 @@ const legendItems = ref<BulletLegendItemInterface[]>(
   }))
 )
 
+const chartData = computed(() => {
+  if (props.data.length === 1) {
+    return [props.data[0], props.data[0]]
+  }
+  return props.data
+})
+
 const isMounted = useMounted()
 
 function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
   emits("legendItemClick", d, i)
 }
+
+const resolveYFormatter = (tick: number | Date, i: number, ticks: number[] | Date[]) => {
+  if (props.yFormatter) {
+    return props.yFormatter(tick, i, ticks)
+  }
+  return `${tick}`
+}
 </script>
 
 <template>
-  <div :class="cn('w-full h-[400px] flex flex-col items-end relative', $attrs.class ?? '')">
-    <!-- Legend -->
+  <div :class="cn('w-full flex flex-col items-end relative min-h-[400px]', $attrs.class ?? '')">
+    <!-- Legend (Top) -->
     <ChartLegend
-      v-if="showLegend"
+      v-if="showLegend && legendPosition === 'top'"
       v-model:items="legendItems"
       @legend-item-click="handleLegendItemClick"
     />
@@ -78,15 +94,16 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
       <!-- Y-Axis Label -->
       <div
         v-if="props.yLabel"
-        class="absolute left-3 top-1/2 -translate-y-1/2 -rotate-90 text-2xl font-bold text-foreground"
+        class="absolute top-1/2 -translate-y-1/2 -rotate-90 text-sm font-medium text-muted-foreground whitespace-nowrap"
+        style="left: 12px; transform-origin: center;"
       >
         {{ props.yLabel }}
       </div>
 
       <!-- Main Chart -->
       <VisXYContainer
-        :margin="{ left: 50, right: 20, top: 10, bottom: 50 }"
-        :data="data"
+        :margin="props.margin"
+        :data="chartData"
         :style="{ height: isMounted ? '100%' : 'auto' }"
       >
         <ChartCrosshair
@@ -115,10 +132,10 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
         <VisAxis
           v-if="showXAxis"
           type="x"
-          :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
-          :tick-values="data.map((_, i) => i)"
+          :tick-format="xFormatter ?? ((v: number) => props.data.length === 1 ? props.data[0]?.[index] : chartData[v]?.[index])"
+          :tick-values="props.data.length === 1 ? [0.5] : chartData.map((_, i) => i)"
           :grid-line="false"
-          :tick-line="false"
+          :tick-line="true"
           tick-text-color="hsl(var(--vis-text-color))"
         />
 
@@ -127,7 +144,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
           v-if="showYAxis"
           type="y"
           :tick-line="false"
-          :tick-format="yFormatter"
+          :tick-format="resolveYFormatter"
           :domain-line="false"
           :grid-line="showGridLine"
           :attributes="{ [Axis.selectors.grid]: { class: 'text-muted' } }"
@@ -140,10 +157,18 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
       <!-- X-Axis Label -->
       <div
         v-if="props.xLabel"
-        class="absolute bottom-3 text-2xl font-bold text-foreground"
+        class="absolute text-sm font-medium text-muted-foreground"
+        style="bottom: 12px; left: 50%; transform: translateX(-50%);"
       >
         {{ props.xLabel }}
       </div>
     </div>
+
+    <!-- Legend (Bottom) -->
+    <ChartLegend
+      v-if="showLegend && legendPosition === 'bottom'"
+      v-model:items="legendItems"
+      @legend-item-click="handleLegendItemClick"
+    />
   </div>
 </template>
