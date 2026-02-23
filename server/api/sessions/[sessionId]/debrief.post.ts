@@ -29,32 +29,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "question is required" });
   }
 
-  // Load session — try user_id first (new column name), fall back to student_id
-  // for any sessions created before the migration
-  let session: Record<string, unknown> | null = null;
-
-  const { data: sessionByUserId } = (await client
+  // Load session — column is user_id after migration
+  const { data: session, error: sessionErr } = (await client
     .from("case_sessions")
     .select("*")
     .eq("id", sessionId)
-    .eq("user_id", userId) // ← new column name
-    .single()) as { data: Record<string, unknown> | null };
+    .eq("user_id", userId)
+    .single()) as { data: Record<string, unknown> | null; error: any };
 
-  if (sessionByUserId) {
-    session = sessionByUserId;
-  } else {
-    // Fallback: case_sessions may still use student_id before that migration runs
-    const { data: sessionByStudentId } = (await client
-      .from("case_sessions")
-      .select("*")
-      .eq("id", sessionId)
-      .eq("user_id", userId)
-      .single()) as { data: Record<string, unknown> | null };
-
-    session = sessionByStudentId;
-  }
-
-  if (!session) {
+  if (sessionErr || !session) {
     throw createError({ statusCode: 404, message: "Session not found" });
   }
 
@@ -89,7 +72,6 @@ export default defineEventHandler(async (event) => {
     .in("role", ["student", "evaluator"])
     .order("created_at", { ascending: true });
 
-  // Build context summary
   const actionSummary = (actions ?? [])
     .map(
       (a: Record<string, unknown>) =>
@@ -183,7 +165,6 @@ TONE: Warm, constructive, educational. Like a supportive attending doing a post-
       "Debrief chat requires OPENAI_API_KEY to be set in the Nuxt server environment.";
   }
 
-  // Save messages to DB
   await (client.from("session_messages") as any).insert([
     {
       session_id: sessionId,

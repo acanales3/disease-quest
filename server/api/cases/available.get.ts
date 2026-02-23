@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
 
   const role = userProfile.role?.toUpperCase();
 
-  // ADMIN / INSTRUCTOR: all cases
+  // ── ADMIN / INSTRUCTOR: all cases ───────────────────────────────────────
   if (role === "ADMIN" || role === "INSTRUCTOR") {
     const { data, error } = await client
       .from("cases")
@@ -41,14 +41,14 @@ export default defineEventHandler(async (event) => {
     return data ?? [];
   }
 
-  // STUDENT: cases assigned to classrooms they are enrolled in + progress from student_cases
+  // ── STUDENT ─────────────────────────────────────────────────────────────
   if (role === "STUDENT") {
-    // 1) student classroom memberships
+    // 1) Classrooms this student is enrolled in
+    //    Table: classroom_students, column: student_id (FK → students.user_id)
     const { data: memberships, error: mErr } = await client
-      .from("case_sessions")
-      .select("case_id, started_at, completed_at, status")
-      .eq("user_id", studentId)
-      .order("updated_at", { ascending: false });
+      .from("classroom_students")
+      .select("classroom_id")
+      .eq("student_id", userId);
 
     if (mErr) {
       throw createError({ statusCode: 500, message: mErr.message });
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
     const classroomIds = (memberships ?? []).map((m: any) => m.classroom_id);
     if (classroomIds.length === 0) return [];
 
-    // 2) cases for those classrooms
+    // 2) Cases assigned to those classrooms
     const { data: rows, error: ccErr } = await client
       .from("classroom_cases")
       .select(
@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 500, message: ccErr.message });
     }
 
-    // Flatten + dedupe + remember a classroom for display
+    // Flatten + dedupe by case id
     const byCaseId = new Map<number, any>();
     for (const r of rows ?? []) {
       const c = (r as any).cases;
@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
           name: c.name,
           description: c.description,
           created_at: c.created_at,
-          classroom: (r as any).classroom_id, // for now: classroom id
+          classroom: (r as any).classroom_id,
         });
       }
     }
@@ -95,36 +95,61 @@ export default defineEventHandler(async (event) => {
     const caseIds = Array.from(byCaseId.keys());
     if (caseIds.length === 0) return [];
 
-    // 3) progress for this student for those cases
-    const { data: progress, error: pErr } = await client
-      .from("student_cases")
-      .select("case_id, started_at, completed_at")
-      .eq("student_id", userId)
-      .in("case_id", caseIds);
+    // 3) Progress from case_sessions (user_id FK → auth.users)
+    //    Pull all sessions for this user across these cases.
+    //    Pick the best status per case so replay works correctly:
+    //    a completed past session keeps showing "completed" while
+    //    a new in-progress replay is underway.
+    const { data: sessions, error: sErr } = await client
+      .from("case_sessions")
+      .select("case_id, status, started_at, completed_at")
+      .eq("user_id", userId)
+      .in("case_id", caseIds)
+      .order("created_at", { ascending: false });
 
-    if (pErr) {
-      throw createError({ statusCode: 500, message: pErr.message });
+    if (sErr) {
+      throw createError({ statusCode: 500, message: sErr.message });
     }
+
+    const statusPriority: Record<string, number> = {
+      completed: 3,
+      in_progress: 2,
+      created: 1,
+    };
 
     const progressByCase = new Map<
       number,
-      { started_at: any; completed_at: any }
+      {
+        status: string;
+        started_at: string | null;
+        completed_at: string | null;
+      }
     >();
-    for (const p of progress ?? []) {
-      progressByCase.set((p as any).case_id, {
-        started_at: (p as any).started_at,
-        completed_at: (p as any).completed_at,
-      });
+
+    for (const s of sessions ?? []) {
+      const caseId = (s as any).case_id as number;
+      const existing = progressByCase.get(caseId);
+      const incoming = statusPriority[(s as any).status] ?? 0;
+      const current = existing ? (statusPriority[existing.status] ?? 0) : -1;
+
+      if (incoming > current) {
+        progressByCase.set(caseId, {
+          status: (s as any).status,
+          started_at: (s as any).started_at,
+          completed_at: (s as any).completed_at,
+        });
+      }
     }
 
-    // 4) shape to match student datatable columns
+    // 4) Shape for the datatable columns
     const result = caseIds.map((id) => {
       const base = byCaseId.get(id);
       const prog = progressByCase.get(id);
 
       let status: "not started" | "in progress" | "completed" = "not started";
-      if (prog?.completed_at) status = "completed";
-      else if (prog?.started_at) status = "in progress";
+      if (prog?.status === "completed") status = "completed";
+      else if (prog?.status === "in_progress" || prog?.status === "created")
+        status = "in progress";
 
       return {
         ...base,
@@ -137,6 +162,7 @@ export default defineEventHandler(async (event) => {
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
+
     return result;
   }
 

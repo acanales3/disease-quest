@@ -53,6 +53,7 @@ async function callAgent(
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
     },
     body: JSON.stringify(body),
   });

@@ -1,11 +1,6 @@
 /**
  * POST /api/sessions/:sessionId/action
  * Proxies student actions to the orchestrator edge function.
- *
- * Body: {
- *   actionType: string,
- *   payload: { content?, testId?, rationale?, treatment?, differential?, diagnosis?, reasoning?, minutes? }
- * }
  */
 import { defineEventHandler, createError, getRouterParam, readBody } from "h3";
 import {
@@ -59,7 +54,16 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
   const supabaseUrl =
     process.env.SUPABASE_URL || config.public?.supabase?.url || "";
-  const serviceKey = process.env.SUPABASE_SERVICE_KEY || "";
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    "";
+  console.log(
+    "[action] serviceKey present:",
+    !!serviceKey,
+    "url:",
+    supabaseUrl,
+  );
 
   if (!supabaseUrl || !serviceKey) {
     throw createError({
@@ -95,8 +99,7 @@ export default defineEventHandler(async (event) => {
 
   const result = await response.json();
 
-  // If this was an end_case action, save the evaluation from the Nuxt server
-  // so we get full logging and bypass any edge function DB issues
+  // Save evaluation from Nuxt server side for reliability
   if (actionType === "end_case" && result?.evaluation) {
     console.log(
       "[action/end_case] Evaluation received, saving from Nuxt server...",
@@ -104,7 +107,6 @@ export default defineEventHandler(async (event) => {
     try {
       const serviceClient = serverSupabaseServiceRole(event);
 
-      // Load session to get case_id
       const { data: fullSession } = await serviceClient
         .from("case_sessions")
         .select("user_id, case_id")
@@ -112,25 +114,24 @@ export default defineEventHandler(async (event) => {
         .single();
 
       if (fullSession) {
-        const userId = fullSession.user_id;
+        const sessionUserId = fullSession.user_id; // ← renamed to avoid shadowing outer userId
         const caseId = fullSession.case_id;
         const evalData = result.evaluation;
         const dbScores = result.db_scores || evalData?.db_scores;
 
         console.log(
-          "[action/end_case] student_id:",
-          studentId,
+          "[action/end_case] user_id:",
+          sessionUserId,
           "case_id:",
           caseId,
-        );
+        ); // ← was: studentId
         console.log("[action/end_case] db_scores:", JSON.stringify(dbScores));
 
         if (dbScores && Object.keys(dbScores).length > 0) {
-          // Delete existing evaluation for this student+case
           const { error: delErr } = await serviceClient
             .from("evaluations")
             .delete()
-            .eq("user_id", userId)
+            .eq("user_id", sessionUserId)
             .eq("case_id", caseId);
 
           if (delErr) {
@@ -142,9 +143,8 @@ export default defineEventHandler(async (event) => {
             );
           }
 
-          // Insert new evaluation
           const evalPayload = {
-            user_id: userId,
+            user_id: sessionUserId,
             case_id: caseId,
             ...dbScores,
             reflection_document: JSON.stringify(evalData),
@@ -175,7 +175,7 @@ export default defineEventHandler(async (event) => {
           }
         } else {
           console.warn(
-            "[action/end_case] No db_scores found in evaluation result — checking result structure:",
+            "[action/end_case] No db_scores in result. Keys:",
             Object.keys(result),
           );
         }
