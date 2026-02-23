@@ -121,6 +121,19 @@
     @apply bg-background text-foreground;
   }
 
+  html {
+    background-color: #f3f4f6;
+  }
+
+  html.auth-page {
+    background: linear-gradient(
+      to bottom,
+      rgb(175, 103, 240),
+      white
+    ) !important;
+    min-height: 100vh;
+  }
+
   :root {
     --vis-tooltip-background-color: none !important;
     --vis-tooltip-border-color: none !important;
