@@ -3,7 +3,7 @@
  * Extracts raw text content from a PDF file buffer using pdf-parse v2.
  */
 
-import { PDFParse } from "pdf-parse";
+import pdf from "pdf-parse";
 
 /**
  * Extract all text content from a PDF buffer.
@@ -11,25 +11,18 @@ import { PDFParse } from "pdf-parse";
  * @returns The extracted text content
  */
 export async function extractPdfText(
-  fileBuffer: Buffer | Uint8Array
+  fileBuffer: Buffer | Uint8Array,
 ): Promise<string> {
-  // Convert Buffer to Uint8Array if needed
   const data =
-    fileBuffer instanceof Uint8Array
-      ? fileBuffer
-      : new Uint8Array(fileBuffer);
+    fileBuffer instanceof Uint8Array ? Buffer.from(fileBuffer) : fileBuffer;
 
-  const parser = new PDFParse({ data });
-  const result = await parser.getText();
+  const result = await pdf(data);
 
   const text = result.text?.trim();
 
-  // Clean up resources
-  await parser.destroy();
-
   if (!text || text.length === 0) {
     throw new Error(
-      "PDF appears to be empty or contains no extractable text (it may be image-based)."
+      "PDF appears to be empty or contains no extractable text (it may be image-based).",
     );
   }
 
