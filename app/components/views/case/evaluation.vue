@@ -317,41 +317,55 @@ function downloadPdf() {
     )
   }
 
-  const strengths = (ev.strengths ?? []) as string[]
+  const toPlainText = (item: unknown): string => {
+    if (typeof item === 'string') return item
+    if (item && typeof item === 'object') {
+      const obj = item as Record<string, unknown>
+      return (obj.text ?? obj.prompt ?? obj.action ?? obj.name ?? JSON.stringify(item)) as string
+    }
+    return String(item)
+  }
+
+  const strengths = (ev.strengths ?? []) as unknown[]
   if (strengths.length > 0) {
     content.push(
       { text: 'Strengths', style: 'sectionHeader', color: '#16a34a' },
-      { ul: strengths, style: 'listItem', margin: [0, 0, 0, 12] as [number, number, number, number] }
+      { ul: strengths.map(toPlainText), style: 'listItem', margin: [0, 0, 0, 12] as [number, number, number, number] }
     )
   }
 
-  const improvements = (ev.improvements ?? []) as string[]
+  const improvements = (ev.improvements ?? []) as unknown[]
   if (improvements.length > 0) {
     content.push(
       { text: 'Areas for Improvement', style: 'sectionHeader', color: '#d97706' },
-      { ul: improvements, style: 'listItem', margin: [0, 0, 0, 12] as [number, number, number, number] }
+      { ul: improvements.map(toPlainText), style: 'listItem', margin: [0, 0, 0, 12] as [number, number, number, number] }
     )
   }
 
-  const missed = (ev.missed_critical_actions ?? []) as Array<{ action: string; learning_point?: string }>
-  if (missed.length > 0) {
+  const missedRaw = (ev.missed_critical_actions ?? []) as unknown[]
+  if (missedRaw.length > 0) {
     content.push(
       { text: 'Missed Critical Actions', style: 'sectionHeader', color: '#dc2626' },
-      ...missed.map(m => ({
-        stack: [
-          { text: m.action, bold: true, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] },
-          ...(m.learning_point ? [{ text: m.learning_point, italics: true, fontSize: 9, color: '#2563eb', margin: [0, 1, 0, 4] as [number, number, number, number] }] : []),
-        ],
-      })),
+      ...missedRaw.map(m => {
+        const obj = (typeof m === 'object' && m !== null ? m : { action: String(m) }) as Record<string, unknown>
+        const action = toPlainText(obj.action ?? obj)
+        const lp = obj.learning_point as string | undefined
+        return {
+          stack: [
+            { text: action, bold: true, fontSize: 10, margin: [0, 2, 0, 0] as [number, number, number, number] },
+            ...(lp ? [{ text: lp, italics: true, fontSize: 9, color: '#2563eb', margin: [0, 1, 0, 4] as [number, number, number, number] }] : []),
+          ],
+        }
+      }),
       { text: '', margin: [0, 0, 0, 8] as [number, number, number, number] }
     )
   }
 
-  const reflections = (ev.reflection_prompts ?? []) as Array<string | { prompt: string }>
+  const reflections = (ev.reflection_prompts ?? []) as unknown[]
   if (reflections.length > 0) {
     content.push(
       { text: 'Reflection Questions', style: 'sectionHeader' },
-      { ol: reflections.map(r => typeof r === 'string' ? r : r.prompt), style: 'listItem', margin: [0, 0, 0, 12] as [number, number, number, number] }
+      { ol: reflections.map(toPlainText), style: 'listItem', margin: [0, 0, 0, 12] as [number, number, number, number] }
     )
   }
 
