@@ -14,21 +14,13 @@
             <TotalCount icon="mdi:fire" :count="stats?.login_streak ?? 0" label="Login Streak" />
         </div>
 
-        <!-- Attempted Cases Table -->
-
-        <div class="w-full py-2">
-            <DataTable :columns="visibleColumns" :data="caseData" />
-        </div>
         
     </div>
 </template>
 
 <script setup lang="ts">
-import { getColumns } from '../../CaseDatatable/columns'
-import DataTable from '../../CaseDatatable/data-table.vue'
 import type { Case } from '../../CaseDatatable/columns'
 import TotalCount from '@/components/ui/TotalCount.vue'
-import { onMounted, ref } from 'vue'
 import { computed } from 'vue'
 
 type DashboardResponse = {
@@ -50,11 +42,5 @@ const stats = computed(() => data.value?.stats)
 
 const caseData = computed(() => data.value?.cases ?? [])
 
-const visibleColumns = computed(() => {
-  const columnsToShow = ['id', 'name', 'description', 'classroom', 'completionDate', 'status', 'actions'];
-  return getColumns('student').filter(column => {
-    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
-    return key ? columnsToShow.includes(String(key)) : false;
-  });
-});
+
 </script>
