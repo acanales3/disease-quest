@@ -49,8 +49,10 @@ function handleDelete() {
       >
         Edit
       </DropdownMenuItem>
-      <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin' || props.role === 'student'">
-        View Analytics
+      <DropdownMenuItem asChild v-if="props.role === 'instructor' || props.role === 'admin' || props.role === 'student'">
+        <NuxtLink :to="`/${props.role}/analytics?classroomId=${props.classroom.id}&classroomName=${encodeURIComponent(props.classroom.name)}`">
+          View Analytics
+        </NuxtLink>
       </DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'instructor' || props.role === 'admin'">
         <NuxtLink
