@@ -252,6 +252,20 @@ const classroomConflicts = computed(() => {
   }).filter(Boolean)
 })
 
+const classroomsToBeDeleted = computed(() => {
+  if (!original.value) return [];
+
+  const currentIds = original.value.classrooms.map(c => c.id);
+  const newIds = form.value.classrooms.map(c => c.id);
+
+  // Classrooms being removed
+  const removedIds = currentIds.filter(id => !newIds.includes(id));
+
+  // Map to actual classroom objects
+  return removedIds
+    .map(id => props.classrooms.find(c => c.id === id))
+    .filter(Boolean) as ClassroomOptions[];
+});
 </script>
 
 <template>
@@ -337,6 +351,18 @@ const classroomConflicts = computed(() => {
             </div>
 
             <div
+              v-if="classroomsToBeDeleted?.length > 0"
+              class="p-3 rounded bg-red-50 border border-red-300 text-red-800 text-sm"
+            >
+              <div class="font-semibold mb-2">
+                Warning: The following classrooms will be deleted because no instructor will be left:
+              </div>
+              <div v-for="c in classroomsToBeDeleted" :key="c.id">
+                • {{ c.name }}
+              </div>
+            </div>
+
+            <div
               v-if="classroomConflicts.length > 0"
               class="p-3 rounded bg-yellow-50 border border-yellow-300 text-yellow-800 text-sm"
             >
@@ -346,10 +372,10 @@ const classroomConflicts = computed(() => {
 
               <div
                 v-for="conflict in classroomConflicts"
-                :key="conflict.classroomName"
+                :key="conflict?.classroomName"
               >
-                • {{ conflict.classroomName }} —
-                {{ conflict.instructorName }} will be removed and replaced.
+                • {{ conflict?.classroomName }} —
+                {{ conflict?.instructorName }} will be removed and replaced.
               </div>
             </div>
 

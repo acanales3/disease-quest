@@ -232,13 +232,13 @@ export default defineEventHandler(async (event) => {
     if (toRemove.length > 0) {
       const { error: removeError } = await client
         .from("classrooms")
-        .update({ instructor_id: null })
+        .delete()
         .in("id", toRemove);
 
       if (removeError)
         throw createError({
           statusCode: 500,
-          statusMessage: "Failed removing instructor from classrooms",
+          statusMessage: "Failed to delete classrooms left without instructors",
         });
   }
 
