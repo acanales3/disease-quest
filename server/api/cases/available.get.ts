@@ -152,7 +152,7 @@ export default defineEventHandler(async (event) => {
         status = "in progress";
 
       return {
-        ...base,
+        ...c,
         status,
         completionDate: prog?.completed_at ?? null,
       };
