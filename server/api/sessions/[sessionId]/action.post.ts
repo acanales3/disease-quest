@@ -8,7 +8,11 @@
  * }
  */
 import { defineEventHandler, createError, getRouterParam, readBody } from "h3";
-import { serverSupabaseClient, serverSupabaseServiceRole, serverSupabaseUser } from "#supabase/server";
+import {
+  serverSupabaseClient,
+  serverSupabaseServiceRole,
+  serverSupabaseUser,
+} from "#supabase/server";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -28,9 +32,9 @@ export default defineEventHandler(async (event) => {
   // Verify session ownership
   const { data: session, error: sessionErr } = await client
     .from("case_sessions")
-    .select("id, student_id, status")
+    .select("id, user_id, status")
     .eq("id", sessionId)
-    .eq("student_id", userId)
+    .eq("user_id", userId)
     .single();
 
   if (sessionErr || !session) {
@@ -38,7 +42,10 @@ export default defineEventHandler(async (event) => {
   }
 
   if (session.status === "completed" || session.status === "abandoned") {
-    throw createError({ statusCode: 400, message: "Session is already completed" });
+    throw createError({
+      statusCode: 400,
+      message: "Session is already completed",
+    });
   }
 
   const body = await readBody(event);
@@ -50,13 +57,15 @@ export default defineEventHandler(async (event) => {
 
   // Call the orchestrator edge function
   const config = useRuntimeConfig();
-  const supabaseUrl = process.env.SUPABASE_URL || config.public?.supabase?.url || "";
+  const supabaseUrl =
+    process.env.SUPABASE_URL || config.public?.supabase?.url || "";
   const serviceKey = process.env.SUPABASE_SERVICE_KEY || "";
 
   if (!supabaseUrl || !serviceKey) {
     throw createError({
       statusCode: 500,
-      message: "Supabase configuration missing (SUPABASE_URL or SUPABASE_SERVICE_KEY)",
+      message:
+        "Supabase configuration missing (SUPABASE_URL or SUPABASE_SERVICE_KEY)",
     });
   }
 
@@ -89,24 +98,31 @@ export default defineEventHandler(async (event) => {
   // If this was an end_case action, save the evaluation from the Nuxt server
   // so we get full logging and bypass any edge function DB issues
   if (actionType === "end_case" && result?.evaluation) {
-    console.log("[action/end_case] Evaluation received, saving from Nuxt server...");
+    console.log(
+      "[action/end_case] Evaluation received, saving from Nuxt server...",
+    );
     try {
       const serviceClient = serverSupabaseServiceRole(event);
 
       // Load session to get case_id
       const { data: fullSession } = await serviceClient
         .from("case_sessions")
-        .select("student_id, case_id")
+        .select("user_id, case_id")
         .eq("id", sessionId)
         .single();
 
       if (fullSession) {
-        const studentId = fullSession.student_id;
+        const userId = fullSession.user_id;
         const caseId = fullSession.case_id;
         const evalData = result.evaluation;
         const dbScores = result.db_scores || evalData?.db_scores;
 
-        console.log("[action/end_case] student_id:", studentId, "case_id:", caseId);
+        console.log(
+          "[action/end_case] student_id:",
+          studentId,
+          "case_id:",
+          caseId,
+        );
         console.log("[action/end_case] db_scores:", JSON.stringify(dbScores));
 
         if (dbScores && Object.keys(dbScores).length > 0) {
@@ -114,21 +130,29 @@ export default defineEventHandler(async (event) => {
           const { error: delErr } = await serviceClient
             .from("evaluations")
             .delete()
-            .eq("student_id", studentId)
+            .eq("user_id", userId)
             .eq("case_id", caseId);
 
           if (delErr) {
-            console.error("[action/end_case] Delete old evaluation failed:", delErr.message, delErr.details, delErr.hint);
+            console.error(
+              "[action/end_case] Delete old evaluation failed:",
+              delErr.message,
+              delErr.details,
+              delErr.hint,
+            );
           }
 
           // Insert new evaluation
           const evalPayload = {
-            student_id: studentId,
+            user_id: userId,
             case_id: caseId,
             ...dbScores,
             reflection_document: JSON.stringify(evalData),
           };
-          console.log("[action/end_case] Inserting evaluation with keys:", Object.keys(evalPayload));
+          console.log(
+            "[action/end_case] Inserting evaluation with keys:",
+            Object.keys(evalPayload),
+          );
 
           const { data: insertedEval, error: evalErr } = await serviceClient
             .from("evaluations")
@@ -136,32 +160,35 @@ export default defineEventHandler(async (event) => {
             .select();
 
           if (evalErr) {
-            console.error("[action/end_case] EVALUATION INSERT FAILED:", evalErr.message, evalErr.details, evalErr.hint, evalErr.code);
+            console.error(
+              "[action/end_case] EVALUATION INSERT FAILED:",
+              evalErr.message,
+              evalErr.details,
+              evalErr.hint,
+              evalErr.code,
+            );
           } else {
-            console.log("[action/end_case] Evaluation saved successfully, id:", (insertedEval as any)?.[0]?.id);
+            console.log(
+              "[action/end_case] Evaluation saved successfully, id:",
+              (insertedEval as any)?.[0]?.id,
+            );
           }
         } else {
-          console.warn("[action/end_case] No db_scores found in evaluation result — checking result structure:", Object.keys(result));
-        }
-
-        // Also upsert student_cases
-        const { error: scErr } = await serviceClient
-          .from("student_cases")
-          .upsert({
-            student_id: studentId,
-            case_id: caseId,
-            started_at: new Date().toISOString(),
-            completed_at: new Date().toISOString(),
-          } as any);
-
-        if (scErr) {
-          console.error("[action/end_case] student_cases upsert failed:", scErr.message);
+          console.warn(
+            "[action/end_case] No db_scores found in evaluation result — checking result structure:",
+            Object.keys(result),
+          );
         }
       } else {
-        console.error("[action/end_case] Could not load session for evaluation save");
+        console.error(
+          "[action/end_case] Could not load session for evaluation save",
+        );
       }
     } catch (evalSaveErr: any) {
-      console.error("[action/end_case] Exception saving evaluation:", evalSaveErr.message);
+      console.error(
+        "[action/end_case] Exception saving evaluation:",
+        evalSaveErr.message,
+      );
     }
   }
 
