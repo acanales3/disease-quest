@@ -73,7 +73,10 @@
 <script setup lang="ts">
 import LineChart from '@/components/ui/chart-line/LineChart.vue'
 import type { AnalyticsScoreEntry } from '@/types/analytics'
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
+import { useRoute } from '#imports'
+
+const route = useRoute()
 
 const props = defineProps<{
     data: AnalyticsScoreEntry[];
@@ -115,6 +118,20 @@ const classroomsList = computed(() => {
 
 const selectedCategory = ref<{ id: string, name: string } | null>(null)
 const selectedClassroom = ref<{ id: number, name: string } | null>(null)
+
+watchEffect(() => {
+    const classroomIdQuery = route.query.classroomId
+    if (classroomIdQuery) {
+        const id = Number(classroomIdQuery)
+        const nameQuery = route.query.classroomName as string
+        const found = classroomsList.value.find(c => c.id === id)
+        if (found) {
+            selectedClassroom.value = found
+        } else {
+            selectedClassroom.value = { id, name: nameQuery || 'Selected Classroom' }
+        }
+    }
+})
 
 const index = 'case' // X-axis key in the transformed data
 
