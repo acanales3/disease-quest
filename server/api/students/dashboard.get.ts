@@ -1,4 +1,4 @@
-import { serverSupabaseClient } from "#supabase/server";
+import { serverSupabaseClient, serverSupabaseServiceRole } from "#supabase/server";
 import type { Database } from "@/assets/types/supabase";
 import type { Case } from "@/components/CaseDatatable/columns";
 
@@ -19,6 +19,51 @@ export default defineEventHandler(async (event) => {
     .eq("id", studentId)
     .single();
 
+  const { data: studentStats } = await supabase
+    .from("students")
+    .select("login_streak, last_login_date")
+    .eq("user_id", studentId)
+    .single();
+
+  let streak = studentStats?.login_streak ?? 0;
+  let lastLogin = studentStats?.last_login_date ? new Date(studentStats.last_login_date) : null;
+  const now = new Date();
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  let needsUpdate = false;
+
+  if (!lastLogin) {
+    if (streak === 0) streak = 1;
+    needsUpdate = true;
+  } else {
+    const lastLoginUTC = Date.UTC(lastLogin.getUTCFullYear(), lastLogin.getUTCMonth(), lastLogin.getUTCDate());
+    const diffDays = Math.floor((nowUTC - lastLoginUTC) / msPerDay);
+
+    if (diffDays === 1) {
+      streak += 1;
+      needsUpdate = true;
+    } else if (diffDays > 1) {
+      streak = 1;
+      needsUpdate = true;
+    }
+  }
+
+  if (needsUpdate) {
+    const serviceClient = await serverSupabaseServiceRole<Database>(event);
+    const { error: updateError } = await serviceClient
+      .from("students")
+      .update({
+        login_streak: streak,
+        last_login_date: now.toISOString()
+      })
+      .eq("user_id", studentId);
+
+    if (updateError) {
+      console.error("Failed to update student streak:", updateError);
+    }
+  }
+
   const { data: classrooms } = await supabase
     .from("classroom_students")
     .select("classroom_id")
@@ -30,7 +75,7 @@ export default defineEventHandler(async (event) => {
         first_name: userRow?.first_name ?? null,
         last_name: userRow?.last_name ?? null,
       },
-      stats: null,
+      stats: { login_streak: streak, total: 0, completedPercent: 0, inProgress: 0, notStartedPercent: 0 },
       cases: [],
     };
   }
@@ -115,6 +160,7 @@ export default defineEventHandler(async (event) => {
       inProgress,
       notStartedPercent:
         total === 0 ? 0 : Math.round((notStarted / total) * 100),
+      login_streak: streak,
     },
     cases,
   };

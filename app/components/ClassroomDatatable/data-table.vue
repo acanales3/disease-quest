@@ -17,7 +17,7 @@ import {
 
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
-import { ref, onMounted } from "vue"
+import { ref, onMounted, computed } from "vue"
 import { valueUpdater } from "@/lib/utils"
 
 import {
@@ -28,6 +28,15 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table"
+
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu"
+
+import { ChevronDown } from "lucide-vue-next"
 
 import ClassroomFilterDialog from "../ClassroomFilterDialog/ClassroomFilterDialog.vue"
 
@@ -83,7 +92,6 @@ const table = useVueTable({
           ...col,
           filterFn: (row, columnId, filterValues: string[]) => {
             const cellValue = String(row.getValue(columnId) ?? "").toLowerCase()
-
             if (!filterValues?.length) return true
             return filterValues.includes(cellValue)
           },
@@ -122,6 +130,14 @@ const table = useVueTable({
     },
   },
 })
+
+
+/* ---------------------------------------------
+HIDEABLE COLUMNS (for Columns dropdown)
+--------------------------------------------- */
+const hideableColumns = computed(() =>
+  table.getAllColumns().filter((column) => column.getCanHide())
+)
 
 
 /* ---------------------------------------------
@@ -206,6 +222,31 @@ const applyClassroomFilters = (filters: {
           :model-value="getNameFilterValue()"
           @update:model-value="setNameFilterValue"
         />
+
+        <!-- Columns Dropdown -->
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button class="bg-gray-100 text-gray-500 hover:bg-gray-200">
+              Columns
+              <ChevronDown class="w-4 h-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end">
+            <DropdownMenuCheckboxItem
+              v-for="column in hideableColumns"
+              :key="column.id"
+              class="capitalize"
+              :modelValue="column.getIsVisible()"
+              @update:modelValue="
+                (value: boolean) => column.toggleVisibility(!!value)
+              "
+            >
+              {{ column.id }}
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
       </div>
     </div>
 
@@ -239,7 +280,6 @@ const applyClassroomFilters = (filters: {
               :key="row.id"
               :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
             >
-              <!-- ROW HEIGHT FIX -->
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
