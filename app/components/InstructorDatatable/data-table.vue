@@ -149,7 +149,7 @@ const handleApplyFilters = (filters: any) => {
 
       <div class="flex items-center space-x-4">
         <!-- Filters -->
-        <FilterDialog :classrooms="props.classrooms || []" :role="props.role || 'student'" @apply-filters="handleApplyFilters" />
+        <FilterDialog :classrooms="props.classrooms || []" :role="props.role || 'student'" :show-msyear="false" @apply-filters="handleApplyFilters" />
 
         <!-- Email search -->
         <Input
