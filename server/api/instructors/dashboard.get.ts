@@ -76,10 +76,7 @@ export default defineEventHandler(async (event) => {
         .eq('role', 'STUDENT')
         .eq('status', 'pending')
 
-    console.log(registered);
-    console.log(unregistered);
     const totalInvites = (registered ?? 0) + (unregistered ?? 0);
-    console.log(totalInvites)
     return {
         instructorName: name,
         totalStudents: studentCount ?? 0,
