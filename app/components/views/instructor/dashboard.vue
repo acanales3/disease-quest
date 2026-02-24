@@ -54,6 +54,8 @@ export interface InstructorDashboard {
   totalStudents: number;
   totalClassrooms: number;
   totalCases: number;
+  registeredStudents: number;
+  unregisteredStudents: number;
   totalInvitations: number;
 }
 
@@ -77,8 +79,8 @@ onMounted(async () => {
 
     if (!dashboardData.value) return;
     userName.value = dashboardData.value.instructorName;
-    graphData.value[0].total = dashboardData.value.totalStudents;
-    graphData.value[1].total = dashboardData.value.totalInvitations - dashboardData.value.totalStudents;
+    graphData.value[0].total = dashboardData.value.registeredStudents || 0;
+    graphData.value[1].total = dashboardData.value.unregisteredStudents;
   } catch (error) {
     console.error("Failed to fetch instructor's dashboard data:", error)
   }

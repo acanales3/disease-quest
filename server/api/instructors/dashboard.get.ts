@@ -14,9 +14,14 @@ export default defineEventHandler(async (event) => {
     // User name
     const { data: userRow } = await supabase
         .from('users')
-        .select('name')
+        .select(`
+            first_name,
+            last_name
+            `)
         .eq('id', instructorId)
         .single()
+
+    const name = userRow?.first_name + ' ' + userRow?.last_name;
     
     // Get number of students
     const { count: studentCount, error: studentError } = await supabase
@@ -57,22 +62,32 @@ export default defineEventHandler(async (event) => {
 
     if (caseError) throw createError({ statusCode: 500, statusMessage: caseError.message })
 
-    // Total invites
-    const { count: totalInvites, error: inviteError } = await supabase
+    const { count: registered } = await supabase
         .from('invitations')
-        .select(`
-            id   
-        `, { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('created_by', instructorId)
+        .eq('role', 'STUDENT')
+        .eq('status', 'accepted')
 
-    if (inviteError) createError({ statusCode: 500, statusMessage: inviteError.message })
+    const { count: unregistered } = await supabase
+        .from('invitations')
+        .select('*', { count: 'exact', head: true })
+        .eq('created_by', instructorId)
+        .eq('role', 'STUDENT')
+        .eq('status', 'pending')
 
+    console.log(registered);
+    console.log(unregistered);
+    const totalInvites = (registered ?? 0) + (unregistered ?? 0);
+    console.log(totalInvites)
     return {
-        instructorName: userRow?.name,
+        instructorName: name,
         totalStudents: studentCount ?? 0,
         totalClassrooms: classroomCount ?? 0,
         totalCases: casesAvailable ?? 0,
-        totalInvitations: totalInvites ?? 0,
+        registeredStudents: registered ?? 0,
+        unregisteredStudents: unregistered ?? 0,
+        totalInvitations: totalInvites
     };
     
 })

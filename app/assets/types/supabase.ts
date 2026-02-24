@@ -42,30 +42,6 @@ export type Database = {
           },
         ]
       }
-      analytics: {
-        Row: {
-          average_scores: Json
-          created_at: string | null
-          id: number
-          source_id: number
-          source_type: string
-        }
-        Insert: {
-          average_scores: Json
-          created_at?: string | null
-          id?: never
-          source_id: number
-          source_type: string
-        }
-        Update: {
-          average_scores?: Json
-          created_at?: string | null
-          id?: never
-          source_id?: number
-          source_type?: string
-        }
-        Relationships: []
-      }
       case_sessions: {
         Row: {
           case_id: number
@@ -82,9 +58,9 @@ export type Database = {
           scoring: Json | null
           started_at: string | null
           status: string
-          student_id: string
           unlocked_disclosures: string[] | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           case_id: number
@@ -101,9 +77,9 @@ export type Database = {
           scoring?: Json | null
           started_at?: string | null
           status?: string
-          student_id: string
           unlocked_disclosures?: string[] | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           case_id?: number
@@ -120,9 +96,9 @@ export type Database = {
           scoring?: Json | null
           started_at?: string | null
           status?: string
-          student_id?: string
           unlocked_disclosures?: string[] | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -131,13 +107,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "case_sessions_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -294,7 +263,7 @@ export type Database = {
           physical_exam_interpretation: number | null
           reflection_document: string | null
           reflection_metacognition: number | null
-          student_id: string
+          user_id: string
         }
         Insert: {
           case_id: number
@@ -308,7 +277,7 @@ export type Database = {
           physical_exam_interpretation?: number | null
           reflection_document?: string | null
           reflection_metacognition?: number | null
-          student_id: string
+          user_id: string
         }
         Update: {
           case_id?: number
@@ -322,7 +291,7 @@ export type Database = {
           physical_exam_interpretation?: number | null
           reflection_document?: string | null
           reflection_metacognition?: number | null
-          student_id?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -331,13 +300,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cases"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "evaluations_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -373,6 +335,7 @@ export type Database = {
           email: string
           expires_at: string
           id: string
+          invited_by: string | null
           registration_link: string
           role: Database["public"]["Enums"]["user_role"]
           status: string
@@ -385,6 +348,7 @@ export type Database = {
           email: string
           expires_at: string
           id?: string
+          invited_by?: string | null
           registration_link: string
           role: Database["public"]["Enums"]["user_role"]
           status?: string
@@ -397,6 +361,7 @@ export type Database = {
           email?: string
           expires_at?: string
           id?: string
+          invited_by?: string | null
           registration_link?: string
           role?: Database["public"]["Enums"]["user_role"]
           status?: string
@@ -573,56 +538,26 @@ export type Database = {
           },
         ]
       }
-      student_cases: {
-        Row: {
-          case_id: number
-          completed_at: string | null
-          started_at: string | null
-          student_id: string
-        }
-        Insert: {
-          case_id: number
-          completed_at?: string | null
-          started_at?: string | null
-          student_id: string
-        }
-        Update: {
-          case_id?: number
-          completed_at?: string | null
-          started_at?: string | null
-          student_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_cases_case_id_fkey"
-            columns: ["case_id"]
-            isOneToOne: false
-            referencedRelation: "cases"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "student_cases_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
       students: {
         Row: {
+          last_login_date: string | null
+          login_streak: number | null
           msyear: number | null
           nickname: string | null
           status: Database["public"]["Enums"]["student_status"]
           user_id: string
         }
         Insert: {
+          last_login_date?: string | null
+          login_streak?: number | null
           msyear?: number | null
           nickname?: string | null
           status?: Database["public"]["Enums"]["student_status"]
           user_id: string
         }
         Update: {
+          last_login_date?: string | null
+          login_streak?: number | null
           msyear?: number | null
           nickname?: string | null
           status?: Database["public"]["Enums"]["student_status"]
@@ -645,7 +580,6 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
-          name: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           school: string | null
           token: string | null
@@ -656,7 +590,6 @@ export type Database = {
           first_name?: string | null
           id: string
           last_name?: string | null
-          name?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           school?: string | null
           token?: string | null
@@ -667,7 +600,6 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
-          name?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           school?: string | null
           token?: string | null
@@ -678,6 +610,7 @@ export type Database = {
     Views: {
       leaderboard_view: {
         Row: {
+          average_score: number | null
           cases_completed: number | null
           leaderboard_id: number | null
           rank: number | null
@@ -702,6 +635,7 @@ export type Database = {
       }
     }
     Functions: {
+      expire_old_invitations: { Args: never; Returns: undefined }
       hook_require_accepted_invite: { Args: { event: Json }; Returns: Json }
     }
     Enums: {
