@@ -11,4 +11,10 @@ export interface Classroom {
   invitationCode?: string | null;
 }
 
+// Used for when classrooms are retrieved intructor/student classroom editing
+export interface ClassroomOptions {
+  id: number;
+  name: string;
+}
+
 export const classrooms: Classroom[] = [];

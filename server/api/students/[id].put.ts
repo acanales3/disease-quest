@@ -59,31 +59,53 @@ export default defineEventHandler(async (event) => {
       message: `Error updating student details: ${studentUpdateError.message}`,
     });
 
-  if (typeof body.classroom !== "undefined") {
-    const classroomId = Number(body.classroom);
+  if (Array.isArray(body.classrooms)) {
+    const newClassroomIds: number[] = body.classrooms.map((c: any) => Number(c.id));
 
-    const { error: deleteError } = await (
-      client.from("classroom_students") as any
-    )
-      .delete()
+    // Fetch current classrooms for this student
+    const { data: currentClassrooms, error: currentClassroomsError } = await client
+      .from("classroom_students")
+      .select("classroom_id")
       .eq("student_id", id);
 
-    if (deleteError)
+    if (currentClassroomsError) {
       throw createError({
         statusCode: 500,
-        message: `Error removing student from previous classroom: ${deleteError.message}`,
+        statusMessage: `Failed to fetch current classrooms: ${currentClassroomsError.message}`
       });
+    }
 
-    if (classroomId > 0) {
-      const { error: insertError } = await (
-        client.from("classroom_students") as any
-      ).insert({ classroom_id: classroomId, student_id: id });
+    const currentIds = (currentClassrooms ?? []).map((c: any) => c.classroom_id);
 
-      if (insertError)
+    // Calculate which classrooms to delete
+    const toDelete = currentIds.filter((cid) => !newClassroomIds.includes(cid));
+    if (toDelete.length > 0) {
+      const { error: deleteError } = await client
+        .from("classroom_students")
+        .delete()
+        .in("classroom_id", toDelete)
+        .eq("student_id", id);
+
+      if (deleteError)
         throw createError({
           statusCode: 500,
-          message: `Error assigning student to classroom ${classroomId}: ${insertError.message}`,
+          message: `Error removing student from previous classroom: ${deleteError.message}`,
         });
+    }
+
+    // Find which classrooms to insert
+    const toInsert = newClassroomIds.filter((cid) => !currentIds.includes(cid));
+    if (toInsert.length > 0) {
+      const inserts = toInsert.map((cid) => ({ student_id: id, classroom_id: cid}));
+      const { error: insertError } = await (client
+        .from("classroom_students") as any)
+        .insert(inserts);
+
+    if (insertError)
+      throw createError({
+        statusCode: 500,
+        message: `Failed to add student to classrooms: ${insertError.message}`,
+      });
     }
   }
 

@@ -36,14 +36,15 @@ export default defineEventHandler(async (event) => {
 
   const mapClassroom = (c: any) => {
     const u = c.instructor?.user;
-    const instructor = u
+    const instructor_name = u
       ? [u.first_name, u.last_name].filter(Boolean).join(" ") || "Unknown"
       : "Unknown";
     return {
       id: c.id,
       name: c.name,
       code: c.code,
-      instructor,
+      instructor_id: c.instructor_id ?? null,
+      instructor_name,
       school: c.school,
       section: c.section,
       startDate: c.start_date,
