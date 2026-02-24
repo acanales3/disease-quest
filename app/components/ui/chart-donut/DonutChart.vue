@@ -30,6 +30,11 @@ const props = withDefaults(defineProps<Pick<BaseChartProps<T>, "data" | "colors"
    * Render custom tooltip component.
    */
   customTooltip?: Component
+
+  centralLabel: number
+  sublabel: string
+
+  renderLabels: boolean
 }>(), {
   margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
   sortFunction: () => undefined,
@@ -48,16 +53,35 @@ const index = computed(() => props.index as KeyOfT)
 
 const isMounted = useMounted()
 const activeSegmentKey = ref<string>()
-const colors = computed(() => props.colors?.length ? props.colors : defaultColors(props.data.filter(d => d[props.category]).filter(Boolean).length))
-const legendItems = computed(() => props.data.map((item, i) => ({
-  name: item[props.index],
-  color: colors.value[i],
-  inactive: false,
-})))
 
-const totalValue = computed(() => props.data.reduce((prev, curr) => {
-  return prev + curr[props.category]
-}, 0))
+  // Define fixed color mapping for Registered and Unregistered
+const categoryColors: Record<string, string> = {
+  Registered: "hsl(267, 93%, 88%)",
+  Unregistered: "hsl(60, 90%, 70%)",
+}
+
+// Legend items with consistent colors
+const legendItems = computed(() => 
+  props.data.map(item => ({
+    name: item[props.index],
+    color: categoryColors[item[props.index]] || "#ccc",
+    inactive: false,
+  }))
+)
+
+// Donut color function (so segments always match)
+const colors = computed(() => 
+  props.data.map(item => categoryColors[item[props.index]] || "#ccc")
+)
+
+const totalValue = computed(() => {
+  if (!props.data || props.data.length === 0) return 0
+  return props.data.reduce((prev, curr) => {
+    const val = curr[props.category as string];
+    return prev + (typeof val === 'number' ? val : 0);
+}, 0)
+})
+
 </script>
 
 <template>
@@ -72,12 +96,14 @@ const totalValue = computed(() => props.data.reduce((prev, curr) => {
       />
 
       <VisDonut
-        :value="(d: Data) => d[category]"
+        :value="(d: Data) => d[props.category]"
+        :data="props.data"
         :sort-function="sortFunction"
         :color="colors"
         :arc-width="type === 'donut' ? 20 : 0"
         :show-background="false"
-        :central-label="type === 'donut' ? valueFormatter(totalValue) : ''"
+        :central-label="type === 'donut' && props.renderLabels && props.data.length ? valueFormatter(props.centralLabel) : ''"
+        :central-sub-label="type === 'donut' && props.renderLabels ? props.sublabel : ''"
         :events="{
           [Donut.selectors.segment]: {
             click: (d: Data, ev: PointerEvent, i: number, elements: HTMLElement[]) => {
