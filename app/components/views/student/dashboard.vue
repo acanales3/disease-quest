@@ -12,6 +12,7 @@
             <TotalCount icon="mdi:clock-outline" :count="stats?.inProgress ?? 0" label="Cases in progress" />
             <TotalCount icon="mdi:circle-outline" :count="`${stats?.notStartedPercent ?? 0}%`" label="Cases not started" />
             <TotalCount icon="mdi:fire" :count="stats?.login_streak ?? 0" label="Login Streak" />
+            <TrophyCard :completed="stats?.completed ?? 0" />
         </div>
 
         
@@ -22,6 +23,7 @@
 import type { Case } from '../../CaseDatatable/columns'
 import TotalCount from '@/components/ui/TotalCount.vue'
 import { computed } from 'vue'
+import TrophyCard from '~/components/TrophyCard/TrophyCard.vue'
 
 type DashboardResponse = {
     user: { name: string | null}
