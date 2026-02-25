@@ -1,4 +1,5 @@
 import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
+import { validateClassroomDetailsType } from "@/utils/validateClassroomDetailsType";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -69,7 +70,31 @@ export default defineEventHandler(async (event) => {
 
   // Parse request body
   const body = await readBody(event);
-  const { name, code, section, school, start_date, end_date, status } = body;
+  const { name, description, code, section, school, start_date, end_date, status } = body;
+
+  // Type-check classroom name and description when provided
+  if (name !== undefined || description !== undefined) {
+    const typeResult = validateClassroomDetailsType({
+      classroomName: name ?? "",
+      classroomDescription: description ?? "",
+    });
+    if (!typeResult.success) {
+      const typeErrors: Record<string, string> = {};
+      if (name !== undefined && typeResult.errors.classroomName) {
+        typeErrors.name = typeResult.errors.classroomName;
+      }
+      if (description !== undefined && typeResult.errors.classroomDescription) {
+        typeErrors.description = typeResult.errors.classroomDescription;
+      }
+      if (Object.keys(typeErrors).length > 0) {
+        throw createError({
+          statusCode: 400,
+          message: "Validation failed.",
+          data: { errors: typeErrors },
+        });
+      }
+    }
+  }
 
   // Build update object with only provided fields
   const updateData: Record<string, any> = {};

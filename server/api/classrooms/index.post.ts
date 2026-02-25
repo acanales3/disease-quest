@@ -1,6 +1,7 @@
 import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
 import { randomBytes } from "node:crypto";
 import { Database } from "@/assets/types/supabase";
+import { validateClassroomDetailsType } from "@/utils/validateClassroomDetailsType";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -38,8 +39,22 @@ export default defineEventHandler(async (event) => {
 
   // ── Parse & validate body ─────────────────────────────────────────
   const body = await readBody(event);
-  const { name, code, section, term, startDate, endDate, instructorId } =
+  const { name, description, code, section, term, startDate, endDate, instructorId } =
     body || {};
+
+  // ── Type-check classroom name and description ───────────────────
+  const typeResult = validateClassroomDetailsType({
+    classroomName: name,
+    classroomDescription: description ?? "",
+  });
+
+  if (!typeResult.success) {
+    throw createError({
+      statusCode: 400,
+      message: "Validation failed.",
+      data: { errors: typeResult.errors },
+    });
+  }
 
   // ── Resolve instructor UUID ───────────────────────────────────────
   let resolvedInstructorId: string = userId;
@@ -133,7 +148,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 500,
       message: insertError?.message || "Failed to create classroom.",
-    });
+s    });
   }
 
   return {
