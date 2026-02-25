@@ -21,7 +21,9 @@ export default defineEventHandler(async (event) => {
         .eq('id', instructorId)
         .single()
 
-    const name = userRow?.first_name + ' ' + userRow?.last_name;
+    const firstName = userRow?.first_name ?? '';
+    const lastName = userRow?.last_name ?? '';
+    const name = `${firstName} ${lastName}`.trim() || 'Instructor';
     
     // Get number of students
     const { count: studentCount, error: studentError } = await supabase
