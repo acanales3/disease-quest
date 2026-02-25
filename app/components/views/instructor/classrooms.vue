@@ -139,6 +139,8 @@ async function getData(): Promise<Classroom[]> {
 async function fetchCurrentUser() {
   const profile = await fetchCustomUser();
   if (profile) {
+    const firstName = profile.first_name ?? "";
+    const lastName = profile.last_name ?? "";
     currentUser.value = {
       id: profile.id ?? "",
       // Concatenate first_name and last_name since the User interface
