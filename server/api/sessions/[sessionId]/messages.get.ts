@@ -23,9 +23,9 @@ export default defineEventHandler(async (event) => {
   // Verify session ownership
   const { data: session, error: sessionErr } = await client
     .from("case_sessions")
-    .select("id, student_id")
+    .select("id, user_id")
     .eq("id", sessionId)
-    .eq("student_id", userId)
+    .eq("user_id", userId)
     .single();
 
   if (sessionErr || !session) {
