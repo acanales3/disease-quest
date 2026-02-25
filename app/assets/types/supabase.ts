@@ -15,712 +15,640 @@ export type Json =
     | Json[]
 
 export type Database = {
-    // Allows to automatically instantiate createClient with right options
-    // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-    __InternalSupabase: {
-        PostgrestVersion: "13.0.5"
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
+  public: {
+    Tables: {
+      admins: {
+        Row: {
+          user_id: string
+        }
+        Insert: {
+          user_id: string
+        }
+        Update: {
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_sessions: {
+        Row: {
+          case_id: number
+          completed_at: string | null
+          created_at: string | null
+          differential_history: Json | null
+          elapsed_minutes: number | null
+          final_diagnosis: Json | null
+          flags: Json | null
+          id: string
+          management_plan: Json | null
+          patient_state: Json | null
+          phase: string
+          scoring: Json | null
+          started_at: string | null
+          status: string
+          unlocked_disclosures: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          case_id: number
+          completed_at?: string | null
+          created_at?: string | null
+          differential_history?: Json | null
+          elapsed_minutes?: number | null
+          final_diagnosis?: Json | null
+          flags?: Json | null
+          id?: string
+          management_plan?: Json | null
+          patient_state?: Json | null
+          phase?: string
+          scoring?: Json | null
+          started_at?: string | null
+          status?: string
+          unlocked_disclosures?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          case_id?: number
+          completed_at?: string | null
+          created_at?: string | null
+          differential_history?: Json | null
+          elapsed_minutes?: number | null
+          final_diagnosis?: Json | null
+          flags?: Json | null
+          id?: string
+          management_plan?: Json | null
+          patient_state?: Json | null
+          phase?: string
+          scoring?: Json | null
+          started_at?: string | null
+          status?: string
+          unlocked_disclosures?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_sessions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cases: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          description: string | null
+          id: number
+          name: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          name: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: never
+          name?: string
+        }
+        Relationships: []
+      }
+      classroom_cases: {
+        Row: {
+          case_id: number | null
+          classroom_id: number | null
+          id: number
+        }
+        Insert: {
+          case_id?: number | null
+          classroom_id?: number | null
+          id?: number
+        }
+        Update: {
+          case_id?: number | null
+          classroom_id?: number | null
+          id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_cases_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classroom_cases_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classroom_students: {
+        Row: {
+          classroom_id: number
+          enrolled_at: string | null
+          student_id: string
+        }
+        Insert: {
+          classroom_id: number
+          enrolled_at?: string | null
+          student_id: string
+        }
+        Update: {
+          classroom_id?: number
+          enrolled_at?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_students_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classroom_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      classrooms: {
+        Row: {
+          code: string
+          created_at: string | null
+          end_date: string | null
+          id: number
+          instructor_id: string
+          invitation_code: string | null
+          name: string
+          school: string | null
+          section: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["classroom_status"]
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: never
+          instructor_id: string
+          invitation_code?: string | null
+          name: string
+          school?: string | null
+          section?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["classroom_status"]
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          end_date?: string | null
+          id?: never
+          instructor_id?: string
+          invitation_code?: string | null
+          name?: string
+          school?: string | null
+          section?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["classroom_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classrooms_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "instructors"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      evaluations: {
+        Row: {
+          case_id: number
+          communication_empathy: number | null
+          created_at: string | null
+          diagnostic_tests: number | null
+          differential_diagnosis_formulation: number | null
+          history_taking_synthesis: number | null
+          id: number
+          management_reasoning: number | null
+          physical_exam_interpretation: number | null
+          reflection_document: string | null
+          reflection_metacognition: number | null
+          user_id: string
+        }
+        Insert: {
+          case_id: number
+          communication_empathy?: number | null
+          created_at?: string | null
+          diagnostic_tests?: number | null
+          differential_diagnosis_formulation?: number | null
+          history_taking_synthesis?: number | null
+          id?: never
+          management_reasoning?: number | null
+          physical_exam_interpretation?: number | null
+          reflection_document?: string | null
+          reflection_metacognition?: number | null
+          user_id: string
+        }
+        Update: {
+          case_id?: number
+          communication_empathy?: number | null
+          created_at?: string | null
+          diagnostic_tests?: number | null
+          differential_diagnosis_formulation?: number | null
+          history_taking_synthesis?: number | null
+          id?: never
+          management_reasoning?: number | null
+          physical_exam_interpretation?: number | null
+          reflection_document?: string | null
+          reflection_metacognition?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instructors: {
+        Row: {
+          status: Database["public"]["Enums"]["instructor_status"]
+          user_id: string
+        }
+        Insert: {
+          status?: Database["public"]["Enums"]["instructor_status"]
+          user_id: string
+        }
+        Update: {
+          status?: Database["public"]["Enums"]["instructor_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          created_by: string
+          custom_message: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          registration_link: string
+          role: Database["public"]["Enums"]["user_role"]
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          created_by: string
+          custom_message?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          registration_link: string
+          role: Database["public"]["Enums"]["user_role"]
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          created_by?: string
+          custom_message?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          registration_link?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: string
+        }
+        Relationships: []
+      }
+      leaderboard_entries: {
+        Row: {
+          leaderboard_id: number
+          student_id: string
+        }
+        Insert: {
+          leaderboard_id: number
+          student_id: string
+        }
+        Update: {
+          leaderboard_id?: number
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_entries_leaderboard_id_fkey"
+            columns: ["leaderboard_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_entries_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      leaderboards: {
+        Row: {
+          classroom_id: number | null
+          created_at: string | null
+          id: number
+        }
+        Insert: {
+          classroom_id?: number | null
+          created_at?: string | null
+          id?: never
+        }
+        Update: {
+          classroom_id?: number | null
+          created_at?: string | null
+          id?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboards_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          id: number
+          message: string
+          timestamp_sent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: never
+          message: string
+          timestamp_sent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: never
+          message?: string
+          timestamp_sent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_actions: {
+        Row: {
+          action_type: string
+          actor: string
+          created_at: string | null
+          elapsed_minutes: number | null
+          id: number
+          payload: Json | null
+          penalties: number | null
+          points_earned: number | null
+          response: Json | null
+          session_id: string
+          target: string | null
+        }
+        Insert: {
+          action_type: string
+          actor: string
+          created_at?: string | null
+          elapsed_minutes?: number | null
+          id?: never
+          payload?: Json | null
+          penalties?: number | null
+          points_earned?: number | null
+          response?: Json | null
+          session_id: string
+          target?: string | null
+        }
+        Update: {
+          action_type?: string
+          actor?: string
+          created_at?: string | null
+          elapsed_minutes?: number | null
+          id?: never
+          payload?: Json | null
+          penalties?: number | null
+          points_earned?: number | null
+          response?: Json | null
+          session_id?: string
+          target?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_actions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "case_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: number
+          metadata: Json | null
+          role: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: never
+          metadata?: Json | null
+          role: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: never
+          metadata?: Json | null
+          role?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "case_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          last_login_date: string | null
+          login_streak: number | null
+          msyear: number | null
+          nickname: string | null
+          status: Database["public"]["Enums"]["student_status"]
+          user_id: string
+        }
+        Insert: {
+          last_login_date?: string | null
+          login_streak?: number | null
+          msyear?: number | null
+          nickname?: string | null
+          status?: Database["public"]["Enums"]["student_status"]
+          user_id: string
+        }
+        Update: {
+          last_login_date?: string | null
+          login_streak?: number | null
+          msyear?: number | null
+          nickname?: string | null
+          status?: Database["public"]["Enums"]["student_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          school: string | null
+          token: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          school?: string | null
+          token?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          school?: string | null
+          token?: string | null
+        }
+        Relationships: []
+      }
     }
-    public: {
-        Tables: {
-            admins: {
-                Row: {
-                    user_id: string
-                }
-                Insert: {
-                    user_id: string
-                }
-                Update: {
-                    user_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "admins_user_id_fkey"
-                        columns: ["user_id"]
-                        isOneToOne: true
-                        referencedRelation: "users"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-            analytics: {
-                Row: {
-                    average_scores: Json
-                    created_at: string | null
-                    id: number
-                    source_id: number
-                    source_type: string
-                }
-                Insert: {
-                    average_scores: Json
-                    created_at?: string | null
-                    id?: never
-                    source_id: number
-                    source_type: string
-                }
-                Update: {
-                    average_scores?: Json
-                    created_at?: string | null
-                    id?: never
-                    source_id?: number
-                    source_type?: string
-                }
-                Relationships: []
-            }
-            case_sessions: {
-                Row: {
-                    case_id: number
-                    completed_at: string | null
-                    created_at: string | null
-                    differential_history: Json | null
-                    elapsed_minutes: number | null
-                    final_diagnosis: Json | null
-                    flags: Json | null
-                    id: string
-                    management_plan: Json | null
-                    patient_state: Json | null
-                    phase: string
-                    scoring: Json | null
-                    started_at: string | null
-                    status: string
-                    student_id: string
-                    unlocked_disclosures: string[] | null
-                    updated_at: string | null
-                }
-                Insert: {
-                    case_id: number
-                    completed_at?: string | null
-                    created_at?: string | null
-                    differential_history?: Json | null
-                    elapsed_minutes?: number | null
-                    final_diagnosis?: Json | null
-                    flags?: Json | null
-                    id?: string
-                    management_plan?: Json | null
-                    patient_state?: Json | null
-                    phase?: string
-                    scoring?: Json | null
-                    started_at?: string | null
-                    status?: string
-                    student_id: string
-                    unlocked_disclosures?: string[] | null
-                    updated_at?: string | null
-                }
-                Update: {
-                    case_id?: number
-                    completed_at?: string | null
-                    created_at?: string | null
-                    differential_history?: Json | null
-                    elapsed_minutes?: number | null
-                    final_diagnosis?: Json | null
-                    flags?: Json | null
-                    id?: string
-                    management_plan?: Json | null
-                    patient_state?: Json | null
-                    phase?: string
-                    scoring?: Json | null
-                    started_at?: string | null
-                    status?: string
-                    student_id?: string
-                    unlocked_disclosures?: string[] | null
-                    updated_at?: string | null
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "case_sessions_case_id_fkey"
-                        columns: ["case_id"]
-                        isOneToOne: false
-                        referencedRelation: "cases"
-                        referencedColumns: ["id"]
-                    },
-                    {
-                        foreignKeyName: "case_sessions_student_id_fkey"
-                        columns: ["student_id"]
-                        isOneToOne: false
-                        referencedRelation: "students"
-                        referencedColumns: ["user_id"]
-                    },
-                ]
-            }
-            cases: {
-                Row: {
-                    content: Json | null
-                    created_at: string | null
-                    description: string | null
-                    id: number
-                    name: string
-                }
-                Insert: {
-                    content?: Json | null
-                    created_at?: string | null
-                    description?: string | null
-                    id?: never
-                    name: string
-                }
-                Update: {
-                    content?: Json | null
-                    created_at?: string | null
-                    description?: string | null
-                    id?: never
-                    name?: string
-                }
-                Relationships: []
-            }
-            classroom_cases: {
-                Row: {
-                    case_id: number | null
-                    classroom_id: number | null
-                    id: number
-                }
-                Insert: {
-                    case_id?: number | null
-                    classroom_id?: number | null
-                    id?: number
-                }
-                Update: {
-                    case_id?: number | null
-                    classroom_id?: number | null
-                    id?: number
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "classroom_cases_case_id_fkey"
-                        columns: ["case_id"]
-                        isOneToOne: false
-                        referencedRelation: "cases"
-                        referencedColumns: ["id"]
-                    },
-                    {
-                        foreignKeyName: "classroom_cases_classroom_id_fkey"
-                        columns: ["classroom_id"]
-                        isOneToOne: false
-                        referencedRelation: "classrooms"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-            classroom_students: {
-                Row: {
-                    classroom_id: number
-                    enrolled_at: string | null
-                    student_id: string
-                }
-                Insert: {
-                    classroom_id: number
-                    enrolled_at?: string | null
-                    student_id: string
-                }
-                Update: {
-                    classroom_id?: number
-                    enrolled_at?: string | null
-                    student_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "classroom_students_classroom_id_fkey"
-                        columns: ["classroom_id"]
-                        isOneToOne: false
-                        referencedRelation: "classrooms"
-                        referencedColumns: ["id"]
-                    },
-                    {
-                        foreignKeyName: "classroom_students_student_id_fkey"
-                        columns: ["student_id"]
-                        isOneToOne: false
-                        referencedRelation: "students"
-                        referencedColumns: ["user_id"]
-                    },
-                ]
-            }
-            classrooms: {
-                Row: {
-                    code: string
-                    created_at: string | null
-                    end_date: string | null
-                    id: number
-                    instructor_id: string
-                    invitation_code: string | null
-                    name: string
-                    school: string | null
-                    section: string | null
-                    start_date: string | null
-                    status: Database["public"]["Enums"]["classroom_status"]
-                }
-                Insert: {
-                    code: string
-                    created_at?: string | null
-                    end_date?: string | null
-                    id?: never
-                    instructor_id: string
-                    invitation_code?: string | null
-                    name: string
-                    school?: string | null
-                    section?: string | null
-                    start_date?: string | null
-                    status?: Database["public"]["Enums"]["classroom_status"]
-                }
-                Update: {
-                    code?: string
-                    created_at?: string | null
-                    end_date?: string | null
-                    id?: never
-                    instructor_id?: string
-                    invitation_code?: string | null
-                    name?: string
-                    school?: string | null
-                    section?: string | null
-                    start_date?: string | null
-                    status?: Database["public"]["Enums"]["classroom_status"]
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "classrooms_instructor_id_fkey"
-                        columns: ["instructor_id"]
-                        isOneToOne: false
-                        referencedRelation: "instructors"
-                        referencedColumns: ["user_id"]
-                    },
-                ]
-            }
-            evaluations: {
-                Row: {
-                    case_id: number
-                    communication_empathy: number | null
-                    created_at: string | null
-                    diagnostic_tests: number | null
-                    differential_diagnosis_formulation: number | null
-                    history_taking_synthesis: number | null
-                    id: number
-                    management_reasoning: number | null
-                    physical_exam_interpretation: number | null
-                    reflection_document: string | null
-                    reflection_metacognition: number | null
-                    student_id: string
-                }
-                Insert: {
-                    case_id: number
-                    communication_empathy?: number | null
-                    created_at?: string | null
-                    diagnostic_tests?: number | null
-                    differential_diagnosis_formulation?: number | null
-                    history_taking_synthesis?: number | null
-                    id?: never
-                    management_reasoning?: number | null
-                    physical_exam_interpretation?: number | null
-                    reflection_document?: string | null
-                    reflection_metacognition?: number | null
-                    student_id: string
-                }
-                Update: {
-                    case_id?: number
-                    communication_empathy?: number | null
-                    created_at?: string | null
-                    diagnostic_tests?: number | null
-                    differential_diagnosis_formulation?: number | null
-                    history_taking_synthesis?: number | null
-                    id?: never
-                    management_reasoning?: number | null
-                    physical_exam_interpretation?: number | null
-                    reflection_document?: string | null
-                    reflection_metacognition?: number | null
-                    student_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "evaluations_case_id_fkey"
-                        columns: ["case_id"]
-                        isOneToOne: false
-                        referencedRelation: "cases"
-                        referencedColumns: ["id"]
-                    },
-                    {
-                        foreignKeyName: "evaluations_student_id_fkey"
-                        columns: ["student_id"]
-                        isOneToOne: false
-                        referencedRelation: "students"
-                        referencedColumns: ["user_id"]
-                    },
-                ]
-            }
-            instructors: {
-                Row: {
-                    status: Database["public"]["Enums"]["instructor_status"]
-                    user_id: string
-                }
-                Insert: {
-                    status?: Database["public"]["Enums"]["instructor_status"]
-                    user_id: string
-                }
-                Update: {
-                    status?: Database["public"]["Enums"]["instructor_status"]
-                    user_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "instructors_user_id_fkey"
-                        columns: ["user_id"]
-                        isOneToOne: true
-                        referencedRelation: "users"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-            invitations: {
-                Row: {
-                    accepted_at: string | null
-                    created_at: string | null
-                    created_by: string
-                    custom_message: string | null
-                    email: string
-                    expires_at: string
-                    id: string
-                    registration_link: string
-                    role: Database["public"]["Enums"]["user_role"]
-                    status: string
-                }
-                Insert: {
-                    accepted_at?: string | null
-                    created_at?: string | null
-                    created_by: string
-                    custom_message?: string | null
-                    email: string
-                    expires_at: string
-                    id?: string
-                    registration_link: string
-                    role: Database["public"]["Enums"]["user_role"]
-                    status?: string
-                }
-                Update: {
-                    accepted_at?: string | null
-                    created_at?: string | null
-                    created_by?: string
-                    custom_message?: string | null
-                    email?: string
-                    expires_at?: string
-                    id?: string
-                    registration_link?: string
-                    role?: Database["public"]["Enums"]["user_role"]
-                    status?: string
-                }
-                Relationships: []
-            }
-            leaderboard_entries: {
-                Row: {
-                    leaderboard_id: number
-                    student_id: string
-                }
-                Insert: {
-                    leaderboard_id: number
-                    student_id: string
-                }
-                Update: {
-                    leaderboard_id?: number
-                    student_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "leaderboard_entries_leaderboard_id_fkey"
-                        columns: ["leaderboard_id"]
-                        isOneToOne: false
-                        referencedRelation: "leaderboards"
-                        referencedColumns: ["id"]
-                    },
-                    {
-                        foreignKeyName: "leaderboard_entries_student_id_fkey"
-                        columns: ["student_id"]
-                        isOneToOne: false
-                        referencedRelation: "students"
-                        referencedColumns: ["user_id"]
-                    },
-                ]
-            }
-            leaderboards: {
-                Row: {
-                    classroom_id: number | null
-                    created_at: string | null
-                    id: number
-                }
-                Insert: {
-                    classroom_id?: number | null
-                    created_at?: string | null
-                    id?: never
-                }
-                Update: {
-                    classroom_id?: number | null
-                    created_at?: string | null
-                    id?: never
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "leaderboards_classroom_id_fkey"
-                        columns: ["classroom_id"]
-                        isOneToOne: false
-                        referencedRelation: "classrooms"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-            notifications: {
-                Row: {
-                    id: number
-                    message: string
-                    timestamp_sent: string | null
-                    user_id: string
-                }
-                Insert: {
-                    id?: never
-                    message: string
-                    timestamp_sent?: string | null
-                    user_id: string
-                }
-                Update: {
-                    id?: never
-                    message?: string
-                    timestamp_sent?: string | null
-                    user_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "notifications_user_id_fkey"
-                        columns: ["user_id"]
-                        isOneToOne: false
-                        referencedRelation: "users"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-            session_actions: {
-                Row: {
-                    action_type: string
-                    actor: string
-                    created_at: string | null
-                    elapsed_minutes: number | null
-                    id: number
-                    payload: Json | null
-                    penalties: number | null
-                    points_earned: number | null
-                    response: Json | null
-                    session_id: string
-                    target: string | null
-                }
-                Insert: {
-                    action_type: string
-                    actor: string
-                    created_at?: string | null
-                    elapsed_minutes?: number | null
-                    id?: never
-                    payload?: Json | null
-                    penalties?: number | null
-                    points_earned?: number | null
-                    response?: Json | null
-                    session_id: string
-                    target?: string | null
-                }
-                Update: {
-                    action_type?: string
-                    actor?: string
-                    created_at?: string | null
-                    elapsed_minutes?: number | null
-                    id?: never
-                    payload?: Json | null
-                    penalties?: number | null
-                    points_earned?: number | null
-                    response?: Json | null
-                    session_id?: string
-                    target?: string | null
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "session_actions_session_id_fkey"
-                        columns: ["session_id"]
-                        isOneToOne: false
-                        referencedRelation: "case_sessions"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-            session_messages: {
-                Row: {
-                    content: string
-                    created_at: string | null
-                    id: number
-                    metadata: Json | null
-                    role: string
-                    session_id: string
-                }
-                Insert: {
-                    content: string
-                    created_at?: string | null
-                    id?: never
-                    metadata?: Json | null
-                    role: string
-                    session_id: string
-                }
-                Update: {
-                    content?: string
-                    created_at?: string | null
-                    id?: never
-                    metadata?: Json | null
-                    role?: string
-                    session_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "session_messages_session_id_fkey"
-                        columns: ["session_id"]
-                        isOneToOne: false
-                        referencedRelation: "case_sessions"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-            student_cases: {
-                Row: {
-                    case_id: number
-                    completed_at: string | null
-                    started_at: string | null
-                    student_id: string
-                }
-                Insert: {
-                    case_id: number
-                    completed_at?: string | null
-                    started_at?: string | null
-                    student_id: string
-                }
-                Update: {
-                    case_id?: number
-                    completed_at?: string | null
-                    started_at?: string | null
-                    student_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "student_cases_case_id_fkey"
-                        columns: ["case_id"]
-                        isOneToOne: false
-                        referencedRelation: "cases"
-                        referencedColumns: ["id"]
-                    },
-                    {
-                        foreignKeyName: "student_cases_student_id_fkey"
-                        columns: ["student_id"]
-                        isOneToOne: false
-                        referencedRelation: "students"
-                        referencedColumns: ["user_id"]
-                    },
-                ]
-            }
-            students: {
-                Row: {
-                    last_login_date: string | null
-                    login_streak: number | null
-                    msyear: number | null
-                    nickname: string | null
-                    status: Database["public"]["Enums"]["student_status"]
-                    user_id: string
-                }
-                Insert: {
-                    last_login_date?: string | null
-                    login_streak?: number | null
-                    msyear?: number | null
-                    nickname?: string | null
-                    status?: Database["public"]["Enums"]["student_status"]
-                    user_id: string
-                }
-                Update: {
-                    last_login_date?: string | null
-                    login_streak?: number | null
-                    msyear?: number | null
-                    nickname?: string | null
-                    status?: Database["public"]["Enums"]["student_status"]
-                    user_id?: string
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "students_user_id_fkey"
-                        columns: ["user_id"]
-                        isOneToOne: true
-                        referencedRelation: "users"
-                        referencedColumns: ["id"]
-                    },
-                ]
-            }
-            users: {
-                Row: {
-                    created_at: string | null
-                    email: string | null
-                    first_name: string | null
-                    id: string
-                    last_name: string | null
-                    name: string | null
-                    role: Database["public"]["Enums"]["user_role"] | null
-                    school: string | null
-                    token: string | null
-                }
-                Insert: {
-                    created_at?: string | null
-                    email?: string | null
-                    first_name?: string | null
-                    id: string
-                    last_name?: string | null
-                    name?: string | null
-                    role?: Database["public"]["Enums"]["user_role"] | null
-                    school?: string | null
-                    token?: string | null
-                }
-                Update: {
-                    created_at?: string | null
-                    email?: string | null
-                    first_name?: string | null
-                    id?: string
-                    last_name?: string | null
-                    name?: string | null
-                    role?: Database["public"]["Enums"]["user_role"] | null
-                    school?: string | null
-                    token?: string | null
-                }
-                Relationships: []
-            }
+    Views: {
+      leaderboard_view: {
+        Row: {
+          average_score: number | null
+          cases_completed: number | null
+          leaderboard_id: number | null
+          rank: number | null
+          student_id: string | null
         }
-        Views: {
-            leaderboard_view: {
-                Row: {
-                    cases_completed: number | null
-                    leaderboard_id: number | null
-                    rank: number | null
-                    student_id: string | null
-                }
-                Relationships: [
-                    {
-                        foreignKeyName: "leaderboard_entries_leaderboard_id_fkey"
-                        columns: ["leaderboard_id"]
-                        isOneToOne: false
-                        referencedRelation: "leaderboards"
-                        referencedColumns: ["id"]
-                    },
-                    {
-                        foreignKeyName: "leaderboard_entries_student_id_fkey"
-                        columns: ["student_id"]
-                        isOneToOne: false
-                        referencedRelation: "students"
-                        referencedColumns: ["user_id"]
-                    },
-                ]
-            }
-        }
-        Functions: {
-            hook_require_accepted_invite: { Args: { event: Json }; Returns: Json }
-        }
-        Enums: {
-            case_status: "not started" | "in progress" | "completed"
-            classroom_status: "active" | "inactive"
-            instructor_status: "active" | "deactivated"
-            student_status: "registered" | "unregistered"
-            user_role: "ADMIN" | "INSTRUCTOR" | "STUDENT"
-        }
-        CompositeTypes: {
-            [_ in never]: never
-        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_entries_leaderboard_id_fkey"
+            columns: ["leaderboard_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaderboard_entries_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
+    Functions: {
+      expire_old_invitations: { Args: never; Returns: undefined }
+      hook_require_accepted_invite: { Args: { event: Json }; Returns: Json }
+    }
+    Enums: {
+      case_status: "not started" | "in progress" | "completed"
+      classroom_status: "active" | "inactive"
+      instructor_status: "active" | "deactivated"
+      student_status: "registered" | "unregistered"
+      user_role: "ADMIN" | "INSTRUCTOR" | "STUDENT"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">

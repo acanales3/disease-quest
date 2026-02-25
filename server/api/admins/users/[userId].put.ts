@@ -76,6 +76,7 @@ export default defineEventHandler(async (event) => {
     school?: string;
     role?: UserRole;
     status?: string;
+    classroomIds?: string[];
   }>(event);
 
   if (!body || Object.keys(body).length === 0)
@@ -195,6 +196,67 @@ export default defineEventHandler(async (event) => {
       });
     }
   }
+
+  if (effectiveRole === "INSTRUCTOR" && body.classroomIds !== undefined) {
+    // Get instructor record
+    const { data: instructorRow, error: instructorLookupError } = await client
+      .from("instructors")
+      .select("user_id")
+      .eq("user_id", userId)
+      .single();
+
+    if (instructorLookupError || !instructorRow)
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Instructor record not found",
+      });
+
+    // Get currently owned classrooms
+    const { data: currentClassrooms, error: currentError } = await client
+      .from("classrooms")
+      .select("id")
+      .eq("instructor_id", userId); 
+
+    if (currentError)
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Failed to fetch current classrooms",
+      });
+
+    const currentIds = currentClassrooms.map(c => c.id);
+    const newIds = body.classroomIds;
+
+    const toRemove = currentIds.filter(id => !newIds.includes(id));
+    const toAssign = newIds.filter(id => !currentIds.includes(id));
+
+    // Remove instructor from deselected classrooms
+    if (toRemove.length > 0) {
+      const { error: removeError } = await client
+        .from("classrooms")
+        .delete()
+        .in("id", toRemove);
+
+      if (removeError)
+        throw createError({
+          statusCode: 500,
+          statusMessage: "Failed to delete classrooms left without instructors",
+        });
+  }
+
+  // Assign instructor to new classrooms
+  if (toAssign.length > 0) {
+    const { error: assignError } = await client
+      .from("classrooms")
+      .update({ instructor_id: userId })
+      .in("id", toAssign);
+
+    if (assignError)
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Failed assigning instructor to classrooms",
+      });
+  }
+}
 
   const { data: updatedUser, error: fetchError } = (await client
     .from("users")

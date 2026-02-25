@@ -156,6 +156,7 @@ export default defineEventHandler(async (event) => {
     },
     stats: {
       total,
+      completed,
       completedPercent: total === 0 ? 0 : Math.round((completed / total) * 100),
       inProgress,
       notStartedPercent:

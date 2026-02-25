@@ -81,8 +81,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watchEffect } from "vue";
 import type { AnalyticsScoreEntry } from '@/types/analytics'
+import { useRoute } from '#imports'
+
+const route = useRoute()
 
 type Category = { label: string; score: number };
 type Item = { id: number; name: string };
@@ -106,6 +109,20 @@ const classroomsList = computed(() => {
     const map = new Map<number, string>()
     props.data.forEach(d => map.set(d.classroomId, d.classroomName))
     return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a,b) => a.name.localeCompare(b.name))
+})
+
+watchEffect(() => {
+    const classroomIdQuery = route.query.classroomId
+    if (classroomIdQuery) {
+        const id = Number(classroomIdQuery)
+        const nameQuery = route.query.classroomName as string
+        const found = classroomsList.value.find(c => c.id === id)
+        if (found) {
+            selectedClassroom.value = found
+        } else {
+            selectedClassroom.value = { id, name: nameQuery || 'Selected Classroom' }
+        }
+    }
 })
 
 // Compute Aggregated Scores
