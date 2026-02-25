@@ -71,29 +71,20 @@ export default defineEventHandler(async (event) => {
 
   // Parse request body
   const body = await readBody(event);
-  const { name, description, code, section, school, start_date, end_date, status } = body;
+  const { name, code, section, school, start_date, end_date, status } = body;
 
-  // Type-check classroom name and description when provided
-  if (name !== undefined || description !== undefined) {
+  // Type-check classroom name when provided
+  if (name !== undefined) {
     const typeResult = validateClassroomDetailsType({
-      classroomName: name ?? "",
-      classroomDescription: description ?? "",
+      classroomName: name,
+      classroomDescription: "",
     });
-    if (!typeResult.success) {
-      const typeErrors: Record<string, string> = {};
-      if (name !== undefined && typeResult.errors.classroomName) {
-        typeErrors.name = typeResult.errors.classroomName;
-      }
-      if (description !== undefined && typeResult.errors.classroomDescription) {
-        typeErrors.description = typeResult.errors.classroomDescription;
-      }
-      if (Object.keys(typeErrors).length > 0) {
-        throw createError({
-          statusCode: 400,
-          message: "Validation failed.",
-          data: { errors: typeErrors },
-        });
-      }
+    if (!typeResult.success && typeResult.errors.classroomName) {
+      throw createError({
+        statusCode: 400,
+        message: "Validation failed.",
+        data: { errors: { name: typeResult.errors.classroomName } },
+      });
     }
   }
 

@@ -40,13 +40,13 @@ export default defineEventHandler(async (event) => {
 
   // ── Parse & validate body ─────────────────────────────────────────
   const body = await readBody(event);
-  const { name, description, code, section, term, startDate, endDate, instructorId } =
+  const { name, code, section, term, startDate, endDate, instructorId } =
     body || {};
 
-  // ── Type-check classroom name and description ───────────────────
+  // ── Type-check classroom name ───────────────────────────────────
   const typeResult = validateClassroomDetailsType({
     classroomName: name,
-    classroomDescription: description ?? "",
+    classroomDescription: "",
   });
 
   if (!typeResult.success) {

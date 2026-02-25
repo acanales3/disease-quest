@@ -72,23 +72,18 @@ export default defineEventHandler(async (event) => {
 
     // Parse request body
     const body = await readBody(event)
-    const { name, description, code, section, school, start_date, end_date, status } = body
+    const { name, code, section, school, start_date, end_date, status } = body
 
     const errors: Record<string, string> = {}
 
-    // Type-check classroom name and description when provided
-    if (name !== undefined || description !== undefined) {
+    // Type-check classroom name when provided
+    if (name !== undefined) {
         const typeResult = validateClassroomDetailsType({
-            classroomName: name ?? '',
-            classroomDescription: description ?? '',
+            classroomName: name,
+            classroomDescription: '',
         })
-        if (!typeResult.success) {
-            if (name !== undefined && typeResult.errors.classroomName) {
-                errors.name = typeResult.errors.classroomName
-            }
-            if (description !== undefined && typeResult.errors.classroomDescription) {
-                errors.description = typeResult.errors.classroomDescription
-            }
+        if (!typeResult.success && typeResult.errors.classroomName) {
+            errors.name = typeResult.errors.classroomName
         }
     }
 
