@@ -1,124 +1,113 @@
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
+import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
 
 export default defineEventHandler(async (event) => {
-    const user = await serverSupabaseUser(event)
-    const client = await serverSupabaseClient(event)
+  const user = await serverSupabaseUser(event);
+  const client = await serverSupabaseClient(event);
 
-    // @ts-ignore
-    const userId = user.id || user.sub
+  // @ts-ignore
+  const userId = user.id || user.sub;
+  if (!userId) throw createError({ statusCode: 401, message: "Unauthorized" });
 
-    if (!userId) {
+  const id = getRouterParam(event, "id");
+  const body = await readBody(event);
+
+  if (!id)
+    throw createError({ statusCode: 400, message: "Student ID is required" });
+
+  const { data: userProfile, error: profileError } = (await client
+    .from("users")
+    .select("role")
+    .eq("id", userId)
+    .single()) as { data: { role: string } | null; error: any };
+
+  if (profileError || !userProfile)
+    throw createError({
+      statusCode: 403,
+      message: "Forbidden: User profile not found",
+    });
+
+  const role = userProfile.role?.toUpperCase();
+  if (role !== "ADMIN")
+    throw createError({ statusCode: 403, message: "Forbidden: access denied" });
+
+  const { error: userUpdateError } = await (client.from("users") as any)
+    .update({
+      first_name: body.first_name,
+      last_name: body.last_name,
+      email: body.email,
+      school: body.school,
+    })
+    .eq("id", id);
+
+  if (userUpdateError)
+    throw createError({
+      statusCode: 500,
+      message: `Error updating user: ${userUpdateError.message}`,
+    });
+
+  const { error: studentUpdateError } = await (client.from("students") as any)
+    .update({
+      nickname: body.nickname,
+      msyear: body.msyear,
+      status: body.status,
+    })
+    .eq("user_id", id);
+
+  if (studentUpdateError)
+    throw createError({
+      statusCode: 500,
+      message: `Error updating student details: ${studentUpdateError.message}`,
+    });
+
+  if (Array.isArray(body.classrooms)) {
+    const newClassroomIds: number[] = body.classrooms.map((c: any) => Number(c.id));
+
+    // Fetch current classrooms for this student
+    const { data: currentClassrooms, error: currentClassroomsError } = await client
+      .from("classroom_students")
+      .select("classroom_id")
+      .eq("student_id", id);
+
+    if (currentClassroomsError) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: `Failed to fetch current classrooms: ${currentClassroomsError.message}`
+      });
+    }
+
+    const currentIds = (currentClassrooms ?? []).map((c: any) => c.classroom_id);
+
+    // Calculate which classrooms to delete
+    const toDelete = currentIds.filter((cid) => !newClassroomIds.includes(cid));
+    if (toDelete.length > 0) {
+      const { error: deleteError } = await client
+        .from("classroom_students")
+        .delete()
+        .in("classroom_id", toDelete)
+        .eq("student_id", id);
+
+      if (deleteError)
         throw createError({
-            statusCode: 401,
-            message: 'Unauthorized',
-        })
+          statusCode: 500,
+          message: `Error removing student from previous classroom: ${deleteError.message}`,
+        });
     }
 
-    const id = getRouterParam(event, 'id')
-    const body = await readBody(event)
+    // Find which classrooms to insert
+    const toInsert = newClassroomIds.filter((cid) => !currentIds.includes(cid));
+    if (toInsert.length > 0) {
+      const inserts = toInsert.map((cid) => ({ student_id: id, classroom_id: cid}));
+      const { error: insertError } = await (client
+        .from("classroom_students") as any)
+        .insert(inserts);
 
-    if (!id) {
-        throw createError({
-            statusCode: 400,
-            message: 'Student ID is required',
-        })
+    if (insertError)
+      throw createError({
+        statusCode: 500,
+        message: `Failed to add student to classrooms: ${insertError.message}`,
+      });
     }
+  }
 
-    // fetch user profile for role check
-    const { data: userProfile, error: profileError } = await client
-        .from('users')
-        .select('role')
-        .eq('id', userId)
-        .single() as { data: { role: string } | null, error: any }
-
-    if (profileError || !userProfile) {
-        throw createError({
-            statusCode: 403,
-            message: 'Forbidden: User profile not found',
-        })
-    }
-
-    const role = userProfile.role?.toUpperCase()
-    const isAdmin = role === 'ADMIN'
-
-    if (!isAdmin) {
-        throw createError({
-            statusCode: 403,
-            message: 'Forbidden: access denied',
-        })
-    }
-
-    // update users table
-    const { error: userUpdateError } = await client
-        .from('users')
-        // @ts-ignore
-        .update({
-            name: body.name,
-            email: body.email,
-            school: body.school
-        } as any)
-        .eq('id', id)
-
-    if (userUpdateError) {
-        throw createError({
-            statusCode: 500,
-            message: `Error updating user: ${userUpdateError.message}`,
-        })
-    }
-
-    // update students table
-    const { error: studentUpdateError } = await client
-        .from('students')
-        // @ts-ignore
-        .update({
-            nickname: body.nickname,
-            msyear: body.msyear,
-            status: body.status
-        } as any)
-        .eq('user_id', id)
-
-    if (studentUpdateError) {
-        throw createError({
-            statusCode: 500,
-            message: `Error updating student details: ${studentUpdateError.message}`,
-        })
-    }
-
-    // update classroom if provided
-    if (typeof body.classroom !== 'undefined') {
-        const classroomId = Number(body.classroom)
-
-        // First, remove existing classroom associations
-        const { error: deleteError } = await client
-            .from('classroom_students')
-            .delete()
-            .eq('student_id', id)
-
-        if (deleteError) {
-            throw createError({
-                statusCode: 500,
-                message: `Error removing student from previous classroom: ${deleteError.message}`,
-            })
-        }
-
-        // try to add the new association
-        if (classroomId >= 0) {
-            const { error: insertError } = await client
-                .from('classroom_students')
-                // @ts-ignore
-                .insert({
-                    classroom_id: classroomId,
-                    student_id: id
-                } as any)
-
-            if (insertError) {
-                throw createError({
-                    statusCode: 500,
-                    message: `Error assigning student to classroom ${classroomId}: ${insertError.message}`,
-                })
-            }
-        }
-    }
-
-    return { success: true }
-})
+  return { success: true };
+});

@@ -69,27 +69,24 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 500, message: ccErr.message })
     }
 
-    // Flatten + dedupe + remember a classroom for display
-    const byCaseId = new Map<number, any>()
-    for (const r of rows ?? []) {
-      const c = (r as any).cases
-      if (!c) continue
-      const caseId = c.id as number
-      if (!byCaseId.has(caseId)) {
-        byCaseId.set(caseId, {
-          id: c.id,
-          name: c.name,
-          description: c.description,
-          created_at: c.created_at,
-          classroom: (r as any).classroom_id, // for now: classroom id
-        })
-      }
-    }
+    // ⭐ FIX: Flatten WITHOUT deduping — return one row per classroom + case
+    const flatCases = (rows ?? [])
+      .filter((r: any) => r.cases)
+      .map((r: any) => ({
+        id: `${r.case_id}-${r.classroom_id}`, // composite unique id
+        case_id: r.case_id,
+        name: r.cases.name,
+        description: r.cases.description,
+        created_at: r.cases.created_at,
+        classroom: r.classroom_id,
+      }))
 
-    const caseIds = Array.from(byCaseId.keys())
-    if (caseIds.length === 0) return []
+    if (flatCases.length === 0) return []
 
     // 3) progress for this student for those cases
+    // (progress is still tracked per case, not per classroom)
+    const caseIds = [...new Set(flatCases.map(c => c.case_id))]
+
     const { data: progress, error: pErr } = await client
       .from('student_cases')
       .select('case_id, started_at, completed_at')
@@ -109,22 +106,25 @@ export default defineEventHandler(async (event) => {
     }
 
     // 4) shape to match student datatable columns
-    const result = caseIds.map((id) => {
-      const base = byCaseId.get(id)
-      const prog = progressByCase.get(id)
+    const result = flatCases.map((c) => {
+      const prog = progressByCase.get(c.case_id)
 
       let status: 'not started' | 'in progress' | 'completed' = 'not started'
       if (prog?.completed_at) status = 'completed'
       else if (prog?.started_at) status = 'in progress'
 
       return {
-        ...base,
+        ...c,
         status,
         completionDate: prog?.completed_at ?? null,
       }
     })
 
-    result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    result.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+
     return result
   }
 

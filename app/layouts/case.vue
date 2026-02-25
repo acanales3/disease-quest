@@ -38,25 +38,23 @@ const nextRoute = computed(() =>
 </script>
 
 <template>
-  <div class="relative min-h-screen">
-    <div class="relative w-full flex justify-center mt-2">
-      <!-- Stepper -->
+  <div class="flex flex-col min-h-screen">
+    <!-- Stepper header -->
+    <div class="relative w-full flex justify-center py-6 border-b bg-white flex-shrink-0">
       <StepperFlowVisual />
 
-      <!-- Back button -->
-      <div class="absolute left-10 top-1/2 -translate-y-1/2 flex justify-start">
+      <div class="absolute left-10 top-1/2 -translate-y-1/2">
         <BackwardButton :route="previousRoute" />
+      </div>
+
+      <div class="absolute right-10 top-1/2 -translate-y-1/2">
+        <ForwardButton :route="nextRoute" />
       </div>
     </div>
 
     <!-- Main content -->
-    <div class="flex-1 flex justify-center items-center">
+    <div class="flex-1">
       <NuxtPage />
-    </div>
-
-    <!-- Forward button -->
-    <div class="absolute right-6 bottom-6">
-      <ForwardButton :route="nextRoute" />
     </div>
   </div>
 </template>

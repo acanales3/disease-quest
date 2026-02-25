@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Sheet,
   SheetClose,
@@ -14,6 +12,7 @@ import {
 } from '@/components/ui/sheet'
 import type { PropType } from 'vue'
 import CaseTextArea from '@/components/CaseTextArea/text-area.vue'
+import { useCaseSession } from '@/composables/useCaseSession'
 
 const props = defineProps({
   agent: {
@@ -26,6 +25,16 @@ const props = defineProps({
     validator: (value: string) => ['left', 'right', 'top', 'bottom'].includes(value)
   }
 })
+
+const { messages, loading, error, consultTutor } = useCaseSession()
+
+const agentType = props.agent.toLowerCase() === 'mentor' ? 'tutor' : props.agent.toLowerCase()
+
+async function handleSend(message: string) {
+  if (agentType === 'tutor') {
+    await consultTutor(message)
+  }
+}
 </script>
 
 <template>
@@ -35,7 +44,7 @@ const props = defineProps({
        {{ agent }} Agent
       </Button>
     </SheetTrigger>
-    <SheetContent :side=side>
+    <SheetContent :side="side" class="w-[400px] sm:w-[540px]">
       <SheetHeader>
         <SheetTitle>{{ agent }} Agent</SheetTitle>
         <SheetDescription>
@@ -43,11 +52,17 @@ const props = defineProps({
         </SheetDescription>
       </SheetHeader>
       <div class="flex flex-1 gap-6 px-4 py-2">
-        <CaseTextArea />
+        <CaseTextArea
+          :agent-type="agentType as 'patient' | 'tutor' | 'evaluator'"
+          :messages="messages"
+          :loading="loading"
+          :error-msg="error ?? ''"
+          @send="handleSend"
+        />
       </div>
       <SheetFooter>
         <SheetClose as-child>
-          <Button variant="default"> 
+          <Button variant="default">
             Close
           </Button>
         </SheetClose>

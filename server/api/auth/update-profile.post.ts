@@ -29,9 +29,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 401,
       statusMessage: "Unauthorized",
-      data: {
-        message: "User authentication required",
-      },
+      data: { message: "User authentication required" },
     });
   }
 
@@ -48,10 +46,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 400,
       statusMessage: "Bad Request",
-      data: {
-        code: "INVALID_FIRST_NAME",
-        message: firstNameError,
-      },
+      data: { code: "INVALID_FIRST_NAME", message: firstNameError },
     });
   }
 
@@ -60,10 +55,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 400,
       statusMessage: "Bad Request",
-      data: {
-        code: "INVALID_LAST_NAME",
-        message: lastNameError,
-      },
+      data: { code: "INVALID_LAST_NAME", message: lastNameError },
     });
   }
 
@@ -72,7 +64,6 @@ export default defineEventHandler(async (event) => {
     .update({
       first_name: firstName,
       last_name: lastName,
-      name: `${firstName} ${lastName}`.trim(),
     })
     .eq("id", userId);
 
@@ -81,9 +72,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 500,
       statusMessage: "Internal Server Error",
-      data: {
-        message: "Failed to update profile",
-      },
+      data: { message: "Failed to update profile" },
     });
   }
 

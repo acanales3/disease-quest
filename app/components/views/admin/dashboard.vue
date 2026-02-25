@@ -19,7 +19,7 @@
 <script setup>
 import TotalCount from "@/components/ui/TotalCount.vue";
 
-const { data: stats, pending } = await useFetch('/api/admin/stats')
+const { data: stats, pending } = await useFetch('/api/admins/stats')
 
 const user = computed(() => stats.value?.user || { name: 'Admin' })
 const counts = computed(() => stats.value?.counts || {
