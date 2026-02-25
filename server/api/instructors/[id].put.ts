@@ -1,4 +1,4 @@
-import { serverSupabaseClient } from "#supabase/server";
+import { serverSupabaseClient, serverSupabaseServiceRole } from "#supabase/server";
 import { Database, TablesUpdate } from "@/assets/types/supabase";
 import { logNotification } from "../../utils/notifications";
 
@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const supabase = await serverSupabaseClient<Database>(event);
+  const serviceClient = await serverSupabaseServiceRole(event);
 
   const {
     data: { user },
@@ -100,8 +101,10 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const notifErr = await logNotification(supabase, {
+  const notifErr = await logNotification(serviceClient, {
     recipientUserId: user.id,
+    actorUserId: user.id,
+    type: isAdmin ? "admin.instructor.updated" : "instructor.profile.updated",
     message: `${
       isAdmin ? "Admin" : "Instructor"
     } updated instructor profile: ${instructorId}.`,

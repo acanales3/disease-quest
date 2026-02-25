@@ -200,6 +200,15 @@ Deno.serve(async (req) => {
 
     const { error: notifErr } = await admin.from("notifications").insert({
       user_id: inviterId,
+      actor_user_id: inviterId,
+      type:
+        inviterRole === "INSTRUCTOR"
+          ? "instructor.student.invited"
+          : role === "INSTRUCTOR"
+            ? "admin.instructor.invited"
+            : role === "STUDENT"
+              ? "admin.student.invited"
+              : "admin.admin.invited",
       message: `${inviterRole} sent ${role.toLowerCase()} invitation to ${email}.`,
     });
     if (notifErr) {

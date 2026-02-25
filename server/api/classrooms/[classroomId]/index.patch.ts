@@ -1,9 +1,14 @@
-import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
+import {
+  serverSupabaseUser,
+  serverSupabaseClient,
+  serverSupabaseServiceRole,
+} from "#supabase/server";
 import { logNotification } from "../../../utils/notifications";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
   const client = await serverSupabaseClient(event);
+  const serviceClient = await serverSupabaseServiceRole(event);
   const classroomId = event.context.params?.classroomId;
 
   // @ts-ignore
@@ -213,8 +218,13 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const notifErr = await logNotification(client, {
+  const notifErr = await logNotification(serviceClient, {
     recipientUserId: userId,
+    actorUserId: userId,
+    type:
+      role === "ADMIN"
+        ? "admin.classroom.updated"
+        : "instructor.classroom.updated",
     message: `${role === "ADMIN" ? "Admin" : "Instructor"} updated classroom ${updatedClassroom.id} (${updatedClassroom.name}).`,
   });
   if (notifErr) {

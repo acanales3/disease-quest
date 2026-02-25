@@ -179,6 +179,8 @@ export default defineEventHandler(async (event) => {
 
   const notifErr = await logNotification(adminClient, {
     recipientUserId: actorUserId,
+    actorUserId,
+    type: "admin.instructor.deleted",
     message,
   });
   if (notifErr) {
