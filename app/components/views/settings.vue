@@ -81,6 +81,84 @@
             </div>
         </div>
 
+        <!-- Nickname Section (students only) -->
+        <div v-if="isStudent" class="mb-8">
+            <h2 class="text-xl font-semibold mb-4 pb-2 border-b">
+                Nickname
+            </h2>
+            <p class="text-sm text-muted-foreground mb-4">
+                Your nickname is shown on leaderboards to keep your identity
+                confidential. Type your own or generate a random one.
+            </p>
+            <div class="grid gap-6 py-4">
+                <div class="grid grid-cols-4 items-center gap-4">
+                    <Label class="text-right">Current Nickname</Label>
+                    <div class="col-span-3">
+                        <span
+                            class="text-lg font-medium text-purple-700 bg-purple-50 px-4 py-2 rounded-md inline-block"
+                        >
+                            {{ currentNickname || "Not assigned" }}
+                        </span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 items-center gap-4">
+                    <Label for="nicknameInput" class="text-right"
+                        >New Nickname</Label
+                    >
+                    <div class="col-span-3 flex items-center gap-2">
+                        <Input
+                            id="nicknameInput"
+                            v-model="nicknameInput"
+                            maxlength="30"
+                            placeholder="Enter a custom nickname"
+                            class="flex-1"
+                        />
+                        <Button
+                            :disabled="isSavingNickname || !canSaveNickname"
+                            @click="saveCustomNickname"
+                        >
+                            {{ isSavingNickname ? "Saving..." : "Save" }}
+                        </Button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-4 items-start gap-4 -mt-4">
+                    <div />
+                    <p class="col-span-3 text-sm text-muted-foreground">
+                        2 to 30 characters. Must be unique.
+                    </p>
+                </div>
+                <div
+                    v-if="nicknameStatus"
+                    class="grid grid-cols-4 items-start gap-4 -mt-2"
+                >
+                    <div />
+                    <p
+                        :class="
+                            nicknameStatus.type === 'success'
+                                ? 'text-green-600'
+                                : 'text-destructive'
+                        "
+                        class="col-span-3 text-sm"
+                    >
+                        {{ nicknameStatus.message }}
+                    </p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 pt-2 border-t">
+                <Button
+                    variant="outline"
+                    :disabled="isRegeneratingNickname"
+                    @click="regenerateNickname"
+                >
+                    {{
+                        isRegeneratingNickname
+                            ? "Generating..."
+                            : "Generate Random Nickname"
+                    }}
+                </Button>
+            </div>
+        </div>
+
         <!-- Security Section -->
         <div class="mb-8">
             <h2 class="text-xl font-semibold mb-4 pb-2 border-b">Security</h2>
@@ -195,6 +273,20 @@ const form = ref({
 const originalNames = ref({
     firstName: "",
     lastName: "",
+});
+
+const isStudent = ref(false);
+const currentNickname = ref("");
+const nicknameInput = ref("");
+const isRegeneratingNickname = ref(false);
+const isSavingNickname = ref(false);
+const nicknameStatus = ref<null | { type: "success" | "error"; message: string }>(
+    null,
+);
+
+const canSaveNickname = computed(() => {
+    const trimmed = nicknameInput.value.trim();
+    return trimmed.length >= 2 && trimmed.length <= 30;
 });
 
 const showConfirmDialog = ref(false);
@@ -430,10 +522,83 @@ watch(
     },
 );
 
+const saveCustomNickname = async () => {
+    const trimmed = nicknameInput.value.trim();
+    if (trimmed.length < 2 || trimmed.length > 30) return;
+
+    isSavingNickname.value = true;
+    nicknameStatus.value = null;
+    try {
+        const result = await $fetch<{ nickname: string }>(
+            "/api/students/nickname",
+            { method: "POST", body: { nickname: trimmed } },
+        );
+        currentNickname.value = result.nickname;
+        nicknameInput.value = "";
+        nicknameStatus.value = {
+            type: "success",
+            message: "Nickname updated successfully.",
+        };
+    } catch (error: any) {
+        nicknameStatus.value = {
+            type: "error",
+            message:
+                error?.data?.statusMessage ||
+                error?.message ||
+                "Failed to save nickname.",
+        };
+    } finally {
+        isSavingNickname.value = false;
+    }
+};
+
+const regenerateNickname = async () => {
+    isRegeneratingNickname.value = true;
+    nicknameStatus.value = null;
+    try {
+        const result = await $fetch<{ nickname: string }>(
+            "/api/students/nickname",
+            { method: "POST" },
+        );
+        currentNickname.value = result.nickname;
+        nicknameInput.value = "";
+        nicknameStatus.value = {
+            type: "success",
+            message: "Nickname updated successfully.",
+        };
+    } catch (error: any) {
+        nicknameStatus.value = {
+            type: "error",
+            message:
+                error?.data?.statusMessage ||
+                error?.message ||
+                "Failed to generate new nickname.",
+        };
+    } finally {
+        isRegeneratingNickname.value = false;
+    }
+};
+
+const fetchNickname = async () => {
+    try {
+        const result = await $fetch<{ nickname: string | null }>(
+            "/api/students/nickname",
+        );
+        currentNickname.value = result.nickname ?? "";
+    } catch {
+        // Student record may not exist yet
+    }
+};
+
 const loadCurrentUserName = async () => {
     try {
         const profile = await fetchCustomUser();
         if (!profile) return;
+
+        if (profile.role === "STUDENT") {
+            isStudent.value = true;
+            fetchNickname();
+        }
 
         const first = (profile.first_name ?? "").trim();
         const last = (profile.last_name ?? "").trim();
