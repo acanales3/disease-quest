@@ -121,6 +121,10 @@
     @apply bg-background text-foreground;
   }
 
+  html {
+    background-color: #f3f4f6;
+  }
+
   :root {
     --vis-tooltip-background-color: none !important;
     --vis-tooltip-border-color: none !important;
