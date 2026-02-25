@@ -135,9 +135,11 @@ async function getData(): Promise<Classroom[]> {
 async function fetchCurrentUser() {
   const profile = await fetchCustomUser();
   if (profile) {
+    const firstName = profile.first_name ?? "";
+    const lastName = profile.last_name ?? "";
     currentUser.value = {
       id: profile.id ?? "",
-      name: profile.name ?? "",
+      name: `${firstName} ${lastName}`.trim(),
     };
   }
 }
