@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     .from("case_sessions")
     .select("*")
     .eq("id", sessionId)
-    .eq("student_id", userId)
+    .eq("user_id", userId)
     .single();
 
   if (error || !session) {
@@ -39,7 +39,8 @@ export default defineEventHandler(async (event) => {
     .single();
 
   const content = caseRow?.content as Record<string, unknown> | null;
-  const physiology = ((session.patient_state ?? {}) as Record<string, unknown>).physiology as Record<string, unknown> | undefined;
+  const physiology = ((session.patient_state ?? {}) as Record<string, unknown>)
+    .physiology as Record<string, unknown> | undefined;
   const vitals = (physiology?.vitals ?? {}) as Record<string, unknown>;
 
   // Mask diagnosis from title during simulation
