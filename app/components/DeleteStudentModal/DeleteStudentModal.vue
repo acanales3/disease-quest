@@ -44,14 +44,23 @@ watch(
       selectedClassroomIds.value = [];
       emit("reset");
     }
-  }
+  },
 );
 
 const enrolledClassrooms = computed(() => {
-  if (props.mode !== "unenroll" || !props.student?.classrooms || !props.availableClassrooms) {
+  if (
+    props.mode !== "unenroll" ||
+    !props.student?.classrooms ||
+    !props.availableClassrooms
+  ) {
     return [];
   }
-  const enrolledIds = new Set(props.student.classrooms);
+  // classrooms on the student may be { id, name } objects or raw numbers — extract the id either way
+  const enrolledIds = new Set(
+    props.student.classrooms.map((c: any) =>
+      typeof c === "object" ? c.id : c,
+    ),
+  );
   return props.availableClassrooms.filter((c) => enrolledIds.has(c.id));
 });
 
@@ -68,9 +77,12 @@ function isClassroomSelected(classroomId: number): boolean {
   return selectedClassroomIds.value.includes(classroomId);
 }
 
-const requiredToken = computed(() => (props.mode === "unenroll" ? "REMOVE" : "DELETE"));
+const requiredToken = computed(() =>
+  props.mode === "unenroll" ? "REMOVE" : "DELETE",
+);
 const canConfirm = computed(() => {
-  const tokenMatch = confirmation.value.trim().toUpperCase() === requiredToken.value;
+  const tokenMatch =
+    confirmation.value.trim().toUpperCase() === requiredToken.value;
   if (props.mode === "unenroll") {
     return tokenMatch && selectedClassroomIds.value.length > 0;
   }
@@ -78,17 +90,21 @@ const canConfirm = computed(() => {
 });
 const isBusy = computed(() => props.state.status === "loading");
 const modalTitle = computed(() =>
-  props.mode === "unenroll" ? "Remove Student from Classroom" : "Delete Student"
+  props.mode === "unenroll"
+    ? "Remove Student from Classroom"
+    : "Delete Student",
 );
 const modalDescription = computed(() =>
   props.mode === "unenroll"
     ? "Select the classroom(s) to remove the student from. Their account and profile will be kept."
-    : "This will permanently delete the student account and related student data. This action cannot be undone."
+    : "This will permanently delete the student account and related student data. This action cannot be undone.",
 );
 const confirmActionLabel = computed(() =>
-  props.mode === "unenroll" ? "Remove Student" : "Delete Student"
+  props.mode === "unenroll" ? "Remove Student" : "Delete Student",
 );
-const loadingLabel = computed(() => (props.mode === "unenroll" ? "Removing..." : "Deleting..."));
+const loadingLabel = computed(() =>
+  props.mode === "unenroll" ? "Removing..." : "Deleting...",
+);
 
 function onCancel() {
   emit("update:open", false);
@@ -108,7 +124,9 @@ function onConfirm() {
   <Dialog :open="open" @update:open="(value) => emit('update:open', value)">
     <DialogContent class="max-w-lg">
       <DialogHeader class="text-center">
-        <DialogTitle class="text-red-600 text-center">{{ modalTitle }}</DialogTitle>
+        <DialogTitle class="text-red-600 text-center">{{
+          modalTitle
+        }}</DialogTitle>
         <DialogDescription class="text-left">
           {{ modalDescription }}
         </DialogDescription>
@@ -118,16 +136,23 @@ function onConfirm() {
         <div class="bg-gray-50 rounded-lg p-4 space-y-2">
           <div class="flex justify-between gap-4">
             <span class="text-sm text-gray-500">Name:</span>
-            <span class="text-sm font-medium text-right">{{ student.name }}</span>
+            <span class="text-sm font-medium text-right">{{
+              student.name
+            }}</span>
           </div>
           <div class="flex justify-between gap-4">
             <span class="text-sm text-gray-500">Email:</span>
-            <span class="text-sm font-medium text-right">{{ student.email }}</span>
+            <span class="text-sm font-medium text-right">{{
+              student.email
+            }}</span>
           </div>
         </div>
 
         <!-- Classroom selection for unenroll mode -->
-        <div v-if="mode === 'unenroll' && enrolledClassrooms.length > 0" class="mt-4 space-y-2">
+        <div
+          v-if="mode === 'unenroll' && enrolledClassrooms.length > 0"
+          class="mt-4 space-y-2"
+        >
           <p class="text-sm font-medium text-gray-700">
             Select classroom(s) to remove from:
           </p>
@@ -136,7 +161,9 @@ function onConfirm() {
               v-for="classroom in enrolledClassrooms"
               :key="classroom.id"
               class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-100 transition-colors"
-              :class="{ 'bg-red-50 hover:bg-red-100': isClassroomSelected(classroom.id) }"
+              :class="{
+                'bg-red-50 hover:bg-red-100': isClassroomSelected(classroom.id),
+              }"
             >
               <input
                 type="checkbox"
@@ -146,28 +173,46 @@ function onConfirm() {
                 @change="toggleClassroom(classroom.id)"
               />
               <div class="flex flex-col">
-                <span class="text-sm font-medium text-gray-800">{{ classroom.name }}</span>
-                <span class="text-xs text-gray-500">{{ classroom.code }} &middot; {{ classroom.section }}</span>
+                <span class="text-sm font-medium text-gray-800">{{
+                  classroom.name
+                }}</span>
+                <span class="text-xs text-gray-500"
+                  >{{ classroom.code }} &middot; {{ classroom.section }}</span
+                >
               </div>
             </label>
           </div>
-          <p v-if="selectedClassroomIds.length === 0" class="text-xs text-amber-600">
+          <p
+            v-if="selectedClassroomIds.length === 0"
+            class="text-xs text-amber-600"
+          >
             Please select at least one classroom.
           </p>
           <p v-else class="text-xs text-gray-500">
-            {{ selectedClassroomIds.length }} classroom{{ selectedClassroomIds.length > 1 ? 's' : '' }} selected
+            {{ selectedClassroomIds.length }} classroom{{
+              selectedClassroomIds.length > 1 ? "s" : ""
+            }}
+            selected
           </p>
         </div>
 
-        <div v-if="mode === 'unenroll' && enrolledClassrooms.length === 0" class="mt-4">
+        <div
+          v-if="mode === 'unenroll' && enrolledClassrooms.length === 0"
+          class="mt-4"
+        >
           <p class="text-sm text-amber-600">
-            This student is not enrolled in any classrooms{{ availableClassrooms && availableClassrooms.length > 0 ? ' you have access to' : '' }}.
+            This student is not enrolled in any classrooms{{
+              availableClassrooms && availableClassrooms.length > 0
+                ? " you have access to"
+                : ""
+            }}.
           </p>
         </div>
 
         <div class="mt-4 space-y-2">
           <p class="text-sm text-gray-600">
-            Type <span class="font-semibold">{{ requiredToken }}</span> to confirm.
+            Type <span class="font-semibold">{{ requiredToken }}</span> to
+            confirm.
           </p>
           <Input
             v-model="confirmation"
@@ -180,7 +225,10 @@ function onConfirm() {
         <div v-if="state.status === 'error'" class="mt-3 text-sm text-red-600">
           {{ state.message }}
         </div>
-        <div v-else-if="state.status === 'success'" class="mt-3 text-sm text-green-700">
+        <div
+          v-else-if="state.status === 'success'"
+          class="mt-3 text-sm text-green-700"
+        >
           {{ state.message }}
         </div>
       </div>
@@ -200,4 +248,3 @@ function onConfirm() {
     </DialogContent>
   </Dialog>
 </template>
-
