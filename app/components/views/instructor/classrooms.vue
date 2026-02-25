@@ -34,7 +34,11 @@
     </div>
 
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" user-role="instructor" />
+      <DataTable
+        :columns="visibleColumns"
+        :data="data"
+        user-role="instructor"
+      />
     </div>
 
     <CreateClassroomModal
@@ -137,7 +141,9 @@ async function fetchCurrentUser() {
   if (profile) {
     currentUser.value = {
       id: profile.id ?? "",
-      name: profile.name ?? "",
+      // Concatenate first_name and last_name since the User interface
+      // has no guaranteed `name` field
+      name: [profile.first_name, profile.last_name].filter(Boolean).join(" "),
     };
   }
 }
