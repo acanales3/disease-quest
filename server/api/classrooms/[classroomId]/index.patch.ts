@@ -1,4 +1,5 @@
 import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
+import { logNotification } from "../../../utils/notifications";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -210,6 +211,14 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       message: "Failed to update classroom",
     });
+  }
+
+  const notifErr = await logNotification(client, {
+    recipientUserId: userId,
+    message: `${role === "ADMIN" ? "Admin" : "Instructor"} updated classroom ${updatedClassroom.id} (${updatedClassroom.name}).`,
+  });
+  if (notifErr) {
+    console.warn("Classroom update notification log failed:", notifErr.message);
   }
 
   return {

@@ -1,6 +1,7 @@
 import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
 import { randomBytes } from "node:crypto";
 import { Database } from "@/assets/types/supabase";
+import { logNotification } from "../../utils/notifications";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -134,6 +135,18 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       message: insertError?.message || "Failed to create classroom.",
     });
+  }
+
+  const notifMessage =
+    role === "ADMIN"
+      ? `Admin created classroom ${classroom.name} (${classroom.code}-${classroom.section}) for instructor ${resolvedInstructorId}.`
+      : `Instructor created classroom ${classroom.name} (${classroom.code}-${classroom.section}).`;
+  const notifErr = await logNotification(client, {
+    recipientUserId: userId,
+    message: notifMessage,
+  });
+  if (notifErr) {
+    console.warn("Classroom create notification log failed:", notifErr.message);
   }
 
   return {

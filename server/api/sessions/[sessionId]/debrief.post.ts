@@ -1,7 +1,6 @@
 /**
  * POST /api/sessions/:sessionId/debrief
  * Chat with the evaluator agent about your performance.
- * Sends the full session context + evaluation + student question.
  *
  * Body: { question: string, evaluationData?: Record<string, unknown> }
  */
@@ -30,15 +29,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "question is required" });
   }
 
-  // Load session
-  const { data: session } = (await client
+  // Load session — column is user_id after migration
+  const { data: session, error: sessionErr } = (await client
     .from("case_sessions")
     .select("*")
     .eq("id", sessionId)
-    .eq("student_id", userId)
-    .single()) as { data: Record<string, unknown> | null; error: unknown };
+    .eq("user_id", userId)
+    .single()) as { data: Record<string, unknown> | null; error: any };
 
-  if (!session) {
+  if (sessionErr || !session) {
     throw createError({ statusCode: 404, message: "Session not found" });
   }
 
@@ -47,7 +46,9 @@ export default defineEventHandler(async (event) => {
     .from("cases")
     .select("name, content")
     .eq("id", session.case_id as number)
-    .single()) as { data: { name: string; content: Record<string, unknown> } | null; error: unknown };
+    .single()) as {
+    data: { name: string; content: Record<string, unknown> } | null;
+  };
 
   // Load full conversation history
   const { data: messages } = await client
@@ -71,9 +72,11 @@ export default defineEventHandler(async (event) => {
     .in("role", ["student", "evaluator"])
     .order("created_at", { ascending: true });
 
-  // Build context summary
   const actionSummary = (actions ?? [])
-    .map((a: Record<string, unknown>) => `[${a.elapsed_minutes}min] ${a.actor} ${a.action_type} → ${a.target ?? ""}`)
+    .map(
+      (a: Record<string, unknown>) =>
+        `[${a.elapsed_minutes}min] ${a.actor} ${a.action_type} → ${a.target ?? ""}`,
+    )
     .join("\n");
 
   const evalSummary = evaluationData
@@ -82,22 +85,30 @@ export default defineEventHandler(async (event) => {
 
   const conversationSummary = (messages ?? [])
     .slice(-20)
-    .map((m: Record<string, unknown>) => `${(m.role as string).toUpperCase()}: ${(m.content as string).slice(0, 200)}`)
+    .map(
+      (m: Record<string, unknown>) =>
+        `${(m.role as string).toUpperCase()}: ${(m.content as string).slice(0, 200)}`,
+    )
     .join("\n");
 
   const priorDebrief = (debriefMessages ?? [])
-    .filter((m: Record<string, unknown>) => (m.content as string).includes("[Debrief]") || m.role === "evaluator")
+    .filter(
+      (m: Record<string, unknown>) =>
+        (m.content as string).includes("[Debrief]") || m.role === "evaluator",
+    )
     .slice(-10)
-    .map((m: Record<string, unknown>) => `${m.role === "student" ? "Student" : "Evaluator"}: ${(m.content as string).replace("[Debrief] ", "")}`)
+    .map(
+      (m: Record<string, unknown>) =>
+        `${m.role === "student" ? "Student" : "Evaluator"}: ${(m.content as string).replace("[Debrief] ", "")}`,
+    )
     .join("\n");
 
-  // Build the system prompt
-  const systemPrompt = `You are a supportive medical education evaluator having a debrief conversation with a student who just completed a clinical simulation.
+  const systemPrompt = `You are a supportive medical education evaluator having a debrief conversation with a user who just completed a clinical simulation.
 
 CASE: ${caseRow?.name ?? "Unknown"}
 CORRECT DIAGNOSIS: ${caseRow?.content?.correct_diagnosis ?? "Unknown"}
 
-WHAT THE STUDENT DID (action log):
+WHAT THE USER DID (action log):
 ${actionSummary || "No actions recorded"}
 
 CONVERSATION WITH PATIENT (last 20 messages):
@@ -109,7 +120,7 @@ ${evalSummary}
 ${priorDebrief ? `PRIOR DEBRIEF CONVERSATION:\n${priorDebrief}` : ""}
 
 YOUR ROLE:
-- Help the student understand their evaluation
+- Help the user understand their evaluation
 - Explain what they did well and why
 - Explain what they missed and why it matters clinically
 - If they ask "what should I have done?", give specific, actionable advice
@@ -121,13 +132,7 @@ YOUR ROLE:
 
 TONE: Warm, constructive, educational. Like a supportive attending doing a post-case debrief.`;
 
-  // Call OpenAI
-  const supabaseUrl = process.env.SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SERVICE_KEY || "";
-
   const openaiKey = process.env.OPENAI_API_KEY;
-
-  // If we have the key directly, call OpenAI; otherwise proxy through edge function
   let responseText = "";
 
   if (openaiKey) {
@@ -153,16 +158,19 @@ TONE: Warm, constructive, educational. Like a supportive attending doing a post-
     }
 
     const data = await res.json();
-    responseText = data.choices?.[0]?.message?.content ?? "I couldn't generate a response.";
+    responseText =
+      data.choices?.[0]?.message?.content ?? "I couldn't generate a response.";
   } else {
-    // Fallback: call through Supabase edge function
-    // This is a simplified fallback — in production you'd want a dedicated debrief edge function
-    responseText = "Debrief chat requires OPENAI_API_KEY to be set in the Nuxt server environment.";
+    responseText =
+      "Debrief chat requires OPENAI_API_KEY to be set in the Nuxt server environment.";
   }
 
-  // Save messages to DB
   await (client.from("session_messages") as any).insert([
-    { session_id: sessionId, role: "student", content: `[Debrief] ${question}` },
+    {
+      session_id: sessionId,
+      role: "student",
+      content: `[Debrief] ${question}`,
+    },
     { session_id: sessionId, role: "evaluator", content: responseText },
   ]);
 

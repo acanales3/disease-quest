@@ -1,7 +1,5 @@
-import {
-  serverSupabaseUser,
-  serverSupabaseServiceRole,
-} from "#supabase/server";
+import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
+import { logNotification } from "../../utils/notifications";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -34,8 +32,16 @@ export default defineEventHandler(async (event) => {
   if (!isAdmin && !isInstructor)
     throw createError({ statusCode: 403, message: "Forbidden: access denied" });
 
-  const query = getQuery(event);
-  const classroomIdsParam = query.classroomIds as string | undefined;
+  let classroomActionMessage = "";
+
+  const { error: userUpdateError } = await (client.from("users") as any)
+    .update({
+      first_name: body.first_name,
+      last_name: body.last_name,
+      email: body.email,
+      school: body.school,
+    })
+    .eq("id", id);
 
   if (classroomIdsParam) {
     // --- UNENROLL: remove student from specific classrooms, keep account intact ---
@@ -89,7 +95,30 @@ export default defineEventHandler(async (event) => {
         message: `Failed to remove student from classroom(s): ${removeError.message}`,
       });
 
-    return { success: true, action: "unenrolled" };
+    if (classroomId > 0) {
+      const { error: insertError } = await (
+        client.from("classroom_students") as any
+      ).insert({ classroom_id: classroomId, student_id: id });
+
+      if (insertError)
+        throw createError({
+          statusCode: 500,
+          message: `Error assigning student to classroom ${classroomId}: ${insertError.message}`,
+        });
+    }
+
+    classroomActionMessage =
+      classroomId > 0
+        ? ` Assigned to classroom ${classroomId}.`
+        : " Removed from classroom assignment.";
+  }
+
+  const notifErr = await logNotification(client, {
+    recipientUserId: userId,
+    message: `Admin processed student delete action for: ${id}.${classroomActionMessage}`,
+  });
+  if (notifErr) {
+    console.warn("Student delete notification log failed:", notifErr.message);
   }
 
   // --- FULL DELETE: admin only ---

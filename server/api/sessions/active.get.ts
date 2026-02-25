@@ -19,18 +19,29 @@ export default defineEventHandler(async (event) => {
   const caseId = query.caseId;
 
   if (!caseId) {
-    throw createError({ statusCode: 400, message: "caseId query param is required" });
+    throw createError({
+      statusCode: 400,
+      message: "caseId query param is required",
+    });
   }
 
   const { data, error } = (await client
     .from("case_sessions")
     .select("id, status, phase, elapsed_minutes, created_at")
-    .eq("student_id", userId)
+    .eq("user_id", userId)
     .eq("case_id", parseInt(caseId as string))
     .in("status", ["created", "in_progress"])
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()) as { data: { id: string; status: string; phase: string; elapsed_minutes: number } | null; error: any };
+    .single()) as {
+    data: {
+      id: string;
+      status: string;
+      phase: string;
+      elapsed_minutes: number;
+    } | null;
+    error: any;
+  };
 
   if (error || !data) {
     return { sessionId: null };

@@ -24,9 +24,9 @@ export default defineEventHandler(async (event) => {
   // Verify ownership
   const { data: session } = (await client
     .from("case_sessions")
-    .select("id, student_id")
+    .select("id, user_id")
     .eq("id", sessionId)
-    .eq("student_id", userId)
+    .eq("user_id", userId)
     .single()) as { data: { id: string } | null; error: unknown };
 
   if (!session) {
@@ -42,7 +42,11 @@ export default defineEventHandler(async (event) => {
 
   // Build restore data
   const orderedTests: string[] = [];
-  const testResults: Array<{ testId: string; testName: string; data: Record<string, unknown> }> = [];
+  const testResults: Array<{
+    testId: string;
+    testName: string;
+    data: Record<string, unknown>;
+  }> = [];
   const treatments: string[] = [];
   let examFindings: Record<string, unknown> | null = null;
 
@@ -55,7 +59,12 @@ export default defineEventHandler(async (event) => {
       orderedTests.push(target);
     }
 
-    if (actionType === "interpret" && target && response.status === "complete" && response.results) {
+    if (
+      actionType === "interpret" &&
+      target &&
+      response.status === "complete" &&
+      response.results
+    ) {
       const d = { ...(response.results as Record<string, unknown>) };
       delete d.interpretation;
       delete d.wbc_value;
