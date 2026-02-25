@@ -3,6 +3,7 @@ import {
     serverSupabaseClient,
     serverSupabaseServiceRole,
 } from '#supabase/server'
+import { logNotification } from '../../utils/notifications'
 
 const PASSWORD_REQUIREMENTS = {
     minLength: 8,
@@ -203,6 +204,14 @@ export default defineEventHandler(async (event) => {
             }
         } catch (error: any) {
             console.warn('Error invalidating sessions:', error)
+        }
+
+        const notifErr = await logNotification(adminClient, {
+            recipientUserId: userId,
+            message: 'Password reset complete. Password updated successfully.',
+        })
+        if (notifErr) {
+            console.warn('Password reset notification log failed:', notifErr.message)
         }
 
         setResponseStatus(event, 200)

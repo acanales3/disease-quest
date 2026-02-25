@@ -3,6 +3,7 @@ import {
   serverSupabaseServiceRole,
   serverSupabaseUser,
 } from "#supabase/server";
+import { logNotification } from "../../utils/notifications";
 
 export default defineEventHandler(async (event) => {
   // 1) Authenticate actor
@@ -115,14 +116,13 @@ export default defineEventHandler(async (event) => {
   // 6) Best-effort audit log — do NOT throw if this fails, deletion already succeeded
   const message = `Admin permanently deleted: ${displayName}.`;
 
-  await client
-    .from("notifications")
-    .insert([{ user_id: actorUserId, message }])
-    .then(({ error }) => {
-      if (error) {
-        console.warn("Audit log failed (non-fatal):", error.message);
-      }
-    });
+  const notifErr = await logNotification(client, {
+    recipientUserId: actorUserId,
+    message,
+  });
+  if (notifErr) {
+    console.warn("Audit log failed (non-fatal):", notifErr.message);
+  }
 
   return {
     ok: true,

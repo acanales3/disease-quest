@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 type EvaluationRow = {
   id: number;
-  student_id: string;
+  user_id: string;
   case_id: number;
   reflection_document: string | null;
   history_taking_synthesis: number | null;
@@ -73,7 +73,7 @@ export default defineEventHandler(async (event) => {
 
   const selectEval = `
     id,
-    student_id,
+    user_id,
     case_id,
     reflection_document,
     history_taking_synthesis,
@@ -89,7 +89,7 @@ export default defineEventHandler(async (event) => {
   const strictRes = (await authedClient
     .from("evaluations")
     .select(selectEval)
-    .eq("student_id", userId)
+    .eq("user_id", userId)
     .eq("case_id", caseId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -164,7 +164,7 @@ export default defineEventHandler(async (event) => {
     const userRes = (await service
       .from("users")
       .select("id, first_name, last_name")
-      .eq("id", evaluation.student_id)
+      .eq("id", evaluation.user_id)
       .maybeSingle()) as { data: UsersRow | null; error: any };
 
     if (!userRes.error && userRes.data) {
@@ -185,7 +185,7 @@ export default defineEventHandler(async (event) => {
 
   return {
     id: evaluation.id,
-    studentId: evaluation.student_id,
+    studentId: evaluation.user_id,
     caseId: evaluation.case_id,
     caseTitle,
     createdAt: evaluation.created_at,

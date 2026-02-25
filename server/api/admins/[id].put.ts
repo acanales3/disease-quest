@@ -4,6 +4,7 @@ import {
   serverSupabaseUser,
 } from "#supabase/server";
 import type { TablesUpdate } from "@/assets/types/supabase";
+import { logNotification } from "../../utils/notifications";
 
 type UserUpdate = TablesUpdate<"users">;
 
@@ -138,6 +139,18 @@ export default defineEventHandler(async (event) => {
       statusCode: 500,
       statusMessage: "Admin updated but failed to fetch updated record",
     });
+  }
+
+  const displayName =
+    [updatedUser.first_name, updatedUser.last_name].filter(Boolean).join(" ") ||
+    updatedUser.email ||
+    targetId;
+  const notifErr = await logNotification(client, {
+    recipientUserId: actorUserId,
+    message: `Admin profile updated: ${displayName}.`,
+  });
+  if (notifErr) {
+    console.warn("Admin update notification log failed:", notifErr.message);
   }
 
   return {

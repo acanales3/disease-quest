@@ -198,6 +198,14 @@ Deno.serve(async (req) => {
       html,
     });
 
+    const { error: notifErr } = await admin.from("notifications").insert({
+      user_id: inviterId,
+      message: `${inviterRole} sent ${role.toLowerCase()} invitation to ${email}.`,
+    });
+    if (notifErr) {
+      console.warn("Invite notification log failed:", notifErr.message);
+    }
+
     results.push({ email, ok: true });
   }
 

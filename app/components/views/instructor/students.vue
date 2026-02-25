@@ -2,16 +2,22 @@
   <div class="flex flex-col w-full">
     <!-- Student Count & Student Invite -->
     <div class="flex justify-center gap-4">
-      <TotalCount icon="hugeicons:students" :count="data.length" label="Total Students" />
+      <TotalCount
+        icon="hugeicons:students"
+        :count="data.length"
+        label="Total Students"
+      />
       <InviteDialog dialog-type="student" />
     </div>
 
     <div v-if="pageMessage" class="w-full py-2">
       <div
         class="rounded-md border px-4 py-3 text-sm"
-        :class="pageMessage.type === 'success'
-          ? 'border-green-200 bg-green-50 text-green-800'
-          : 'border-red-200 bg-red-50 text-red-700'"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
       >
         {{ pageMessage.text }}
       </div>
@@ -19,7 +25,11 @@
 
     <!-- Student Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="data" :classrooms="classrooms" />
+      <DataTable
+        :columns="visibleColumns"
+        :data="data"
+        :classrooms="classrooms"
+      />
     </div>
 
     <DeleteStudentModal
@@ -46,19 +56,21 @@ import DeleteStudentModal from "@/components/DeleteStudentModal/DeleteStudentMod
 
 import type { Classroom } from "../../ClassroomDatatable/columns";
 
+type DeleteState =
+  | { status: "idle"; message?: string }
+  | { status: "loading"; message?: string }
+  | { status: "success"; message: string }
+  | { status: "error"; message: string };
+
 const data = ref<Student[]>([]);
 const classrooms = ref<Classroom[]>([]);
 
 const isDeleteModalOpen = ref(false);
 const studentToDelete = ref<Student | null>(null);
-const pageMessage = ref<null | { type: "success" | "error"; text: string }>(null);
-
-const deleteState = ref<
-  | { status: "idle"; message?: string }
-  | { status: "loading"; message?: string }
-  | { status: "success"; message: string }
-  | { status: "error"; message: string }
->({ status: "idle" });
+const pageMessage = ref<null | { type: "success" | "error"; text: string }>(
+  null,
+);
+const deleteState = ref<DeleteState>({ status: "idle" });
 
 function resetDeleteState() {
   deleteState.value = { status: "idle" };
@@ -71,31 +83,45 @@ function handleRemoveFromClassroomClick(s: Student) {
 }
 
 const visibleColumns = computed(() => {
-  return getColumns('instructor', {
+  return getColumns("instructor", {
     classrooms: classrooms.value,
     onRemoveFromClassroom: handleRemoveFromClassroomClick,
   });
 });
 
-async function getData(): Promise<{ students: Student[], classrooms: Classroom[] }> {
-    const [studentsData, classroomsData] = await Promise.all([
-        $fetch<Student[]>("/api/students"),
-        $fetch<Classroom[]>("/api/classrooms")
-    ]);
-    
-    return {
-        students: studentsData,
-        classrooms: classroomsData
-    };
+async function getData(): Promise<{
+  students: Student[];
+  classrooms: Classroom[];
+}> {
+  const [studentsData, classroomsData] = await Promise.all([
+    $fetch<Student[]>("/api/students"),
+    $fetch<Classroom[]>("/api/classrooms"),
+  ]);
+  return { students: studentsData, classrooms: classroomsData };
 }
 
 async function refreshStudents() {
   const result = await getData();
-  data.value = result.students;
   classrooms.value = result.classrooms;
+
+  // Transform classroom IDs into { id, name } objects so the table can display
+  // names and the dialog can match them against availableClassrooms.
+  data.value = result.students.map((s) => ({
+    ...s,
+    classrooms: (s.classrooms || []).map((id: any) => {
+      const rawId = typeof id === "object" ? id.id : id;
+      const match = result.classrooms.find((c) => c.id === rawId);
+      return match
+        ? { id: match.id, name: match.name }
+        : { id: rawId, name: String(rawId) };
+    }),
+  }));
 }
 
-async function handleDeleteConfirm(s: Student, selectedClassroomIds?: number[]) {
+async function handleDeleteConfirm(
+  s: Student,
+  selectedClassroomIds?: number[],
+) {
   deleteState.value = { status: "loading" };
   pageMessage.value = null;
 
@@ -121,8 +147,12 @@ async function handleDeleteConfirm(s: Student, selectedClassroomIds?: number[]) 
     const classroomNames = selectedClassroomIds
       .map((id) => classrooms.value.find((c) => c.id === id)?.name)
       .filter(Boolean);
-    const nameList = classroomNames.length > 0 ? classroomNames.join(", ") : `${selectedClassroomIds.length} classroom(s)`;
+    const nameList =
+      classroomNames.length > 0
+        ? classroomNames.join(", ")
+        : `${selectedClassroomIds.length} classroom(s)`;
     const successMessage = `${s.name} has been removed from: ${nameList}.`;
+
     deleteState.value = { status: "success", message: successMessage };
     pageMessage.value = { type: "success", text: successMessage };
 
@@ -131,13 +161,16 @@ async function handleDeleteConfirm(s: Student, selectedClassroomIds?: number[]) 
     studentToDelete.value = null;
   } catch (error: any) {
     const statusMessage = error?.statusMessage ?? error?.data?.statusMessage;
-    const msg = error?.data?.message || statusMessage || "Failed to remove student from classroom.";
+    const msg =
+      error?.data?.message ||
+      statusMessage ||
+      "Failed to remove student from classroom.";
     deleteState.value = { status: "error", message: msg };
     pageMessage.value = { type: "error", text: msg };
   }
 }
 
 onMounted(async () => {
-    await refreshStudents();
+  await refreshStudents();
 });
 </script>

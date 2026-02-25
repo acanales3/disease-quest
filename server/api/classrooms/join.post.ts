@@ -1,5 +1,6 @@
 import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server';
 import type { Database } from '@/assets/types/supabase'
+import { logNotification } from '../../utils/notifications'
 
 export default defineEventHandler(async (event) => {
     const user = await serverSupabaseUser(event);
@@ -14,12 +15,16 @@ export default defineEventHandler(async (event) => {
     }
 
     const supabase = await serverSupabaseClient<Database>(event);
+    const userId = user.id || user.sub;
+    if (!userId) {
+        throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+    }
 
     // Check user is a STUDENT
     const { data: student } = await supabase
         .from("students")
         .select("user_id")
-        .eq("user_id", user.sub)
+        .eq("user_id", userId)
         .single();
 
     if (!student) {
@@ -53,7 +58,7 @@ export default defineEventHandler(async (event) => {
         .from("classroom_students")
         .select("*")
         .eq("classroom_id", classroom.id)
-        .eq("student_id", user.sub)
+        .eq("student_id", userId)
         .maybeSingle();
 
     if (existing) {
@@ -68,7 +73,7 @@ export default defineEventHandler(async (event) => {
         .from("classroom_students")
         .insert({
             classroom_id: classroom.id,
-            student_id: user.sub,
+            student_id: userId,
         });
 
         if (insertError) {
@@ -76,6 +81,14 @@ export default defineEventHandler(async (event) => {
                 statusCode: 500,
                 statusMessage: "Failed to enroll in classroom"
             });
+        }
+
+        const notifErr = await logNotification(supabase, {
+            recipientUserId: userId,
+            message: `Student joined classroom ${classroom.name} (${classroom.id}).`,
+        });
+        if (notifErr) {
+            console.warn("Classroom join notification log failed:", notifErr.message);
         }
 
         return { classroomId: classroom.id, classroomName: classroom.name };
