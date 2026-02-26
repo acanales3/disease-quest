@@ -20,23 +20,21 @@
 
     <div class="w-full py-2">
       <!-- Cases Table -->
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable :columns="visibleColumns" :data="data" :classrooms="classroomsData" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Case } from "../../CaseDatatable/columns"
-import type { Classroom } from "~/assets/interface/Classroom"
-import { computed, watchEffect, ref } from "vue"
-import { getColumns } from "@/components/CaseDatatable/columns"
-import DataTable from "../../CaseDatatable/data-table.vue"
-import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue"
-import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue"
-import TotalCount from "../../../components/ui/TotalCount.vue"
+import type { Case } from "../../CaseDatatable/columns";
+import { computed, watchEffect, ref } from "vue";
+import { getColumns } from "@/components/CaseDatatable/columns";
+import DataTable from "../../CaseDatatable/data-table.vue";
+import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue";
+import TotalCount from "../../../components/ui/TotalCount.vue";
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "actions"]
+  const columnsToShow = ["id", "name", "description", "actions"];
   return getColumns("admin").filter((column) => {
     const key =
       "id" in column
@@ -53,26 +51,13 @@ const visibleColumns = computed(() => {
 const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
   "/api/cases/available",
   { default: () => [] }
-)
+);
 
-const data = ref<Case[]>([])
+// Adapt into your existing `data` ref
+const data = ref<Case[]>([]);
 watchEffect(() => {
-  data.value = apiData.value ?? []
-})
-
-/* ---------- FETCH CLASSROOMS ---------- */
-
-const classroomsData = ref<Classroom[]>([])
-
-const { data: classroomsApi } = await useFetch<Classroom[]>("/api/classrooms", {
-  default: () => [],
-})
-
-watchEffect(() => {
-  classroomsData.value = classroomsApi.value ?? []
-})
-
-/* ---------- ERROR HANDLING ---------- */
+  data.value = apiData.value ?? [];
+});
 
 const errorMessage = computed(() => {
   const e: any = error.value

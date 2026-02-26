@@ -1,6 +1,10 @@
-import { serverSupabaseClient, serverSupabaseServiceRole } from "#supabase/server";
+import {
+  serverSupabaseClient,
+  serverSupabaseServiceRole,
+} from "#supabase/server";
 import type { Database } from "@/assets/types/supabase";
 import type { Case } from "@/components/CaseDatatable/columns";
+import { generateUniqueNickname } from "../../utils/nickname-generator";
 
 export default defineEventHandler(async (event) => {
   const supabase = await serverSupabaseClient<Database>(event);
@@ -21,23 +25,41 @@ export default defineEventHandler(async (event) => {
 
   const { data: studentStats } = await supabase
     .from("students")
-    .select("login_streak, last_login_date")
+    .select("login_streak, last_login_date, nickname")
     .eq("user_id", studentId)
     .single();
 
+  if (studentStats && !studentStats.nickname) {
+    const serviceClient = await serverSupabaseServiceRole<Database>(event);
+    await serviceClient
+      .from("students")
+      .update({ nickname: await generateUniqueNickname(serviceClient) })
+      .eq("user_id", studentId);
+  }
+
   let streak = studentStats?.login_streak ?? 0;
-  let lastLogin = studentStats?.last_login_date ? new Date(studentStats.last_login_date) : null;
+  let lastLogin = studentStats?.last_login_date
+    ? new Date(studentStats.last_login_date)
+    : null;
   const now = new Date();
 
   const msPerDay = 1000 * 60 * 60 * 24;
-  const nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const nowUTC = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
   let needsUpdate = false;
 
   if (!lastLogin) {
     if (streak === 0) streak = 1;
     needsUpdate = true;
   } else {
-    const lastLoginUTC = Date.UTC(lastLogin.getUTCFullYear(), lastLogin.getUTCMonth(), lastLogin.getUTCDate());
+    const lastLoginUTC = Date.UTC(
+      lastLogin.getUTCFullYear(),
+      lastLogin.getUTCMonth(),
+      lastLogin.getUTCDate(),
+    );
     const diffDays = Math.floor((nowUTC - lastLoginUTC) / msPerDay);
 
     if (diffDays === 1) {
@@ -55,7 +77,7 @@ export default defineEventHandler(async (event) => {
       .from("students")
       .update({
         login_streak: streak,
-        last_login_date: now.toISOString()
+        last_login_date: now.toISOString(),
       })
       .eq("user_id", studentId);
 
@@ -75,7 +97,13 @@ export default defineEventHandler(async (event) => {
         first_name: userRow?.first_name ?? null,
         last_name: userRow?.last_name ?? null,
       },
-      stats: { login_streak: streak, total: 0, completedPercent: 0, inProgress: 0, notStartedPercent: 0 },
+      stats: {
+        login_streak: streak,
+        total: 0,
+        completedPercent: 0,
+        inProgress: 0,
+        notStartedPercent: 0,
+      },
       cases: [],
     };
   }
@@ -106,9 +134,9 @@ export default defineEventHandler(async (event) => {
     });
 
   const { data: studentCases, error } = await supabase
-    .from("student_cases")
-    .select("case_id, started_at, completed_at")
-    .eq("student_id", studentId);
+    .from("case_sessions")
+    .select("case_id, started_at, completed_at, status")
+    .eq("user_id", studentId);
 
   if (error)
     throw createError({ statusCode: 500, statusMessage: error.message });

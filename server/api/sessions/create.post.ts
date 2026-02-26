@@ -4,7 +4,11 @@
  * Body: { caseId: number }
  */
 import { defineEventHandler, createError, readBody } from "h3";
-import { serverSupabaseServiceRole, serverSupabaseUser } from "#supabase/server";
+import {
+  serverSupabaseServiceRole,
+  serverSupabaseUser,
+} from "#supabase/server";
+import { generateUniqueNickname } from "../../utils/nickname-generator";
 
 export default defineEventHandler(async (event) => {
   console.log("[session/create] === Session creation started ===");
@@ -44,8 +48,15 @@ export default defineEventHandler(async (event) => {
     .single();
 
   if (caseErr || !caseRow) {
-    console.error("[session/create] Case lookup failed:", caseErr?.message, caseErr?.details);
-    throw createError({ statusCode: 404, message: `Case not found: ${caseErr?.message ?? "no data"}` });
+    console.error(
+      "[session/create] Case lookup failed:",
+      caseErr?.message,
+      caseErr?.details,
+    );
+    throw createError({
+      statusCode: 404,
+      message: `Case not found: ${caseErr?.message ?? "no data"}`,
+    });
   }
   console.log("[session/create] Case loaded, id:", (caseRow as any).id);
 
@@ -71,16 +82,26 @@ export default defineEventHandler(async (event) => {
     .single();
 
   if (studentCheckErr) {
-    console.log("[session/create] Student check result:", studentCheckErr.code, studentCheckErr.message);
+    console.log(
+      "[session/create] Student check result:",
+      studentCheckErr.code,
+      studentCheckErr.message,
+    );
   }
 
   if (!existingStudent) {
     console.log("[session/create] Student not found, creating...");
     const { error: studentErr } = await client
       .from("students")
-      .insert({ user_id: userId } as any);
+      .insert({ user_id: userId, nickname: await generateUniqueNickname(client) } as any);
     if (studentErr) {
-      console.error("[session/create] Student creation failed:", studentErr.message, studentErr.details, studentErr.hint, studentErr.code);
+      console.error(
+        "[session/create] Student creation failed:",
+        studentErr.message,
+        studentErr.details,
+        studentErr.hint,
+        studentErr.code,
+      );
       throw createError({
         statusCode: 500,
         message: `Cannot create session: student record creation failed - ${studentErr.message}`,
@@ -96,7 +117,7 @@ export default defineEventHandler(async (event) => {
   const { data: session, error: sessionErr } = await client
     .from("case_sessions")
     .insert({
-      student_id: userId,
+      user_id: userId,
       case_id: caseId,
       status: "created",
       phase: "prologue",
@@ -122,7 +143,13 @@ export default defineEventHandler(async (event) => {
     .single();
 
   if (sessionErr || !session) {
-    console.error("[session/create] Session insert failed:", sessionErr?.message, sessionErr?.details, sessionErr?.hint, sessionErr?.code);
+    console.error(
+      "[session/create] Session insert failed:",
+      sessionErr?.message,
+      sessionErr?.details,
+      sessionErr?.hint,
+      sessionErr?.code,
+    );
     throw createError({
       statusCode: 500,
       message: `Failed to create session: ${sessionErr?.message ?? "unknown error"}`,
@@ -130,16 +157,6 @@ export default defineEventHandler(async (event) => {
   }
 
   console.log("[session/create] Session created:", (session as any).id);
-
-  // Upsert student_cases to track progress
-  const { error: upsertErr } = await client.from("student_cases").upsert({
-    student_id: userId,
-    case_id: caseId,
-    started_at: new Date().toISOString(),
-  } as any);
-  if (upsertErr) {
-    console.error("[session/create] student_cases upsert failed (non-fatal):", upsertErr.message);
-  }
 
   console.log("[session/create] === Session creation complete ===");
   return {
