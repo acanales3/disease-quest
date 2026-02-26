@@ -66,11 +66,7 @@ const assignCase = async () => {
     // refresh data across page
     await refreshNuxtData()
 
-    // auto close after 2 seconds
-    setTimeout(() => {
-      isOpen.value = false
-      status.value = "idle"
-    }, 2000)
+
   } catch (err: any) {
     console.error("Failed to assign case:", err)
     errorMessage.value = err?.data?.message || "Something went wrong"

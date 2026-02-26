@@ -172,7 +172,7 @@ async function handleSubmit() {
     <DialogTrigger as-child>
       <Button variant="outline" class="h-28 w-48 flex flex-col items-center justify-center gap-2 p-4">
         <div class="flex flex-col items-center justify-center gap-2">
-          <Icon name="hugeicons:plus-sign-square" size="24" class="text-purple-500"/>
+          <Icon name="ic:baseline-add" size="24" class="text-black"/>
           <span class="text-sm">Create Case</span>
         </div>
       </Button>
