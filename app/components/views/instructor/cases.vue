@@ -9,7 +9,7 @@
       />
       <AssignCaseDialog :cases="casesData" :classrooms="classroomsData" />
     </div>
-    
+
     <!-- Cases Table -->
     <div class="w-full py-2">
       <DataTable :columns="visibleColumns" :data="casesData" />
@@ -30,7 +30,7 @@ const casesData = ref<Case[]>([]);
 const classroomsData = ref<Classroom[]>([]);
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "actions"];
+  const columnsToShow = ["id", "name", "description", "status", "actions"];
   return getColumns("instructor").filter((column) => {
     const key =
       "id" in column

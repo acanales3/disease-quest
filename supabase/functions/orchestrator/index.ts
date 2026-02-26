@@ -938,36 +938,28 @@ serve(async (req: Request) => {
 
       if (dbScores && Object.keys(dbScores).length > 0) {
         const evalPayload = {
-          user_id: session.user_id, // ← renamed
+          user_id: session.user_id,
           case_id: session.case_id,
+          session_id: sessionId, // ← ties this eval to its specific attempt
           ...dbScores,
           reflection_document: JSON.stringify(
             (evalResult as Record<string, unknown>).evaluation ?? {},
           ),
         };
+
         console.log(
           "[ORCHESTRATOR] Inserting evaluation:",
           JSON.stringify({
-            user_id: evalPayload.user_id, // ← renamed
+            user_id: evalPayload.user_id,
             case_id: evalPayload.case_id,
+            session_id: evalPayload.session_id,
             score_keys: Object.keys(dbScores),
           }),
         );
 
-        // Delete any existing evaluation for this user+case, then insert fresh
-        const { error: delErr } = await db
-          .from("evaluations")
-          .delete()
-          .eq("user_id", session.user_id) // ← renamed
-          .eq("case_id", session.case_id);
-
-        if (delErr) {
-          console.error(
-            "[ORCHESTRATOR] Failed to delete old evaluation:",
-            delErr.message,
-          );
-        }
-
+        // INSERT only — previous attempts are preserved for analytics history.
+        // No DELETE. The unique constraint on (user_id, case_id) has been dropped
+        // via migration 001_replay_support.sql.
         const { data: evalData, error: evalErr } = await db
           .from("evaluations")
           .insert(evalPayload)
@@ -982,7 +974,7 @@ serve(async (req: Request) => {
           );
         } else {
           console.log(
-            "[ORCHESTRATOR] Evaluation saved successfully, id:",
+            "[ORCHESTRATOR] Evaluation saved, id:",
             (evalData as any)?.[0]?.id,
           );
         }

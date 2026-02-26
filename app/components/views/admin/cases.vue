@@ -12,7 +12,7 @@
 
     <div class="w-full py-2">
       <!-- Cases Table -->
-      <DataTable  :columns="visibleColumns" :data="data" />
+      <DataTable :columns="visibleColumns" :data="data" />
     </div>
   </div>
 </template>
@@ -26,7 +26,7 @@ import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDia
 import TotalCount from "../../../components/ui/TotalCount.vue";
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "actions"];
+  const columnsToShow = ["id", "name", "description", "status", "actions"];
   return getColumns("admin").filter((column) => {
     const key =
       "id" in column
@@ -39,10 +39,12 @@ const visibleColumns = computed(() => {
 });
 
 // Call your API
-const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
-  "/api/cases/available",
-  { default: () => [] }
-);
+const {
+  data: apiData,
+  pending,
+  error,
+  refresh,
+} = await useFetch<Case[]>("/api/cases/available", { default: () => [] });
 
 // Adapt into your existing `data` ref
 const data = ref<Case[]>([]);
@@ -53,7 +55,6 @@ watchEffect(() => {
 const errorMessage = computed(() => {
   const e: any = error.value;
   if (!e) return "";
-  // Nuxt useFetch errors often have statusCode/statusMessage
   if (e.statusCode === 401) return "You are not logged in.";
   if (e.statusCode === 403) return "You do not have permission to view cases.";
   if (e.statusCode === 400) return e.statusMessage || "Bad request.";

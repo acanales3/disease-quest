@@ -36,9 +36,21 @@ import TotalCount from "../../ui/TotalCount.vue";
 const data = ref<Case[]>([]);
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ['id', 'name', 'description', 'classroom', 'completionDate', 'status', 'actions'];
-  return getColumns('student').filter(column => {
-    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
+  const columnsToShow = [
+    "id",
+    "name",
+    "description",
+    "classroom",
+    "status",
+    "actions",
+  ];
+  return getColumns("student").filter((column) => {
+    const key =
+      "id" in column
+        ? column.id
+        : "accessorKey" in column
+          ? column.accessorKey
+          : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
 });
@@ -54,15 +66,15 @@ watchEffect(() => {
 
 // Calculate statistics
 const completedCount = computed(() => {
-  return data.value.filter(c => c.status === 'completed').length;
+  return data.value.filter((c) => c.status === "completed").length;
 });
 
 const inProgressCount = computed(() => {
-  return data.value.filter(c => c.status === 'in progress').length;
+  return data.value.filter((c) => c.status === "in progress").length;
 });
 
 const notStartedCount = computed(() => {
-  return data.value.filter(c => c.status === 'not started').length;
+  return data.value.filter((c) => c.status === "not started").length;
 });
 
 const completionPercentage = computed(() => {

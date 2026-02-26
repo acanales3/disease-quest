@@ -26,6 +26,13 @@ export default defineEventHandler(async (event) => {
 
   const role = userProfile.role?.toUpperCase();
 
+  const rank: Record<string, number> = {
+    completed: 3,
+    in_progress: 2,
+    created: 1,
+    abandoned: 0,
+  };
+
   if (role === "ADMIN" || role === "INSTRUCTOR") {
     const { data, error } = await client
       .from("cases")
@@ -33,7 +40,45 @@ export default defineEventHandler(async (event) => {
       .order("created_at", { ascending: false });
 
     if (error) throw createError({ statusCode: 500, message: error.message });
-    return data ?? [];
+
+    const cases = data ?? [];
+    if (cases.length === 0) return [];
+
+    const caseIds = cases.map((c: any) => c.id);
+
+    const { data: progress, error: pErr } = await client
+      .from("case_sessions")
+      .select("case_id, status, started_at, completed_at")
+      .eq("user_id", userId)
+      .in("case_id", caseIds);
+
+    if (pErr) throw createError({ statusCode: 500, message: pErr.message });
+
+    const progressByCase = new Map<
+      number,
+      { status: string; started_at: any; completed_at: any }
+    >();
+    for (const p of progress ?? []) {
+      const prev = progressByCase.get((p as any).case_id);
+      if (
+        (rank[(p as any).status] ?? 0) > (prev ? (rank[prev.status] ?? 0) : -1)
+      ) {
+        progressByCase.set((p as any).case_id, {
+          status: (p as any).status,
+          started_at: (p as any).started_at,
+          completed_at: (p as any).completed_at,
+        });
+      }
+    }
+
+    return cases.map((c: any) => {
+      const prog = progressByCase.get(c.id);
+      let status: "not started" | "in progress" | "completed" = "not started";
+      if (prog?.status === "completed") status = "completed";
+      else if (prog?.status === "in_progress" || prog?.status === "created")
+        status = "in progress";
+      return { ...c, status, completionDate: prog?.completed_at ?? null };
+    });
   }
 
   if (role === "STUDENT") {
@@ -80,13 +125,6 @@ export default defineEventHandler(async (event) => {
       .in("case_id", caseIds);
 
     if (pErr) throw createError({ statusCode: 500, message: pErr.message });
-
-    const rank: Record<string, number> = {
-      completed: 3,
-      in_progress: 2,
-      created: 1,
-      abandoned: 0,
-    };
 
     const progressByCase = new Map<
       number,
