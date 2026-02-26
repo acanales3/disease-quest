@@ -595,7 +595,7 @@ const loadCurrentUserName = async () => {
         const profile = await fetchCustomUser();
         if (!profile) return;
 
-        if (profile.role === "STUDENT") {
+        if (profile.role?.toUpperCase() === "STUDENT") {
             isStudent.value = true;
             fetchNickname();
         }
