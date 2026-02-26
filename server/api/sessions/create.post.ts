@@ -8,6 +8,7 @@ import {
   serverSupabaseServiceRole,
   serverSupabaseUser,
 } from "#supabase/server";
+import { generateUniqueNickname } from "../../utils/nickname-generator";
 
 export default defineEventHandler(async (event) => {
   console.log("[session/create] === Session creation started ===");
@@ -92,7 +93,7 @@ export default defineEventHandler(async (event) => {
     console.log("[session/create] Student not found, creating...");
     const { error: studentErr } = await client
       .from("students")
-      .insert({ user_id: userId } as any);
+      .insert({ user_id: userId, nickname: await generateUniqueNickname(client) } as any);
     if (studentErr) {
       console.error(
         "[session/create] Student creation failed:",

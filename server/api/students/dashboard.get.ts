@@ -4,6 +4,7 @@ import {
 } from "#supabase/server";
 import type { Database } from "@/assets/types/supabase";
 import type { Case } from "@/components/CaseDatatable/columns";
+import { generateUniqueNickname } from "../../utils/nickname-generator";
 
 export default defineEventHandler(async (event) => {
   const supabase = await serverSupabaseClient<Database>(event);
@@ -24,9 +25,17 @@ export default defineEventHandler(async (event) => {
 
   const { data: studentStats } = await supabase
     .from("students")
-    .select("login_streak, last_login_date")
+    .select("login_streak, last_login_date, nickname")
     .eq("user_id", studentId)
     .single();
+
+  if (studentStats && !studentStats.nickname) {
+    const serviceClient = await serverSupabaseServiceRole<Database>(event);
+    await serviceClient
+      .from("students")
+      .update({ nickname: await generateUniqueNickname(serviceClient) })
+      .eq("user_id", studentId);
+  }
 
   let streak = studentStats?.login_streak ?? 0;
   let lastLogin = studentStats?.last_login_date

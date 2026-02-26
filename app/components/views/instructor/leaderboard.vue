@@ -94,10 +94,7 @@ async function handleClassroomSelected(classroomId: number) {
 }
 
 function displayName(entry?: LeaderboardEntry) {
-  // Instructors see student names if available? Or just nicknames?
-  // User didn't specify, but usually instructors see names.
-  // Using baseColumns so it's nickname only for now in table, but podium uses displayName.
-  return entry?.studentName ?? entry?.nickname ?? "-";
+  return entry?.nickname ?? "-";
 }
 
 onMounted(async () => {
