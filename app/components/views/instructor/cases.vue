@@ -12,7 +12,7 @@
     
     <!-- Cases Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="casesData" />
+      <DataTable :columns="visibleColumns" :data="casesData" :classrooms="classroomsData" />
     </div>
   </div>
 </template>
@@ -30,7 +30,7 @@ const casesData = ref<Case[]>([]);
 const classroomsData = ref<Classroom[]>([]);
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "actions"];
+  const columnsToShow = ["id", "name", "description", "classrooms", "actions"];
   return getColumns("instructor").filter((column) => {
     const key =
       "id" in column

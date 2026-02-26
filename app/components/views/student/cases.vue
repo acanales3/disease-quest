@@ -36,7 +36,7 @@ import TotalCount from "../../ui/TotalCount.vue";
 const data = ref<Case[]>([]);
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ['id', 'name', 'description', 'classroom', 'completionDate', 'status', 'actions'];
+  const columnsToShow = ['id', 'name', 'description', 'classrooms', 'completionDate', 'status', 'actions'];
   return getColumns('student').filter(column => {
     const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
     return key ? columnsToShow.includes(String(key)) : false;

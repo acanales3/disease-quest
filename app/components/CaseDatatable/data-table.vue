@@ -8,6 +8,7 @@ import type {
 
 import {
   DropdownMenu,
+  DropdownMenuItem,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
@@ -24,9 +25,10 @@ import {
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import type { Classroom } from "../ClassroomDatatable/columns";
 
 import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
-import { h, ref } from "vue";
+import { h, ref, computed } from "vue";
 import { valueUpdater } from "@/lib/utils";
 
 import {
@@ -38,21 +40,59 @@ import {
   TableRow,
 } from "~/components/ui/table";
 
+const selectedClassroom = ref<Classroom | null>(null);
+
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  classrooms?: Classroom[];
 }>();
 
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
 
+// Custom filter function for array-based filters
+const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
+  if (!filterValue || (Array.isArray(filterValue) && filterValue.length === 0)) {
+    return true;
+  }
+
+  const cellValue = row.getValue(columnId);
+
+  if (columnId === "classrooms" && cellValue) {
+    // cellValue is array of objects {id, name}
+    return (cellValue as { id: number; name: string }[]).some((c) =>
+      filterValue.includes(String(c.id))
+    );
+  }
+
+  if (columnId === "status") {
+    return filterValue.includes(cellValue);
+  }
+
+  return true;
+};
+
+// Modify columns to add filterFn for status and classrooms
+const modifiedColumns = computed(() => {
+  return props.columns.map((col: any) => {
+    if (col.accessorKey === "status" || col.accessorKey === "classrooms") {
+      return {
+        ...col,
+        filterFn: arrayFilterFn,
+      };
+    }
+    return col;
+  });
+});
+
 const table = useVueTable({
   get data() {
     return props.data;
   },
   get columns() {
-    return props.columns;
+    return modifiedColumns.value;
   },
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
@@ -76,6 +116,14 @@ const table = useVueTable({
   },
 });
 
+const handleClassroomSelect = (classroom: Classroom | null) => {
+  selectedClassroom.value = classroom;
+  if (classroom) {
+    table.getColumn("classrooms")?.setFilterValue([String(classroom.id)]);
+  } else {
+    table.getColumn("classrooms")?.setFilterValue(undefined);
+  }
+};
 </script>
 <template>
   <div class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden">
@@ -86,11 +134,6 @@ const table = useVueTable({
 
       <!-- Right: search input + dropdowns -->
       <div class="flex flex-wrap items-center gap-4">
-        <div
-          class="flex items-center justify-center w-8 h-8 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 cursor-pointer transition-colors"
-        >
-          <Icon name="lets-icons:filter" />
-        </div>
         <Input
           class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
           placeholder="Search by Case Name"
@@ -101,29 +144,36 @@ const table = useVueTable({
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button
-              class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
+              class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md min-w-[140px]"
             >
-              All Classes
+              {{ selectedClassroom ? selectedClassroom.name : "All Classes" }}
               <ChevronDown class="w-4 h-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            class="bg-white rounded-md shadow-md flex flex-col"
+            class="bg-white rounded-md shadow-md flex flex-col max-h-60 overflow-y-auto"
           >
             <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block cursor-pointer"
+              @click="handleClassroomSelect(null)"
             >
-              Example Class 0
+              All Classes
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem
+              v-if="!classrooms?.length"
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block cursor-default"
+            >
+              No Classes Available
             </DropdownMenuItem>
             <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
+              v-else
+              v-for="c in classrooms"
+              :key="c.id"
+              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block cursor-pointer whitespace-nowrap"
+              @click="handleClassroomSelect(c)"
             >
-              Example Class 1
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-            >
-              Example Class 2
+              {{ c.name }}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

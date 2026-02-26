@@ -29,22 +29,47 @@ export default defineEventHandler(async (event) => {
   if (role === "ADMIN" || role === "INSTRUCTOR") {
     const { data, error } = await client
       .from("cases")
-      .select("id, name, description, created_at")
+      .select("id, name, description, created_at, classroom_cases(classrooms(id, name, instructor_id))")
       .order("created_at", { ascending: false });
 
     if (error) throw createError({ statusCode: 500, message: error.message });
-    return data ?? [];
+
+    return (data ?? []).map((c: any) => {
+      let classrooms = (c.classroom_cases || [])
+        .map((cc: any) => cc.classrooms)
+        .filter(Boolean);
+
+      if (role === "INSTRUCTOR") {
+        classrooms = classrooms.filter((cls: any) => cls.instructor_id === userId);
+      }
+
+      // Clean up instructor_id before returning
+      classrooms = classrooms.map((cls: any) => ({ id: cls.id, name: cls.name }));
+
+      return {
+        id: c.id,
+        name: c.name,
+        description: c.description,
+        created_at: c.created_at,
+        classrooms,
+      };
+    });
   }
 
   if (role === "STUDENT") {
     const { data: memberships, error: mErr } = await client
       .from("classroom_students")
-      .select("classroom_id")
+      .select("classroom_id, classrooms(name)")
       .eq("student_id", userId);
 
     if (mErr) throw createError({ statusCode: 500, message: mErr.message });
 
-    const classroomIds = (memberships ?? []).map((m: any) => m.classroom_id);
+    const classroomNames: Record<number, string> = {};
+    const classroomIds = (memberships ?? []).map((m: any) => {
+      const name = Array.isArray(m.classrooms) ? m.classrooms[0]?.name : m.classrooms?.name;
+      if (name) classroomNames[m.classroom_id] = name;
+      return m.classroom_id;
+    });
     if (classroomIds.length === 0) return [];
 
     const { data: rows, error: ccErr } = await client
@@ -58,13 +83,22 @@ export default defineEventHandler(async (event) => {
       .map((r: any) => {
         const caseData = Array.isArray(r.cases) ? r.cases[0] : r.cases;
         if (!caseData) return null;
+
+        // Find all classrooms this case belongs to among the enrolled ones
+        const associatedClassrooms = (rows ?? [])
+          .filter((row: any) => row.case_id === r.case_id)
+          .map((row: any) => ({
+            id: row.classroom_id,
+            name: classroomNames[row.classroom_id] ?? `Classroom ${row.classroom_id}`
+          }));
+
         return {
           id: `${r.case_id}-${r.classroom_id}`,
           case_id: r.case_id,
           name: caseData.name,
           description: caseData.description,
           created_at: caseData.created_at,
-          classroom: r.classroom_id,
+          classrooms: associatedClassrooms,
         };
       })
       .filter(Boolean);
