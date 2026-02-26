@@ -27,44 +27,51 @@
 
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
+import type { Classroom } from "~/assets/interface/Classroom";
 import { computed, watchEffect, ref } from "vue";
 import { getColumns } from "@/components/CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue";
+import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue";
 import TotalCount from "../../../components/ui/TotalCount.vue";
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "actions"];
+  const columnsToShow = ["id", "name", "description", "classrooms", "actions"];
   return getColumns("admin").filter((column) => {
     const key =
       "id" in column
         ? column.id
         : "accessorKey" in column
         ? column.accessorKey
-        : undefined
-    return key ? columnsToShow.includes(String(key)) : false
-  })
-})
+        : undefined;
+    return key ? columnsToShow.includes(String(key)) : false;
+  });
+});
 
-/* ---------- CASES FETCH ---------- */
-
+/* ---------- FETCHES ---------- */
 const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
   "/api/cases/available",
   { default: () => [] }
 );
 
-// Adapt into your existing `data` ref
+const { data: classroomsApi } = await useFetch<Classroom[]>("/api/classrooms", {
+  default: () => [],
+});
+
 const data = ref<Case[]>([]);
+const classroomsData = ref<Classroom[]>([]);
+
 watchEffect(() => {
   data.value = apiData.value ?? [];
+  classroomsData.value = classroomsApi.value ?? [];
 });
 
 const errorMessage = computed(() => {
-  const e: any = error.value
-  if (!e) return ""
-  if (e.statusCode === 401) return "You are not logged in."
-  if (e.statusCode === 403) return "You do not have permission to view cases."
-  if (e.statusCode === 400) return e.statusMessage || "Bad request."
-  return e.statusMessage || e.message || "Unknown error."
-})
+  const e: any = error.value;
+  if (!e) return "";
+  if (e.statusCode === 401) return "You are not logged in.";
+  if (e.statusCode === 403) return "You do not have permission to view cases.";
+  if (e.statusCode === 400) return e.statusMessage || "Bad request.";
+  return e.statusMessage || e.message || "Unknown error.";
+});
 </script>
