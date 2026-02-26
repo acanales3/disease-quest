@@ -12,12 +12,13 @@
 
     <div class="w-full py-2">
       <!-- Cases Table -->
-      <DataTable  :columns="visibleColumns" :data="data" />
+      <DataTable :columns="visibleColumns" :data="data" :classrooms="classroomsData" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { Classroom } from "~/assets/interface/Classroom";
 import type { Case } from "../../CaseDatatable/columns";
 import { computed, watchEffect, ref } from "vue";
 import { getColumns } from "@/components/CaseDatatable/columns";
@@ -26,7 +27,7 @@ import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDia
 import TotalCount from "../../../components/ui/TotalCount.vue";
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "actions"];
+  const columnsToShow = ["id", "name", "description", "classrooms", "actions"];
   return getColumns("admin").filter((column) => {
     const key =
       "id" in column
@@ -44,10 +45,16 @@ const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
   { default: () => [] }
 );
 
+const { data: classroomsApi } = await useFetch<Classroom[]>("/api/classrooms", {
+  default: () => [],
+});
+
 // Adapt into your existing `data` ref
 const data = ref<Case[]>([]);
+const classroomsData = ref<Classroom[]>([]);
 watchEffect(() => {
   data.value = apiData.value ?? [];
+  classroomsData.value = classroomsApi.value ?? [];
 });
 
 const errorMessage = computed(() => {
