@@ -1,13 +1,21 @@
 <template>
   <div class="flex flex-col w-full">
-    <!-- Num Cases & Create Case Button -->
+    <!-- Num Cases + Create + Assign Buttons -->
     <div class="flex justify-center gap-4">
       <TotalCount
         :count="data.length"
         label="Total Cases"
         icon="si:book-line"
       />
+
+      <!-- Create Case -->
       <CreateCaseDialog />
+
+      <!-- Assign Case -->
+      <AssignCaseDialog
+        :cases="data"
+        :classrooms="classroomsData"
+      />
     </div>
 
     <div class="w-full py-2">
@@ -18,7 +26,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Classroom } from "~/assets/interface/Classroom";
 import type { Case } from "../../CaseDatatable/columns";
 import { computed, watchEffect, ref } from "vue";
 import { getColumns } from "@/components/CaseDatatable/columns";
@@ -27,43 +34,37 @@ import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDia
 import TotalCount from "../../../components/ui/TotalCount.vue";
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "classrooms", "actions"];
+  const columnsToShow = ["id", "name", "description", "actions"];
   return getColumns("admin").filter((column) => {
     const key =
       "id" in column
         ? column.id
         : "accessorKey" in column
-          ? column.accessorKey
-          : undefined;
-    return key ? columnsToShow.includes(String(key)) : false;
-  });
-});
+        ? column.accessorKey
+        : undefined
+    return key ? columnsToShow.includes(String(key)) : false
+  })
+})
 
-// Call your API
+/* ---------- CASES FETCH ---------- */
+
 const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
   "/api/cases/available",
   { default: () => [] }
 );
 
-const { data: classroomsApi } = await useFetch<Classroom[]>("/api/classrooms", {
-  default: () => [],
-});
-
 // Adapt into your existing `data` ref
 const data = ref<Case[]>([]);
-const classroomsData = ref<Classroom[]>([]);
 watchEffect(() => {
   data.value = apiData.value ?? [];
-  classroomsData.value = classroomsApi.value ?? [];
 });
 
 const errorMessage = computed(() => {
-  const e: any = error.value;
-  if (!e) return "";
-  // Nuxt useFetch errors often have statusCode/statusMessage
-  if (e.statusCode === 401) return "You are not logged in.";
-  if (e.statusCode === 403) return "You do not have permission to view cases.";
-  if (e.statusCode === 400) return e.statusMessage || "Bad request.";
-  return e.statusMessage || e.message || "Unknown error.";
-});
+  const e: any = error.value
+  if (!e) return ""
+  if (e.statusCode === 401) return "You are not logged in."
+  if (e.statusCode === 403) return "You do not have permission to view cases."
+  if (e.statusCode === 400) return e.statusMessage || "Bad request."
+  return e.statusMessage || e.message || "Unknown error."
+})
 </script>
