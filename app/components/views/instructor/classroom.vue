@@ -68,6 +68,31 @@
     <div class="w-full py-2">
       <StudentDataTable :columns="studentColumns" :data="studentData" />
     </div>
+
+    <!-- Remove Case Confirmation Dialog -->
+    <Dialog v-model:open="showRemoveCaseDialog">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle class="text-red-600">Remove Case from Classroom</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to remove this case from the classroom?
+            Students will no longer be able to access it from this classroom.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="gap-2 sm:justify-end">
+          <Button variant="outline" @click="showRemoveCaseDialog = false">
+            Cancel
+          </Button>
+          <Button
+            class="bg-red-600 text-white hover:bg-red-700"
+            :disabled="isRemovingCase"
+            @click="confirmRemoveCase"
+          >
+            {{ isRemovingCase ? "Removing..." : "Remove" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -89,6 +114,15 @@ import type { Case } from "../../CaseDatatable/columns";
 import { getColumns as getCaseColumns } from "../../CaseDatatable/columns";
 import CaseDataTable from "../../CaseDatatable/data-table.vue";
 import { cases } from "~/assets/interface/Case";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const route = useRoute();
 const classroomId = Number(route.params.classroomId);
@@ -133,8 +167,11 @@ async function getStudents(): Promise<Student[]> {
 /* ===== CASES ===== */
 const caseData = ref<Case[]>([]);
 const caseColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description"];
-  return getCaseColumns("instructor").filter(column => {
+  const columnsToShow = ["id", "name", "description", "actions"];
+  return getCaseColumns("instructor", {
+    classroomId,
+    onRemoveFromClassroom: handleRemoveCaseFromClassroom,
+  }).filter(column => {
     const key =
       "id" in column
         ? column.id
@@ -151,6 +188,32 @@ async function getCases(): Promise<Case[]> {
   } catch (error) {
     console.error("Failed to fetch cases:", caseData);
     return [];
+  }
+}
+
+const showRemoveCaseDialog = ref(false);
+const pendingRemoveCaseId = ref<number | null>(null);
+const isRemovingCase = ref(false);
+
+function handleRemoveCaseFromClassroom(caseId: number) {
+  pendingRemoveCaseId.value = caseId;
+  showRemoveCaseDialog.value = true;
+}
+
+async function confirmRemoveCase() {
+  if (!pendingRemoveCaseId.value) return;
+  isRemovingCase.value = true;
+  try {
+    await $fetch(`/api/classrooms/${classroomId}/cases/${pendingRemoveCaseId.value}`, {
+      method: "DELETE",
+    });
+    caseData.value = await getCases();
+    showRemoveCaseDialog.value = false;
+  } catch (error) {
+    console.error("Failed to remove case from classroom:", error);
+  } finally {
+    isRemovingCase.value = false;
+    pendingRemoveCaseId.value = null;
   }
 }
 

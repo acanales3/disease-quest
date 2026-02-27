@@ -14,9 +14,17 @@ import type { Case } from "./columns";
 interface Props {
   caseData: Case;
   role: string;
+  classroomId?: number;
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{
+  (e: "removeFromClassroom", caseId: number): void;
+}>();
+
+const onRemoveFromClassroom = () => {
+  emit("removeFromClassroom", props.caseData.id);
+};
 
 // Determine button text and action based on case status
 const getButtonText = () => {
@@ -61,6 +69,13 @@ const getButtonText = () => {
         class="text-red-600 focus:text-red-600 focus:bg-red-50"
       >
         Delete
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && props.classroomId"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50"
+        @click="onRemoveFromClassroom"
+      >
+        Remove from Classroom
       </DropdownMenuItem>
       <DropdownMenuItem
         v-if="props.role === 'student' && props.caseData.status === 'completed'"
