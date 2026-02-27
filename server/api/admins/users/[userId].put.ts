@@ -295,6 +295,13 @@ export default defineEventHandler(async (event) => {
     userId;
   const notifErr = await logNotification(client, {
     recipientUserId: actorUserId,
+    actorUserId,
+    type:
+      updatedRole === "INSTRUCTOR"
+        ? "admin.instructor.updated"
+        : updatedRole === "STUDENT"
+          ? "admin.student.updated"
+          : "admin.admin.updated",
     message: `Admin updated ${updatedRole.toLowerCase()} account: ${displayName}.`,
   });
   if (notifErr) {

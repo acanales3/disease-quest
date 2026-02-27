@@ -1,4 +1,8 @@
-import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
+import {
+  serverSupabaseUser,
+  serverSupabaseClient,
+  serverSupabaseServiceRole,
+} from "#supabase/server";
 import { randomBytes } from "node:crypto";
 import { Database } from "@/assets/types/supabase";
 import { logNotification } from "../../utils/notifications";
@@ -6,6 +10,7 @@ import { logNotification } from "../../utils/notifications";
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
   const client = await serverSupabaseClient<Database>(event);
+  const serviceClient = await serverSupabaseServiceRole(event);
 
   // @ts-ignore
   const userId = user?.id || user?.sub;
@@ -141,8 +146,13 @@ export default defineEventHandler(async (event) => {
     role === "ADMIN"
       ? `Admin created classroom ${classroom.name} (${classroom.code}-${classroom.section}) for instructor ${resolvedInstructorId}.`
       : `Instructor created classroom ${classroom.name} (${classroom.code}-${classroom.section}).`;
-  const notifErr = await logNotification(client, {
+  const notifErr = await logNotification(serviceClient, {
     recipientUserId: userId,
+    actorUserId: userId,
+    type:
+      role === "ADMIN"
+        ? "admin.classroom.created"
+        : "instructor.classroom.created",
     message: notifMessage,
   });
   if (notifErr) {
