@@ -20,10 +20,15 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: "removeFromClassroom", caseId: number): void;
+  (e: "removeFromClassrooms", caseData: Case): void;
 }>();
 
 const onRemoveFromClassroom = () => {
   emit("removeFromClassroom", props.caseData.id);
+};
+
+const onRemoveFromClassrooms = () => {
+  emit("removeFromClassrooms", props.caseData);
 };
 
 // Determine button text and action based on case status
@@ -74,6 +79,13 @@ const getButtonText = () => {
         v-if="(props.role === 'admin' || props.role === 'instructor') && props.classroomId"
         class="text-red-600 focus:text-red-600 focus:bg-red-50"
         @click="onRemoveFromClassroom"
+      >
+        Remove from Classroom
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && !props.classroomId && props.caseData.classrooms?.length"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50"
+        @click="onRemoveFromClassrooms"
       >
         Remove from Classroom
       </DropdownMenuItem>
