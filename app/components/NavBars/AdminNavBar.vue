@@ -25,7 +25,7 @@
 
       <!-- Close button INSIDE nav -->
       <button
-        class="ml-1 p-2 rounded hover:bg-white/20"
+        class="ml-1 p-1 rounded hover:bg-white/20"
         @click="isOpen = false"
       >
         <Icon name="mdi:close" class="text-xl" />
