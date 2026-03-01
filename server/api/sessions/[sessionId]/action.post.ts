@@ -114,7 +114,7 @@ export default defineEventHandler(async (event) => {
         .single();
 
       if (fullSession) {
-        const sessionUserId = fullSession.user_id; // ← renamed to avoid shadowing outer userId
+        const sessionUserId = fullSession.user_id;
         const caseId = fullSession.case_id;
         const evalData = result.evaluation;
         const dbScores = result.db_scores || evalData?.db_scores;
@@ -124,28 +124,19 @@ export default defineEventHandler(async (event) => {
           sessionUserId,
           "case_id:",
           caseId,
-        ); // ← was: studentId
+          "session_id:",
+          sessionId,
+        );
         console.log("[action/end_case] db_scores:", JSON.stringify(dbScores));
 
         if (dbScores && Object.keys(dbScores).length > 0) {
-          const { error: delErr } = await serviceClient
-            .from("evaluations")
-            .delete()
-            .eq("user_id", sessionUserId)
-            .eq("case_id", caseId);
-
-          if (delErr) {
-            console.error(
-              "[action/end_case] Delete old evaluation failed:",
-              delErr.message,
-              delErr.details,
-              delErr.hint,
-            );
-          }
-
+          // Always INSERT a fresh evaluation row — never delete or upsert.
+          // Each completed attempt gets its own permanent evaluation entry.
+          // This preserves history for analytics, leaderboards, and progress tracking.
           const evalPayload = {
             user_id: sessionUserId,
             case_id: caseId,
+            session_id: sessionId,
             ...dbScores,
             reflection_document: JSON.stringify(evalData),
           };

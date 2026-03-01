@@ -29,7 +29,9 @@ export default defineEventHandler(async (event) => {
   if (role === "ADMIN" || role === "INSTRUCTOR") {
     const { data, error } = await client
       .from("cases")
-      .select("id, name, description, created_at, classroom_cases(classrooms(id, name, instructor_id))")
+      .select(
+        "id, name, description, created_at, classroom_cases(classrooms(id, name, instructor_id))",
+      )
       .order("created_at", { ascending: false });
 
     if (error) throw createError({ statusCode: 500, message: error.message });
@@ -40,11 +42,15 @@ export default defineEventHandler(async (event) => {
         .filter(Boolean);
 
       if (role === "INSTRUCTOR") {
-        classrooms = classrooms.filter((cls: any) => cls.instructor_id === userId);
+        classrooms = classrooms.filter(
+          (cls: any) => cls.instructor_id === userId,
+        );
       }
 
-      // Clean up instructor_id before returning
-      classrooms = classrooms.map((cls: any) => ({ id: cls.id, name: cls.name }));
+      classrooms = classrooms.map((cls: any) => ({
+        id: cls.id,
+        name: cls.name,
+      }));
 
       return {
         id: c.id,
@@ -66,10 +72,13 @@ export default defineEventHandler(async (event) => {
 
     const classroomNames: Record<number, string> = {};
     const classroomIds = (memberships ?? []).map((m: any) => {
-      const name = Array.isArray(m.classrooms) ? m.classrooms[0]?.name : m.classrooms?.name;
+      const name = Array.isArray(m.classrooms)
+        ? m.classrooms[0]?.name
+        : m.classrooms?.name;
       if (name) classroomNames[m.classroom_id] = name;
       return m.classroom_id;
     });
+
     if (classroomIds.length === 0) return [];
 
     const { data: rows, error: ccErr } = await client
@@ -79,73 +88,111 @@ export default defineEventHandler(async (event) => {
 
     if (ccErr) throw createError({ statusCode: 500, message: ccErr.message });
 
-    const flatCases = (rows ?? [])
-      .map((r: any) => {
-        const caseData = Array.isArray(r.cases) ? r.cases[0] : r.cases;
-        if (!caseData) return null;
+    // Deduplicate: one entry per unique case_id, collecting all classrooms
+    const caseMap = new Map<
+      number,
+      {
+        case_id: number;
+        name: string;
+        description: string;
+        created_at: string;
+        classrooms: { id: number; name: string }[];
+      }
+    >();
 
-        // Find all classrooms this case belongs to among the enrolled ones
-        const associatedClassrooms = (rows ?? [])
-          .filter((row: any) => row.case_id === r.case_id)
-          .map((row: any) => ({
-            id: row.classroom_id,
-            name: classroomNames[row.classroom_id] ?? `Classroom ${row.classroom_id}`
-          }));
+    for (const r of rows ?? []) {
+      const caseData = Array.isArray(r.cases) ? r.cases[0] : r.cases;
+      if (!caseData) continue;
 
-        return {
-          id: `${r.case_id}-${r.classroom_id}`,
+      const existing = caseMap.get(r.case_id);
+      const classroom = {
+        id: r.classroom_id,
+        name: classroomNames[r.classroom_id] ?? `Classroom ${r.classroom_id}`,
+      };
+
+      if (existing) {
+        // Add classroom if not already present
+        if (!existing.classrooms.some((c) => c.id === classroom.id)) {
+          existing.classrooms.push(classroom);
+        }
+      } else {
+        caseMap.set(r.case_id, {
           case_id: r.case_id,
           name: caseData.name,
           description: caseData.description,
           created_at: caseData.created_at,
-          classrooms: associatedClassrooms,
-        };
-      })
-      .filter(Boolean);
-
-    if (flatCases.length === 0) return [];
-
-    const caseIds = [...new Set(flatCases.map((c: any) => c.case_id))];
-
-    const { data: progress, error: pErr } = await client
-      .from("case_sessions")
-      .select("case_id, status, started_at, completed_at")
-      .eq("user_id", userId)
-      .in("case_id", caseIds);
-
-    if (pErr) throw createError({ statusCode: 500, message: pErr.message });
-
-    const rank: Record<string, number> = {
-      completed: 3,
-      in_progress: 2,
-      created: 1,
-      abandoned: 0,
-    };
-
-    const progressByCase = new Map<
-      number,
-      { status: string; started_at: any; completed_at: any }
-    >();
-    for (const p of progress ?? []) {
-      const prev = progressByCase.get((p as any).case_id);
-      if (
-        (rank[(p as any).status] ?? 0) > (prev ? (rank[prev.status] ?? 0) : -1)
-      ) {
-        progressByCase.set((p as any).case_id, {
-          status: (p as any).status,
-          started_at: (p as any).started_at,
-          completed_at: (p as any).completed_at,
+          classrooms: [classroom],
         });
       }
     }
 
-    const result = (flatCases as any[]).map((c) => {
-      const prog = progressByCase.get(c.case_id);
-      let status: "not started" | "in progress" | "completed" = "not started";
-      if (prog?.status === "completed") status = "completed";
-      else if (prog?.status === "in_progress" || prog?.status === "created")
-        status = "in progress";
-      return { ...c, status, completionDate: prog?.completed_at ?? null };
+    if (caseMap.size === 0) return [];
+
+    const caseIds = [...caseMap.keys()];
+
+    // Fetch ALL sessions for this student across these cases, ordered by
+    // attempt_number desc so the most recent attempt comes first per case.
+    const { data: sessions, error: sErr } = await client
+      .from("case_sessions")
+      .select("case_id, status, attempt_number, started_at, completed_at")
+      .eq("user_id", userId)
+      .in("case_id", caseIds)
+      .order("attempt_number", { ascending: false });
+
+    if (sErr) throw createError({ statusCode: 500, message: sErr.message });
+
+    // For each case, pick the most recent session (highest attempt_number)
+    // and map its status to the UI status.
+    const latestSessionByCase = new Map<
+      number,
+      {
+        status: string;
+        started_at: string | null;
+        completed_at: string | null;
+      }
+    >();
+
+    for (const s of sessions ?? []) {
+      if (!latestSessionByCase.has(s.case_id)) {
+        // First one we see is the most recent (ordered desc)
+        latestSessionByCase.set(s.case_id, {
+          status: s.status,
+          started_at: s.started_at,
+          completed_at: s.completed_at,
+        });
+      }
+    }
+
+    const result = [...caseMap.values()].map((c) => {
+      const session = latestSessionByCase.get(c.case_id);
+
+      // Map DB session status → UI status
+      // DB statuses: 'created' | 'in_progress' | 'completed' | 'abandoned'
+      // UI statuses: 'not started' | 'in progress' | 'completed'
+      let uiStatus: "not started" | "in progress" | "completed" = "not started";
+
+      if (session) {
+        if (session.status === "completed") {
+          uiStatus = "completed";
+        } else if (session.status === "in_progress") {
+          uiStatus = "in progress";
+        } else {
+          // 'created' or 'abandoned' both map to 'not started'
+          uiStatus = "not started";
+        }
+      }
+
+      return {
+        // Use the real case_id (number) so the dropdown can pass it to
+        // /api/sessions/active?caseId=... correctly
+        id: c.case_id,
+        name: c.name,
+        description: c.description,
+        created_at: c.created_at,
+        classrooms: c.classrooms,
+        status: uiStatus,
+        completionDate: session?.completed_at ?? null,
+      };
     });
 
     return result.sort(

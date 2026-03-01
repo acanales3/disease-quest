@@ -1,6 +1,11 @@
 /**
  * POST /api/sessions/create
  * Creates a new simulation session for a student.
+ *
+ * NOTE: Replay does NOT create a new session — it resets the existing one
+ * via POST /api/sessions/replay. This endpoint is only for the very first
+ * time a user attempts a case (or if no session exists yet).
+ *
  * Body: { caseId: number }
  */
 import { defineEventHandler, createError, readBody } from "h3";
@@ -39,6 +44,30 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "caseId is required" });
   }
 
+  // Guard: if a non-completed session already exists for this user+case,
+  // return it instead of creating a duplicate.
+  const { data: existingSession } = await client
+    .from("case_sessions")
+    .select("id, status, phase, attempt_number")
+    .eq("user_id", userId)
+    .eq("case_id", caseId)
+    .in("status", ["created", "in_progress"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingSession) {
+    console.log(
+      "[session/create] Active session already exists:",
+      existingSession.id,
+    );
+    return {
+      sessionId: existingSession.id,
+      status: existingSession.status,
+      phase: existingSession.phase,
+    };
+  }
+
   // Load the case
   console.log("[session/create] Loading case...");
   const { data: caseRow, error: caseErr } = await client
@@ -73,6 +102,16 @@ export default defineEventHandler(async (event) => {
     .map((d) => d.id);
   console.log("[session/create] Start disclosures:", startDisclosures);
 
+  // Determine attempt_number: count ALL prior sessions for this user+case
+  const { count: priorCount } = await client
+    .from("case_sessions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("case_id", caseId);
+
+  const attemptNumber = (priorCount ?? 0) + 1;
+  console.log("[session/create] attempt_number:", attemptNumber);
+
   // Ensure the student exists in the students table (FK requirement)
   console.log("[session/create] Checking student record...");
   const { data: existingStudent, error: studentCheckErr } = await client
@@ -91,9 +130,10 @@ export default defineEventHandler(async (event) => {
 
   if (!existingStudent) {
     console.log("[session/create] Student not found, creating...");
-    const { error: studentErr } = await client
-      .from("students")
-      .insert({ user_id: userId, nickname: await generateUniqueNickname(client) } as any);
+    const { error: studentErr } = await client.from("students").insert({
+      user_id: userId,
+      nickname: await generateUniqueNickname(client),
+    } as any);
     if (studentErr) {
       console.error(
         "[session/create] Student creation failed:",
@@ -127,6 +167,7 @@ export default defineEventHandler(async (event) => {
       differential_history: [],
       management_plan: [],
       scoring: {},
+      attempt_number: attemptNumber,
       flags: {
         correct_diagnosis_suspected: false,
         antibiotics_ordered: false,
@@ -157,8 +198,8 @@ export default defineEventHandler(async (event) => {
   }
 
   console.log("[session/create] Session created:", (session as any).id);
-
   console.log("[session/create] === Session creation complete ===");
+
   return {
     sessionId: (session as any).id,
     status: (session as any).status,
