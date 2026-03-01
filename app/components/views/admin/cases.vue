@@ -1,25 +1,33 @@
 <template>
-  <div class="flex flex-col w-full">
-    <!-- Num Cases + Create + Assign Buttons -->
-    <div class="flex justify-center gap-4">
-      <TotalCount
-        :count="data.length"
-        label="Total Cases"
-        icon="si:book-line"
-      />
-
-      <!-- Create Case -->
-      <CreateCaseDialog />
-
-      <!-- Assign Case -->
-      <AssignCaseDialog
-        :cases="data"
-        :classrooms="classroomsData"
-      />
+  <div class="flex flex-col w-full gap-8">
+    <!-- Header -->
+    <div class="border-b border-gray-200 pb-8">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Content</p>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight">Cases</h1>
+          <p class="text-gray-500 text-[15px] mt-2">Manage case library and assign cases to classrooms.</p>
+          <div class="mt-3 flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 bg-[#4d1979] text-white text-xs font-medium px-3 py-1 rounded-full">
+              <Icon name="lucide:book-open" size="11" />
+              {{ data.length }} cases
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <CreateCaseDialog />
+          <AssignCaseDialog :cases="data" :classrooms="classroomsData" />
+        </div>
+      </div>
     </div>
 
-    <div class="w-full py-2">
-      <!-- Cases Table -->
+    <div v-if="pending" class="text-sm text-gray-500">Loading cases...</div>
+    <div v-else-if="errorMessage" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Table -->
+    <div>
       <DataTable :columns="visibleColumns" :data="data" :classrooms="classroomsData" />
     </div>
   </div>
@@ -33,7 +41,7 @@ import { getColumns } from "@/components/CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue";
 import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue";
-import TotalCount from "../../../components/ui/TotalCount.vue";
+import { Icon } from "#components";
 
 const visibleColumns = computed(() => {
   const columnsToShow = ["id", "name", "description", "classrooms", "actions"];
@@ -49,7 +57,7 @@ const visibleColumns = computed(() => {
 });
 
 /* ---------- FETCHES ---------- */
-const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
+const { data: apiData, pending, error } = await useFetch<Case[]>(
   "/api/cases/available",
   { default: () => [] }
 );

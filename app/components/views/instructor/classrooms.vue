@@ -4,7 +4,7 @@
       <TotalCount
         :count="data.length"
         label="Total Classrooms"
-        icon="simple-icons:googleclassroom"
+        icon="lucide:layout-grid"
       />
 
       <Button

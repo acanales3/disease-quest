@@ -17,7 +17,7 @@
       />
 
       <TotalCount
-        icon="simple-icons:googleclassroom"
+        icon="lucide:layout-grid"
         :count="dashboardData?.totalClassrooms"
         label="Classrooms"
       />

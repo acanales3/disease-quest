@@ -103,57 +103,42 @@ const hideableColumns = computed(() =>
 
 </script>
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md w-full">
-    <!-- Top bar: label left, search & column menu right -->
-    <div class="flex items-center justify-between py-4">
-      <!-- Left: label -->
-      <div class="text-md font-light text-black">Leaderboard</div>
+  <div class="bg-white rounded-xl border border-gray-200 w-full overflow-hidden">
+    <!-- Top bar -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <p class="text-sm font-medium text-gray-900">All Rankings</p>
 
-      <!-- Right: dropdown to select classroom -->
-      <div class="flex items-center space-x-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button
-              class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
-            >
-              {{ selectedClassroomName }}
-              <ChevronDown class="w-4 h-4 ml-2" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            class="bg-white rounded-md shadow-md flex flex-col"
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <button class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+            {{ selectedClassroomName }}
+            <ChevronDown class="w-3.5 h-3.5 text-gray-400" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent class="bg-white flex flex-col max-h-60 overflow-y-auto">
+          <DropdownMenuItem
+            v-for="classroom in classrooms"
+            :key="classroom.id"
+            class="cursor-pointer"
+            @click="emit('classroom-selected', classroom.id)"
           >
-            <DropdownMenuItem
-              v-for="classroom in classrooms"
-              :key="classroom.id"
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block"
-              @click="emit('classroom-selected', classroom.id)"
-            >
-              {{ classroom.name }}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+            {{ classroom.name }}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md overflow-x-auto">
-      <Table class="w-full text-center font-normal text-gray-500">
-        <TableHeader class="bg-blue-50">
-          <TableRow
-            v-for="headerGroup in table.getHeaderGroups()"
-            :key="headerGroup.id"
-          >
+    <div class="overflow-x-auto">
+      <Table class="w-full text-sm">
+        <TableHeader>
+          <TableRow class="border-b border-gray-100 hover:bg-transparent">
             <TableHead
-              v-for="header in headerGroup.headers"
+              v-for="header in table.getHeaderGroups()[0]?.headers"
               :key="header.id"
-              class="text-center font-semibold py-1 px-4"
+              class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400 px-5 py-3 bg-gray-50/60"
             >
-              <FlexRender
-                v-if="!header.isPlaceholder"
-                :render="header.column.columnDef.header"
-                :props="header.getContext()"
-              />
+              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -161,29 +146,24 @@ const hideableColumns = computed(() =>
         <TableBody>
           <template v-if="table.getRowModel().rows?.length">
             <TableRow
-              v-for="(row, idx) in table.getRowModel().rows"
+              v-for="row in table.getRowModel().rows"
               :key="row.id"
-              :data-state="row.getIsSelected() ? 'selected' : undefined"
-              :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
+              class="border-b border-gray-100 last:border-0 hover:bg-gray-50/60 transition-colors"
             >
-              <!-- Table cell styling adjusted to match the design of other tables (Might need to change later)-->
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
-                class="text-center py-3 leading-6 align-middle"
+                class="px-5 py-3.5 text-left text-gray-700"
               >
-                <FlexRender
-                  :render="cell.column.columnDef.cell"
-                  :props="cell.getContext()"
-                />
+                <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
               </TableCell>
             </TableRow>
           </template>
 
           <template v-else>
             <TableRow>
-              <TableCell :colspan="columns.length" class="h-24 text-center">
-                No results.
+              <TableCell :colspan="columns.length" class="h-32 text-center text-sm text-gray-400">
+                No records found.
               </TableCell>
             </TableRow>
           </template>
@@ -192,23 +172,28 @@ const hideableColumns = computed(() =>
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-end py-4 space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="!table.getCanPreviousPage()"
-        @click="table.previousPage()"
-      >
-        Previous
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="!table.getCanNextPage()"
-        @click="table.nextPage()"
-      >
-        Next
-      </Button>
+    <div class="flex items-center justify-between px-5 py-3.5 border-t border-gray-100">
+      <p class="text-xs text-gray-400">
+        Showing {{ table.getRowModel().rows.length }} of {{ table.getFilteredRowModel().rows.length }} records
+      </p>
+      <div class="flex items-center gap-2">
+        <button
+          class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          :disabled="!table.getCanPreviousPage()"
+          @click="table.previousPage()"
+        >
+          <Icon name="lucide:chevron-left" size="14" />
+          Previous
+        </button>
+        <button
+          class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          :disabled="!table.getCanNextPage()"
+          @click="table.nextPage()"
+        >
+          Next
+          <Icon name="lucide:chevron-right" size="14" />
+        </button>
+      </div>
     </div>
   </div>
 </template>

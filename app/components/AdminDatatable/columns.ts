@@ -21,22 +21,22 @@ export function getColumns(
     {
       accessorKey: "id",
       header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "No"),
+        h("div", {}, "NO"),
       cell: ({ row }) =>
         h(
           "div",
-          { class: "text-center font-normal text-gray-600" },
+          {},
           String(row.getValue("id") ?? "-")
         ),
     },
     {
       accessorKey: "name",
       header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Name"),
+        h("div", {}, "NAME"),
       cell: ({ row }) =>
         h(
           "div",
-          { class: "text-center font-normal text-gray-600" },
+          { class: "capitalize" },
           row.getValue("name")
         ),
     },
@@ -46,27 +46,26 @@ export function getColumns(
         h(
           "button",
           {
-            class:
-              "flex justify-center items-center gap-1 font-normal text-black w-full px-3 py-1 rounded-md transition-colors hover:bg-gray-200",
+            class: "flex items-center gap-1",
             onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
           },
-          ["Email", h(ArrowUpDown, { class: "h-4 w-4" })]
+          ["EMAIL", h(ArrowUpDown, { class: "h-3.5 w-3.5" })]
         ),
       cell: ({ row }) =>
         h(
           "div",
-          { class: "lowercase text-center font-normal text-gray-600" },
+          { class: "lowercase" },
           row.getValue("email")
         ),
     },
     {
       accessorKey: "school",
       header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "School"),
+        h("div", {}, "SCHOOL"),
       cell: ({ row }) =>
         h(
           "div",
-          { class: "text-center font-normal text-gray-600" },
+          { class: "capitalize" },
           row.getValue("school") ?? "-"
         ),
     },

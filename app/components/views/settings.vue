@@ -1,9 +1,10 @@
 <template>
+    <div class="w-full min-h-screen bg-white">
     <div class="w-full max-w-4xl mx-auto px-6 py-8">
-        <h1 class="text-3xl font-bold mb-8">Account Settings</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
 
         <div class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 pb-2 border-b">
+            <h2 class="text-xl font-semibold text-[#2f174a] mb-4 pb-2 border-b border-[#ede9f5]">
                 Profile Name
             </h2>
             <div class="grid gap-6 py-4">
@@ -71,11 +72,11 @@
                     </p>
                 </div>
             </div>
-            <div class="flex justify-end gap-3 pt-2 border-t">
-                <Button variant="outline" @click="cancelNameEdits"
+            <div class="flex justify-end gap-3 pt-2 border-t border-[#ede9f5]">
+                <Button variant="outline" class="border-[#d9d2ea] text-[#4d1979] hover:bg-[#f5f3ff]" @click="cancelNameEdits"
                     >Cancel</Button
                 >
-                <Button :disabled="!canSaveName" @click="saveName">
+                <Button class="bg-[#4d1979] text-white hover:bg-[#3f1564]" :disabled="!canSaveName" @click="saveName">
                     {{ isSavingName ? "Saving..." : "Save Name" }}
                 </Button>
             </div>
@@ -83,7 +84,7 @@
 
         <!-- Nickname Section (students only) -->
         <div v-if="isStudent" class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 pb-2 border-b">
+            <h2 class="text-xl font-semibold text-[#2f174a] mb-4 pb-2 border-b border-[#ede9f5]">
                 Nickname
             </h2>
             <p class="text-sm text-muted-foreground mb-4">
@@ -95,7 +96,7 @@
                     <Label class="text-right">Current Nickname</Label>
                     <div class="col-span-3">
                         <span
-                            class="text-lg font-medium text-purple-700 bg-purple-50 px-4 py-2 rounded-md inline-block"
+                            class="text-lg font-medium text-[#4d1979] bg-[#f5f3ff] px-4 py-2 rounded-md inline-block"
                         >
                             {{ currentNickname || "Not assigned" }}
                         </span>
@@ -114,6 +115,7 @@
                             class="flex-1"
                         />
                         <Button
+                            class="bg-[#4d1979] text-white hover:bg-[#3f1564]"
                             :disabled="isSavingNickname || !canSaveNickname"
                             @click="saveCustomNickname"
                         >
@@ -144,9 +146,10 @@
                     </p>
                 </div>
             </div>
-            <div class="flex justify-end gap-3 pt-2 border-t">
+            <div class="flex justify-end gap-3 pt-2 border-t border-[#ede9f5]">
                 <Button
                     variant="outline"
+                    class="border-[#d9d2ea] text-[#4d1979] hover:bg-[#f5f3ff]"
                     :disabled="isRegeneratingNickname"
                     @click="regenerateNickname"
                 >
@@ -161,7 +164,7 @@
 
         <!-- Security Section -->
         <div class="mb-8">
-            <h2 class="text-xl font-semibold mb-4 pb-2 border-b">Security</h2>
+            <h2 class="text-xl font-semibold text-[#2f174a] mb-4 pb-2 border-b border-[#ede9f5]">Security</h2>
             <div class="grid gap-6 py-4">
                 <div class="grid grid-cols-4 items-center gap-4">
                     <Label for="currentPassword" class="text-right"
@@ -203,9 +206,9 @@
         </div>
 
         <!-- Password Actions -->
-        <div class="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="outline" @click="onCancel">Cancel</Button>
-            <Button @click="onSavePassword">Save Password</Button>
+        <div class="flex justify-end gap-3 pt-4 border-t border-[#ede9f5]">
+            <Button variant="outline" class="border-[#d9d2ea] text-[#4d1979] hover:bg-[#f5f3ff]" @click="onCancel">Cancel</Button>
+            <Button class="bg-[#4d1979] text-white hover:bg-[#3f1564]" @click="onSavePassword">Save Password</Button>
         </div>
 
         <!-- Confirmation Dialog -->
@@ -219,10 +222,10 @@
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="outline" @click="showConfirmDialog = false"
+                    <Button variant="outline" class="border-[#d9d2ea] text-[#4d1979] hover:bg-[#f5f3ff]" @click="showConfirmDialog = false"
                         >Cancel</Button
                     >
-                    <Button @click="confirmSave">Confirm</Button>
+                    <Button class="bg-[#4d1979] text-white hover:bg-[#3f1564]" @click="confirmSave">Confirm</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -237,10 +240,11 @@
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button @click="closeSuccessDialog">OK</Button>
+                    <Button class="bg-[#4d1979] text-white hover:bg-[#3f1564]" @click="closeSuccessDialog">OK</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+    </div>
     </div>
 </template>
 

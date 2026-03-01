@@ -18,7 +18,7 @@
 const links = [
   { label: 'Dashboard', to: '/instructor/dashboard', icon: 'iconamoon:home-light' },
   { label: 'Students', to: '/instructor/students', icon: 'hugeicons:students' },
-  { label: 'Classrooms', to: '/instructor/classrooms', icon: 'simple-icons:googleclassroom' },
+  { label: 'Classrooms', to: '/instructor/classrooms', icon: 'lucide:layout-grid' },
   { label: 'Cases', to: '/instructor/cases', icon: 'si:book-line' },
   { label: 'Analytics', to: '/instructor/analytics', icon: 'uim:analytics' },
   { label: 'Leaderboard', to: '/instructor/leaderboard', icon: 'material-symbols:social-leaderboard-outline-rounded' },

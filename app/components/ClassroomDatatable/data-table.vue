@@ -201,68 +201,62 @@ const applyClassroomFilters = (filters: {
 
 
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md w-full max-w-full overflow-hidden">
+  <div class="bg-white border border-gray-200 rounded-xl w-full max-w-full overflow-hidden">
 
     <!-- Top Bar -->
-    <div class="flex items-center justify-between py-4">
-      <div class="text-md font-light text-black">
-        All Classrooms List
-      </div>
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <p class="text-[13px] font-medium text-gray-900">
+        {{ table.getFilteredRowModel().rows.length }} record{{ table.getFilteredRowModel().rows.length === 1 ? '' : 's' }}
+      </p>
 
-      <div class="flex items-center space-x-4">
-
+      <div class="flex items-center gap-2">
         <ClassroomFilterDialog
           :user-role="props.userRole"
           @apply-filters="applyClassroomFilters"
         />
 
-        <Input
-          class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-2 py-1 w-80"
-          placeholder="Search by Class Name"
-          :model-value="getNameFilterValue()"
-          @update:model-value="setNameFilterValue"
-        />
+        <div class="relative">
+          <Icon name="lucide:search" size="13" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Input
+            class="pl-8 h-8 text-[13px] w-56 border-gray-200 rounded-lg placeholder:text-gray-400 focus-visible:ring-[#4d1979]/30"
+            placeholder="Search by class name..."
+            :model-value="getNameFilterValue()"
+            @update:model-value="setNameFilterValue"
+          />
+        </div>
 
         <!-- Columns Dropdown -->
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button class="bg-gray-100 text-gray-500 hover:bg-gray-200">
+            <Button variant="outline" class="h-8 px-3 text-[13px] border-gray-200 text-gray-600 font-normal gap-1.5">
               Columns
-              <ChevronDown class="w-4 h-4 ml-2" />
+              <ChevronDown class="w-3.5 h-3.5" />
             </Button>
           </DropdownMenuTrigger>
-
           <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
               v-for="column in hideableColumns"
               :key="column.id"
               class="capitalize"
               :modelValue="column.getIsVisible()"
-              @update:modelValue="
-                (value: boolean) => column.toggleVisibility(!!value)
-              "
+              @update:modelValue="(value: boolean) => column.toggleVisibility(!!value)"
             >
               {{ column.id }}
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
       </div>
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md overflow-x-auto">
-      <Table class="w-full text-center font-normal text-gray-500">
-
-        <TableHeader class="bg-blue-50">
-          <TableRow
-            v-for="headerGroup in table.getHeaderGroups()"
-            :key="headerGroup.id"
-          >
+    <div class="overflow-x-auto">
+      <Table class="w-full">
+        <TableHeader>
+          <TableRow class="border-b border-gray-100 hover:bg-transparent">
             <TableHead
-              v-for="header in headerGroup.headers"
+              v-for="header in table.getHeaderGroups()[0].headers"
               :key="header.id"
-              class="text-center font-semibold py-1 px-4"
+              class="text-left text-[11px] font-medium text-gray-400 uppercase tracking-wider px-4 py-3 bg-gray-50/60"
             >
               <FlexRender
                 v-if="!header.isPlaceholder"
@@ -276,14 +270,14 @@ const applyClassroomFilters = (filters: {
         <TableBody>
           <template v-if="table.getRowModel().rows.length">
             <TableRow
-              v-for="(row, idx) in table.getRowModel().rows"
+              v-for="row in table.getRowModel().rows"
               :key="row.id"
-              :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
+              class="border-b border-gray-100 last:border-0 hover:bg-gray-50/60 transition-colors"
             >
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
-                class="py-3 text-center"
+                class="px-4 py-3 text-left text-[13px] text-gray-700"
               >
                 <FlexRender
                   :render="cell.column.columnDef.cell"
@@ -295,35 +289,40 @@ const applyClassroomFilters = (filters: {
 
           <template v-else>
             <TableRow>
-              <TableCell :colspan="props.columns.length" class="h-24 text-center">
+              <TableCell :colspan="props.columns.length" class="h-24 text-center text-[13px] text-gray-400">
                 No results.
               </TableCell>
             </TableRow>
           </template>
         </TableBody>
-
       </Table>
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-end py-4 space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="!table.getCanPreviousPage()"
-        @click="table.previousPage()"
-      >
-        Previous
-      </Button>
-
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="!table.getCanNextPage()"
-        @click="table.nextPage()"
-      >
-        Next
-      </Button>
+    <div class="flex items-center justify-between px-5 py-4 border-t border-gray-100">
+      <p class="text-[12px] text-gray-400">
+        Showing {{ table.getRowModel().rows.length }} of {{ table.getFilteredRowModel().rows.length }} records
+      </p>
+      <div class="flex items-center gap-1.5">
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-8 px-3 text-[13px] border-gray-200 text-gray-600 gap-1"
+          :disabled="!table.getCanPreviousPage()"
+          @click="table.previousPage()"
+        >
+          <Icon name="lucide:chevron-left" size="13" /> Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-8 px-3 text-[13px] border-gray-200 text-gray-600 gap-1"
+          :disabled="!table.getCanNextPage()"
+          @click="table.nextPage()"
+        >
+          Next <Icon name="lucide:chevron-right" size="13" />
+        </Button>
+      </div>
     </div>
   </div>
 </template>

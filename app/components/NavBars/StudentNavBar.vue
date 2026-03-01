@@ -17,7 +17,7 @@
 <script setup>
 const links = [
   { label: 'Dashboard', to: '/student/dashboard', icon: 'iconamoon:home-light' },
-  { label: 'Classrooms', to: '/student/classrooms', icon: 'simple-icons:googleclassroom' },
+  { label: 'Classrooms', to: '/student/classrooms', icon: 'lucide:layout-grid' },
   { label: 'Cases', to: '/student/cases', icon: 'si:book-line' },
   { label: 'Analytics', to: '/student/analytics', icon: 'uim:analytics' },
   { label: 'Leaderboard', to: '/student/leaderboard', icon: 'material-symbols:social-leaderboard-outline-rounded' },

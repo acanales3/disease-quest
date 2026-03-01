@@ -1,13 +1,13 @@
 <template>
-  <div class="container rounded-lg bg-white p-6">
+  <div class="rounded-xl border border-gray-200 bg-white p-6">
     <div class="flex items-start justify-between mb-6">
-      <h3 class="text-xl font-medium">Assessment Score by Category</h3>
+      <h3 class="text-lg font-semibold text-gray-900">Assessment Score by Category</h3>
 
       <div class="flex gap-3">
         <!-- Case selector -->
         <ui-dropdown-menu>
           <ui-dropdown-menu-trigger as-child>
-            <button class="px-3 py-2 bg-gray-100 rounded text-sm min-w-[100px] flex justify-between items-center">
+            <button class="px-3 h-8 border border-gray-200 rounded-lg text-[13px] min-w-[120px] flex justify-between items-center text-gray-700 bg-white">
               {{ selectedCase?.name || "All Cases" }} ▾
             </button>
           </ui-dropdown-menu-trigger>
@@ -24,7 +24,7 @@
         <!-- Classroom selector -->
         <ui-dropdown-menu>
           <ui-dropdown-menu-trigger as-child>
-            <button class="px-3 py-2 bg-gray-100 rounded text-sm min-w-[120px] flex justify-between items-center">
+            <button class="px-3 h-8 border border-gray-200 rounded-lg text-[13px] min-w-[130px] flex justify-between items-center text-gray-700 bg-white">
               {{ selectedClassroom?.name || "All Classrooms" }} ▾
             </button>
           </ui-dropdown-menu-trigger>
@@ -47,10 +47,7 @@
             <div
               class="w-full bg-gray-100 rounded-full h-9 relative overflow-visible"
             >
-              <div
-                class="bg-indigo-200 h-9 rounded-full transition-all duration-500"
-                :style="{ width: cat.score + '%' }"
-              ></div>
+              <div class="bg-[#d9d2ea] h-9 rounded-full transition-all duration-500" :style="{ width: cat.score + '%' }"></div>
 
               <!-- percentage pill anchored to the end of the filled area -->
               <div
