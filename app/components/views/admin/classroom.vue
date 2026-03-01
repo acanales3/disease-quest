@@ -159,6 +159,7 @@ async function getStudents(): Promise<Student[]> {
       userId: s.userId, // MUST match student view
       id: s.id,         // optional if your table needs it
       name: s.name,
+      nickname: s.nickname,
       first_name: s.first_name,
       last_name: s.last_name,
       email: s.email,
