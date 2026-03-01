@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import type { Case } from "./columns";
+import { caseEvaluationModalBus } from "../CaseEvaluationModal/modalBusCaseEvaluation";
 
 interface Props {
   caseData: Case;
@@ -64,7 +65,10 @@ const getButtonText = () => {
       </DropdownMenuItem>
       <DropdownMenuItem
         v-if="props.role === 'student' && props.caseData.status === 'completed'"
-        >Review Case</DropdownMenuItem
+        @click="caseEvaluationModalBus.open(props.caseData.id)"
+        >
+        Review Case
+        </DropdownMenuItem
       >
     </DropdownMenuContent>
   </DropdownMenu>
