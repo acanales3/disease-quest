@@ -14,7 +14,7 @@
           </p>
           <div class="mt-4 flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 bg-white text-[#4d1979] text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">
-              <Icon name="lucide:shield" size="11" />
+              <Icon name="eos-icons-admin" size="15" />
               Administrator
             </span>
           </div>
@@ -26,10 +26,10 @@
     <div>
     <p class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-4">Platform Overview</p>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <TotalCount :count="counts.students" label="Students enrolled" icon="lucide:users" :meta="latestMeta.students" />
-      <TotalCount :count="counts.instructors" label="Active instructors" icon="lucide:graduation-cap" :meta="latestMeta.instructors" />
-      <TotalCount :count="counts.classrooms" label="Classrooms" icon="lucide:layout-grid" :meta="latestMeta.classrooms" />
-      <TotalCount :count="counts.cases" label="Cases available" icon="lucide:book-open" :meta="latestMeta.cases" />
+      <TotalCount :count="counts.students" label="Students" icon="hugeicons:students" :meta="latestMeta.students" />
+      <TotalCount :count="counts.instructors" label="Instructors" icon="hugeicons:teacher" :meta="latestMeta.instructors" />
+      <TotalCount :count="counts.classrooms" label="Classrooms" icon="simple-icons:googleclassroom" :meta="latestMeta.classrooms" />
+      <TotalCount :count="counts.cases" label="Cases" icon="si:book-line" :meta="latestMeta.cases" />
     </div>
     </div>
 
@@ -40,61 +40,61 @@
 
         <NuxtLink to="/admin/students" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <Icon name="lucide:users" size="16" class="text-white" />
+            <Icon name="hugeicons:students" size="16" class="text-white" />
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Students</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View students and manage account access</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View, invite, edit, and manage students</p>
           </div>
         </NuxtLink>
 
         <NuxtLink to="/admin/instructors" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <Icon name="lucide:graduation-cap" size="16" class="text-white" />
+            <Icon name="hugeicons:teacher" size="16" class="text-white" />
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Instructors</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Add or remove instructors and assign classrooms</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View, invite, edit, and manage instructors</p>
           </div>
         </NuxtLink>
 
         <NuxtLink to="/admin/classrooms" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <Icon name="lucide:layout-grid" size="16" class="text-white" />
+            <Icon name="simple-icons:googleclassroom" size="16" class="text-white" />
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Classrooms</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Create classrooms and manage enrolled students</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Create and edit classrooms, and manage enrolled students</p>
           </div>
         </NuxtLink>
 
         <NuxtLink to="/admin/cases" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <Icon name="lucide:book-open" size="16" class="text-white" />
+            <Icon name="si:book-line" size="16" class="text-white" />
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Cases</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View and manage available clinical cases</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Create, edit, play, and assign cases to classrooms</p>
           </div>
         </NuxtLink>
 
         <NuxtLink to="/admin/admins" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <Icon name="lucide:shield" size="16" class="text-white" />
+            <Icon name="eos-icons-admin" size="16" class="text-white" />
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Administrators</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Add admins and remove admin access</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View, invite, edit, and manage administrators</p>
           </div>
         </NuxtLink>
 
         <NuxtLink to="/admin/analytics" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <Icon name="lucide:bar-chart-3" size="16" class="text-white" />
+            <Icon name="uim:analytics" size="16" class="text-white" />
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Analytics</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Assessment scores by category and classroom performance</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View assessment scores by category, case, and classroom</p>
           </div>
         </NuxtLink>
 

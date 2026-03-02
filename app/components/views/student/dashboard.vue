@@ -13,7 +13,7 @@
           </p>
           <div class="mt-4 flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 bg-white text-[#4d1979] text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">
-              <Icon name="lucide:book-open" size="11" />
+              <Icon name="si:book-line" size="15" />
               {{ stats?.total ?? 0 }} assigned cases
             </span>
           </div>
