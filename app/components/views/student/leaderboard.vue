@@ -9,7 +9,32 @@
             Top performing students ranked by average score across all cases.
           </p>
         </div>
+        <button
+          class="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-[#4d1979] hover:bg-[#3f1564] text-white text-sm font-medium transition-colors"
+          @click="celebrate"
+        >
+          <Icon name="lucide:party-popper" size="14" />
+          Celebrate
+        </button>
       </div>
+    </div>
+
+    <div class="confetti-layer" v-if="confettiPieces.length">
+      <span
+        v-for="piece in confettiPieces"
+        :key="piece.id"
+        class="confetti-piece"
+        :style="{
+          left: piece.left + 'vw',
+          width: piece.size + 'px',
+          height: piece.size * 0.55 + 'px',
+          background: piece.color,
+          animationDelay: piece.delay + 'ms',
+          animationDuration: piece.duration + 'ms',
+          transform: `rotate(${piece.rotate}deg)`,
+          opacity: piece.opacity,
+        }"
+      />
     </div>
 
     <!-- Podium -->
@@ -82,6 +107,16 @@ const props = defineProps<{ role: "admin" | "student" | "instructor" }>();
 const allData = ref<LeaderboardEntry[]>([]);
 const data = ref<LeaderboardEntry[]>([]);
 const top3 = ref<LeaderboardEntry[]>([]);
+const confettiPieces = ref<Array<{
+  id: number;
+  left: number;
+  delay: number;
+  duration: number;
+  color: string;
+  size: number;
+  rotate: number;
+  opacity: number;
+}>>([]);
 
 const classrooms = ref<{id: number, name: string}[]>([
   { id: -1, name: "All Classrooms" },
@@ -123,6 +158,24 @@ function displayName(entry?: LeaderboardEntry) {
   return entry?.nickname ?? "-";
 }
 
+function celebrate() {
+  const colors = ["#4d1979", "#7c3aed", "#10b981", "#f59e0b", "#ef4444", "#1d4ed8"];
+  confettiPieces.value = Array.from({ length: 80 }, (_, i) => ({
+    id: Date.now() + i,
+    left: Math.random() * 100,
+    delay: Math.random() * 220,
+    duration: 2200 + Math.random() * 1200,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    size: 6 + Math.random() * 8,
+    rotate: Math.random() * 360,
+    opacity: 0.75 + Math.random() * 0.25,
+  }));
+
+  setTimeout(() => {
+    confettiPieces.value = [];
+  }, 3600);
+}
+
 onMounted(async () => {
     // Initial fetch for all allowed classrooms (default)
     await Promise.all([
@@ -136,3 +189,32 @@ onMounted(async () => {
 });
 
 </script>
+
+<style scoped>
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -14px;
+  border-radius: 2px;
+  animation-name: dq-confetti-fall;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes dq-confetti-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate3d(0, 110vh, 0) rotate(520deg);
+    opacity: 0;
+  }
+}
+</style>

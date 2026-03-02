@@ -1,41 +1,41 @@
 <template>
   <div class="w-full max-w-6xl mx-auto space-y-8">
-    <div class="border-b border-gray-200 pb-8">
-      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+    <div class="rounded-2xl overflow-hidden" style="background: linear-gradient(135deg, #3b1566 0%, #5a2590 50%, #3f1d72 100%);">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 px-8 py-7">
+        <!-- Left: text -->
         <div>
-          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Student Dashboard</p>
-          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40 mb-2">Student Dashboard</p>
+          <h1 class="text-[26px] font-semibold text-white tracking-tight leading-snug">
             Welcome back, {{ userName }}
           </h1>
-          <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">
+          <p class="text-white/60 text-[14px] mt-2 leading-relaxed max-w-lg">
             Track your case progress, review your learning streak, and monitor your performance.
           </p>
-          <div class="mt-3 flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 bg-gray-700 text-white text-xs font-medium px-3 py-1 rounded-full">
+          <div class="mt-4 flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 bg-white text-[#4d1979] text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">
               <Icon name="lucide:book-open" size="11" />
               {{ stats?.total ?? 0 }} assigned cases
             </span>
           </div>
         </div>
-        <div class="shrink-0 flex flex-col items-start sm:items-end gap-2">
-          <div v-if="nickname" class="flex flex-col items-center gap-2">
-            <div class="w-28 h-28 overflow-hidden flex items-center justify-center transition-transform duration-200 ease-out hover:-translate-y-1 hover:scale-[1.03]">
-              <img
-                v-if="avatarUrl"
-                :src="avatarUrl"
-                :alt="nickname"
-                class="w-full h-full object-contain"
-              />
-              <div v-else-if="avatarLoading" class="flex items-center justify-center">
-                <Icon name="lucide:loader-2" size="24" class="text-[#4d1979] animate-spin" />
-              </div>
-              <Icon v-else name="lucide:user" size="36" class="text-[#c4b5de]" />
+
+        <!-- Right: avatar + nickname -->
+        <div v-if="nickname" class="shrink-0 flex flex-col items-center gap-2">
+          <div class="w-28 h-28 overflow-hidden flex items-center justify-center transition-transform duration-200 ease-out hover:-translate-y-1 hover:scale-[1.03]">
+            <img
+              v-if="avatarUrl"
+              :src="avatarUrl"
+              :alt="nickname"
+              class="w-full h-full object-contain drop-shadow-lg"
+            />
+            <div v-else-if="avatarLoading" class="flex items-center justify-center">
+              <Icon name="lucide:loader-2" size="24" class="text-white/60 animate-spin" />
             </div>
-            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#4d1979] text-white text-xs font-medium px-3 py-1">
-              Nickname: {{ nickname }}
-            </span>
+            <Icon v-else name="lucide:user" size="36" class="text-white/40" />
           </div>
-          <p class="text-xs text-gray-400">{{ today }}</p>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-white text-[#4d1979] text-xs font-semibold px-3 py-1">
+            Nickname: {{ nickname }}
+          </span>
         </div>
       </div>
     </div>

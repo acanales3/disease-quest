@@ -1,25 +1,21 @@
 <template>
   <div class="max-w-6xl mx-auto w-full space-y-8">
-    <div class="border-b border-gray-200 pb-8">
-      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div class="rounded-2xl overflow-hidden" style="background: linear-gradient(135deg, #3b1566 0%, #5a2590 50%, #3f1d72 100%);">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 px-8 py-7">
         <div>
-          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Instructor Dashboard</p>
-          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40 mb-2">Instructor Dashboard</p>
+          <h1 class="text-[26px] font-semibold text-white tracking-tight leading-snug">
             Welcome back, {{ userName || "Instructor" }}
           </h1>
-          <p class="text-gray-500 text-[15px] mt-2">
+          <p class="text-white/60 text-[14px] mt-2 leading-relaxed max-w-lg">
             Track classroom activity, student participation, and case coverage from one place.
           </p>
-          <div class="mt-3 flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 bg-gray-700 text-white text-xs font-medium px-3 py-1 rounded-full">
+          <div class="mt-4 flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 bg-white text-[#4d1979] text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">
               <Icon name="lucide:layout-grid" size="11" />
               {{ dashboardData?.totalClassrooms ?? 0 }} classrooms
             </span>
           </div>
-        </div>
-        <div class="text-left sm:text-right">
-          <p class="text-[11px] uppercase tracking-wider text-gray-400">Today</p>
-          <p class="text-sm font-medium text-gray-700 mt-1">{{ today }}</p>
         </div>
       </div>
     </div>
