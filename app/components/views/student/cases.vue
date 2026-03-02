@@ -6,11 +6,11 @@
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Learning</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight">Cases</h1>
           <p class="text-gray-500 text-[15px] mt-2">
-            Track progress on assigned cases and continue your clinical simulations.
+            Continue your clinical simulations and track your progress across cases.
           </p>
           <div class="mt-3 flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 bg-gray-700 text-white text-xs font-medium px-3 py-1 rounded-full">
-              <Icon name="lucide:book-open" size="11" />
+              <Icon name="si:book-line" size="15" />
               {{ data.length }} available cases
             </span>
           </div>

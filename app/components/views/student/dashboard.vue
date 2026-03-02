@@ -122,7 +122,7 @@
           <div class="divide-y divide-gray-100">
             <NuxtLink to="/student/classrooms" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
-                <Icon name="lucide:layout-grid" size="14" />
+                <Icon name="simple-icons:googleclassroom" size="14" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">My Classrooms</p>
@@ -131,7 +131,7 @@
             </NuxtLink>
             <NuxtLink to="/student/cases" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
-                <Icon name="lucide:book-open" size="14" />
+                <Icon name="si:book-line" size="14" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Practice Cases</p>

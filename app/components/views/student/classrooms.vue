@@ -10,7 +10,7 @@
           </p>
           <div class="mt-3 flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 bg-gray-700 text-white text-xs font-medium px-3 py-1 rounded-full">
-              <Icon name="lucide:layout-grid" size="11" />
+              <Icon name="simple-icons:googleclassroom" size="15" />
               {{ data.length }} classrooms
             </span>
           </div>
