@@ -184,7 +184,11 @@ async function handleDeleteConfirm(classroom: Classroom) {
 
 async function getData(): Promise<Classroom[]> {
   try {
-    return await $fetch<Classroom[]>("/api/classrooms");
+    const raw = await $fetch<any[]>("/api/classrooms");
+    return raw.map((c) => ({
+      ...c,
+      instructor: c.instructor_name ?? c.instructor ?? "",
+    }));
   } catch (error) {
     console.error("Failed to fetch classrooms:", error);
     return [];

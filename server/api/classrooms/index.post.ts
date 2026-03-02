@@ -59,19 +59,38 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { data: targetInstructor, error: instructorLookupError } =
-      await client
-        .from("instructors")
+    const { data: targetInstructor } = await client
+      .from("instructors")
+      .select("user_id")
+      .eq("user_id", instructorId)
+      .maybeSingle();
+
+    if (!targetInstructor) {
+      // Check if the selected user is an admin and auto-provision as instructor
+      const { data: adminRow } = await serviceClient
+        .from("admins")
         .select("user_id")
         .eq("user_id", instructorId)
-        .single();
+        .maybeSingle();
 
-    if (instructorLookupError || !targetInstructor) {
-      throw createError({
-        statusCode: 400,
-        message: "Validation failed.",
-        data: { errors: { instructorId: "Selected instructor not found." } },
-      });
+      if (!adminRow) {
+        throw createError({
+          statusCode: 400,
+          message: "Validation failed.",
+          data: { errors: { instructorId: "Selected instructor not found." } },
+        });
+      }
+
+      const { error: provisionError } = await serviceClient
+        .from("instructors")
+        .insert({ user_id: instructorId, status: "active" } as any);
+
+      if (provisionError) {
+        throw createError({
+          statusCode: 500,
+          message: "Failed to provision admin as instructor: " + provisionError.message,
+        });
+      }
     }
 
     resolvedInstructorId = instructorId;
