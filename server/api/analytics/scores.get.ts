@@ -59,6 +59,7 @@ export default defineEventHandler(async (event) => {
 
   // 3. Build Query
   let dbQuery = client.from("evaluations").select(`
+            user_id,
             history_taking_synthesis,
             physical_exam_interpretation,
             differential_diagnosis_formulation,
@@ -113,7 +114,50 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // 4. Aggregate in memory
+  const evaluationRows = data ?? [];
+  if (evaluationRows.length === 0) return [];
+
+  // 4. Resolve active classroom membership for evaluation users.
+  const relevantStudentIds = Array.from(
+    new Set(
+      evaluationRows
+        .map((row: any) => row.user_id)
+        .filter((id: unknown): id is string => typeof id === "string" && id.length > 0),
+    ),
+  );
+
+  const relevantClassroomIds = Array.from(
+    new Set(
+      evaluationRows.flatMap((row: any) =>
+        Array.isArray(row.cases?.classroom_cases)
+          ? row.cases.classroom_cases
+              .map((cc: any) => cc?.classroom_id)
+              .filter((id: unknown): id is number => typeof id === "number")
+          : [],
+      ),
+    ),
+  );
+
+  if (relevantStudentIds.length === 0 || relevantClassroomIds.length === 0) return [];
+
+  const { data: memberships, error: membershipError } = await client
+    .from("classroom_students")
+    .select("classroom_id, student_id")
+    .in("student_id", relevantStudentIds)
+    .in("classroom_id", relevantClassroomIds);
+
+  if (membershipError) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: membershipError.message,
+    });
+  }
+
+  const activeMemberships = new Set(
+    (memberships ?? []).map((m) => `${m.classroom_id}:${m.student_id}`),
+  );
+
+  // 5. Aggregate in memory
   const aggregationMap = new Map<
     string,
     {
@@ -134,7 +178,9 @@ export default defineEventHandler(async (event) => {
     }
   >();
 
-  data.forEach((row: any) => {
+  evaluationRows.forEach((row: any) => {
+    if (typeof row.user_id !== "string" || row.user_id.length === 0) return;
+
     const caseData = row.cases;
     if (!caseData || !caseData.classroom_cases) return;
 
@@ -142,15 +188,19 @@ export default defineEventHandler(async (event) => {
       const cls = cc.classrooms;
       if (!cls) return;
 
-      if (role !== "ADMIN" && !allowedClassroomIds.includes(cls.id)) return;
+      const classroomId =
+        typeof cc.classroom_id === "number" ? cc.classroom_id : cls.id;
 
-      const key = `${caseData.id}-${cls.id}`;
+      if (role !== "ADMIN" && !allowedClassroomIds.includes(classroomId)) return;
+      if (!activeMemberships.has(`${classroomId}:${row.user_id}`)) return;
+
+      const key = `${caseData.id}-${classroomId}`;
 
       if (!aggregationMap.has(key)) {
         aggregationMap.set(key, {
           caseId: caseData.id,
           caseName: caseData.name,
-          classroomId: cls.id,
+          classroomId,
           classroomName: cls.name,
           count: 0,
           scores: {
