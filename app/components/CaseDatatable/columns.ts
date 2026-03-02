@@ -1,8 +1,6 @@
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h } from "vue";
-import DropdownAction from "@/components/CaseDatatable/data-table-dropdown.vue";
-import { ChevronDown } from "lucide-vue-next";
-import { Button } from "~/components/ui/button";
+import { CaseDatatableDataTableDropdown as DropdownAction } from "#components";
 import {
   Tooltip,
   TooltipContent,
@@ -10,7 +8,8 @@ import {
 } from "@/components/ui/tooltip";
 
 export interface Case {
-  id: number;
+  id: number | string;
+  case_id?: number;
   name: string;
   description: string;
   classrooms: { id: number; name: string }[];
@@ -29,58 +28,39 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
   return [
     {
       accessorKey: "id",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "No"),
+      header: () => h("div", {}, "NO"),
       cell: ({ row }) => {
-        const id = row.getValue("id") as number;
-        return h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          id.toString(),
-        );
+        const original = row.original as Case;
+        const dbId = original.case_id ?? original.id;
+        return h("div", { class: "text-[13px] text-gray-400 tabular-nums" }, String(dbId));
       },
     },
     {
       accessorKey: "name",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Name"),
+      header: () => h("div", {}, "NAME"),
       cell: ({ row }) => {
         const name = row.getValue("name") as string;
-        return h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          name,
-        );
+        return h("div", { class: "text-[13px] font-medium text-gray-900" }, name);
       },
     },
     {
       accessorKey: "description",
-      header: () =>
-        h(
-          "div",
-          { class: "text-center font-normal text-black" },
-          "Description",
-        ),
+      header: () => h("div", {}, "DESCRIPTION"),
       cell: ({ row }) => {
         const description = row.getValue("description") as string;
-        return h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          description,
-        );
+        return h("div", { class: "text-[13px] text-gray-600" }, description);
       },
     },
     {
       accessorKey: "classrooms",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Classroom"),
+      header: () => h("div", {}, "CLASSROOM"),
       cell: ({ row }) => {
         const classrooms = row.getValue("classrooms") as
           | { id: number; name: string }[]
           | undefined;
 
         if (!classrooms || classrooms.length === 0) {
-          return h("div", { class: "text-center text-gray-600" }, "-");
+          return h("div", { class: "text-[13px] text-gray-400" }, "-");
         }
 
         const first = classrooms[0]?.name ?? "-";
@@ -102,8 +82,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
                     h(
                       "div",
                       {
-                        class:
-                          "text-center cursor-pointer text-gray-600 hover:text-gray-900 transition",
+                        class: "text-[13px] cursor-pointer text-gray-600 hover:text-gray-900 transition",
                       },
                       truncated,
                     ),
@@ -130,32 +109,22 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
     },
     {
       accessorKey: "completionDate",
-      header: () =>
-        h(
-          "div",
-          { class: "text-center font-normal text-black" },
-          "Completion Date",
-        ),
+      header: () => h("div", {}, "COMPLETION DATE"),
       cell: ({ row }) => {
         const completionDate = row.getValue("completionDate") as string;
-        return h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          completionDate,
-        );
+        return h("div", { class: "text-[13px] text-gray-600" }, completionDate);
       },
     },
     {
       accessorKey: "status",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Status"),
+      header: () => h("div", {}, "STATUS"),
       cell: ({ row }) => {
         const status = row.getValue("status") as Case["status"];
 
         const statusClasses = {
-          "not started": "bg-gray-100 text-red-700",
-          "in progress": "bg-gray-100 text-blue-700",
-          completed: "bg-gray-100 text-green-700",
+          "not started": "bg-red-50 text-red-600 border border-red-200",
+          "in progress": "bg-blue-50 text-blue-600 border border-blue-200",
+          "completed": "bg-green-50 text-green-700 border border-green-200"
         };
 
         const statusText = {
@@ -167,7 +136,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
         return h(
           "span",
           {
-            class: `mx-auto px-2 py-1 rounded text-xs font-medium ${statusClasses[status]}`,
+            class: `inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${statusClasses[status]}`,
           },
           statusText[status],
         );
@@ -181,7 +150,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
 
         return h(
           "div",
-          { class: "relative flex justify-center" },
+          { class: "relative flex justify-end" },
           h(DropdownAction, {
             caseData,
             role,

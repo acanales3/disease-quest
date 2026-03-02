@@ -25,20 +25,15 @@ export function getColumns(
   return [
     {
       id: "index",
-      header: () => h("div", { class: "text-center font-normal text-black" }, "No"),
-      cell: ({ row }) =>
-        h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          String(row.index + 1)
-        ),
+      header: () => h("div", {}, "NO"),
+      cell: ({ row }) => h("div", { class: "text-gray-500" }, String(row.index + 1)),
     },
     {
       accessorKey: "name",
-      header: () => h("div", { class: "text-center font-normal text-black" }, "Name"),
+      header: () => h("div", {}, "NAME"),
       cell: ({ row }) => {
         const name = row.getValue("name") as string;
-        return h("div", { class: "text-center font-normal text-gray-600" }, name);
+        return h("div", { class: "font-medium text-gray-900" }, name);
       },
     },
     {
@@ -47,39 +42,29 @@ export function getColumns(
         h(
           "button",
           {
-            class:
-              "flex justify-center items-center gap-1 font-normal text-black w-full px-3 py-1 rounded-md transition-colors hover:bg-gray-200",
+            class: "flex items-center gap-1",
             onClick: () => column.toggleSorting(column.getIsSorted() === "asc"),
           },
-          ["Email", h(ArrowUpDown, { class: "h-4 w-4" })]
+          ["EMAIL", h(ArrowUpDown, { class: "h-3.5 w-3.5" })]
         ),
-      cell: ({ row }) =>
-        h(
-          "div",
-          { class: "lowercase text-center font-normal text-gray-600" },
-          row.getValue("email")
-        ),
+      cell: ({ row }) => h("div", { class: "lowercase text-gray-600" }, row.getValue("email")),
     },
     {
       accessorKey: "school",
-      header: () => h("div", { class: "text-center font-normal text-black" }, "School"),
+      header: () => h("div", {}, "SCHOOL"),
       cell: ({ row }) => {
         const school = row.getValue("school") as string | undefined;
-        return h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          school ?? "-"
-        );
+        return h("div", { class: "text-gray-600" }, school ?? "-");
       },
     },
     {
       accessorKey: "classrooms",
-      header: () => h("div", { class: "text-center font-normal text-black" }, "Classroom"),
+      header: () => h("div", {}, "CLASSROOM"),
       cell: ({ row }) => {
         const classrooms = row.getValue("classrooms") as { id: number; name: string }[] | undefined;
 
         if (!classrooms || classrooms.length === 0) {
-          return h("div", { class: "text-center text-gray-600" }, "-");
+          return h("div", { class: "text-gray-400" }, "-");
         }
 
         const first = classrooms[0]?.name ?? "-";
@@ -90,34 +75,12 @@ export function getColumns(
           {},
           {
             default: () => [
-              h(
-                TooltipTrigger,
-                { asChild: true },
-                {
-                  default: () =>
-                    h(
-                      "div",
-                      {
-                        class: "text-center cursor-pointer text-gray-600 hover:text-gray-900 transition",
-                      },
-                      truncated
-                    ),
-                }
-              ),
-              h(
-                TooltipContent,
-                { side: "bottom", class: "bg-white shadow-md w-56" },
-                {
-                  default: () =>
-                    classrooms.map((c) =>
-                      h(
-                        "div",
-                        { key: c.id, class: "py-1 text-sm text-gray-600" },
-                        c.name
-                      )
-                    ),
-                }
-              ),
+              h(TooltipTrigger, { asChild: true }, {
+                default: () => h("div", { class: "cursor-pointer text-gray-600 hover:text-gray-900 transition" }, truncated),
+              }),
+              h(TooltipContent, { side: "bottom", class: "bg-white shadow-md w-56" }, {
+                default: () => classrooms.map((c) => h("div", { key: c.id, class: "py-1 text-sm text-gray-600" }, c.name)),
+              }),
             ],
           }
         );
@@ -125,16 +88,15 @@ export function getColumns(
     },
     {
       accessorKey: "status",
-      header: () => h("div", { class: "text-center font-normal text-black" }, "Status"),
+      header: () => h("div", {}, "STATUS"),
       cell: ({ row }) => {
         const status = row.getValue("status") as Instructor["status"];
         const isActive = status === "active";
-
         return h(
           "span",
           {
-            class: `mx-auto px-2 py-1 rounded text-xs font-medium ${
-              isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            class: `inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+              isActive ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-600 border border-red-200"
             }`,
           },
           isActive ? "Active" : "Deactivated"
@@ -146,16 +108,7 @@ export function getColumns(
       enableHiding: false,
       cell: ({ row }) => {
         const instructor = row.original;
-
-        return h(
-          "div",
-          { class: "relative flex justify-center" },
-          h(DropdownAction, {
-            instructor,
-            role,
-            onDelete: handlers?.onDelete, // forward callback into dropdown
-          })
-        );
+        return h("div", { class: "relative flex" }, h(DropdownAction, { instructor, role, onDelete: handlers?.onDelete }));
       },
     },
   ];
