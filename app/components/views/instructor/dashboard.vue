@@ -12,7 +12,7 @@
           </p>
           <div class="mt-4 flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 bg-white text-[#4d1979] text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">
-              <Icon name="lucide:layout-grid" size="11" />
+              <Icon name="simple-icons:googleclassroom" size="15" />
               {{ dashboardData?.totalClassrooms ?? 0 }} classrooms
             </span>
           </div>
@@ -33,10 +33,10 @@
           <TotalCount
             icon="hugeicons:students"
             :count="dashboardData?.totalStudents ?? 0"
-            label="Total students"
+            label="Students"
           />
           <TotalCount
-            icon="lucide:layout-grid"
+            icon="simple-icons:googleclassroom"
             :count="dashboardData?.totalClassrooms ?? 0"
             label="Classrooms"
           />
@@ -102,7 +102,7 @@
               </div>
 
               <p class="text-xs text-gray-500">
-                Invitation status across your classroom roster.
+                Invitation status across all your classrooms.
               </p>
             </div>
           </div>
@@ -119,16 +119,16 @@
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Students</p>
-                <p class="text-[12px] text-gray-400">Manage your student roster</p>
+                <p class="text-[12px] text-gray-400">View, invite, and manage students</p>
               </div>
             </NuxtLink>
             <NuxtLink to="/instructor/classrooms" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
-                <Icon name="lucide:layout-grid" size="14" />
+                <Icon name="simple-icons:googleclassroom" size="14" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Classrooms</p>
-                <p class="text-[12px] text-gray-400">Open and organize your classes</p>
+                <p class="text-[12px] text-gray-400">Create, edit, and manage classrooms</p>
               </div>
             </NuxtLink>
             <NuxtLink to="/instructor/cases" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
@@ -137,7 +137,7 @@
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Cases</p>
-                <p class="text-[12px] text-gray-400">Assign and review case activities</p>
+                <p class="text-[12px] text-gray-400">Play and assign cases to classrooms</p>
               </div>
             </NuxtLink>
             <NuxtLink to="/instructor/analytics" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
@@ -146,7 +146,7 @@
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Analytics</p>
-                <p class="text-[12px] text-gray-400">Track classroom performance trends</p>
+                <p class="text-[12px] text-gray-400">View scores by category, case, and classroom</p>
               </div>
             </NuxtLink>
           </div>

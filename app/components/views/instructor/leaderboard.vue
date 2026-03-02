@@ -1,12 +1,12 @@
 <template>
-  <div class="w-full max-w-6xl mx-auto space-y-8">
+  <div class="w-full flex flex-col gap-8">
     <div class="border-b border-gray-200 pb-8">
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Insights</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Leaderboard</h1>
           <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">
-            Top performing students ranked by average score across all cases.
+            Students ranked by completed cases and average scores.
           </p>
         </div>
         <button
