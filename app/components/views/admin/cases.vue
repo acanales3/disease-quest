@@ -1,26 +1,18 @@
 <template>
   <div class="flex flex-col w-full">
-    <!-- Num Cases + Create + Assign Buttons -->
+    <!-- Num Cases & Create Case Button -->
     <div class="flex justify-center gap-4">
       <TotalCount
         :count="data.length"
         label="Total Cases"
         icon="si:book-line"
       />
-
-      <!-- Create Case -->
       <CreateCaseDialog />
-
-      <!-- Assign Case -->
-      <AssignCaseDialog
-        :cases="data"
-        :classrooms="classroomsData"
-      />
     </div>
 
     <div class="w-full py-2">
       <!-- Cases Table -->
-      <DataTable :columns="visibleColumns" :data="data" :classrooms="classroomsData" />
+      <DataTable :columns="visibleColumns" :data="data" @refresh="refresh()" />
     </div>
 
     <!-- Remove from Classroom(s) Modal -->
@@ -69,12 +61,10 @@
 
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
-import type { Classroom } from "~/assets/interface/Classroom";
 import { computed, watchEffect, ref } from "vue";
 import { getColumns } from "@/components/CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue";
-import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue";
 import TotalCount from "../../../components/ui/TotalCount.vue";
 import { Button } from "@/components/ui/button";
 import {
@@ -86,37 +76,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const {
+  data: apiData,
+  pending,
+  error,
+  refresh,
+} = await useFetch<Case[]>("/api/cases/available", { default: () => [] });
+
+const data = ref<Case[]>([]);
+watchEffect(() => {
+  data.value = apiData.value ?? [];
+});
+
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "classrooms", "actions"];
+  const columnsToShow = ["id", "name", "description", "classrooms", "status", "actions"];
   return getColumns("admin", {
     onRemoveFromClassrooms: openRemoveDialog,
+    onRefresh: () => refresh(),
   }).filter((column) => {
     const key =
       "id" in column
         ? column.id
         : "accessorKey" in column
-        ? column.accessorKey
-        : undefined;
+          ? column.accessorKey
+          : undefined;
     return key ? columnsToShow.includes(String(key)) : false;
   });
-});
-
-/* ---------- FETCHES ---------- */
-const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
-  "/api/cases/available",
-  { default: () => [] }
-);
-
-const { data: classroomsApi } = await useFetch<Classroom[]>("/api/classrooms", {
-  default: () => [],
-});
-
-const data = ref<Case[]>([]);
-const classroomsData = ref<Classroom[]>([]);
-
-watchEffect(() => {
-  data.value = apiData.value ?? [];
-  classroomsData.value = classroomsApi.value ?? [];
 });
 
 const errorMessage = computed(() => {
@@ -127,6 +112,7 @@ const errorMessage = computed(() => {
   if (e.statusCode === 400) return e.statusMessage || "Bad request.";
   return e.statusMessage || e.message || "Unknown error.";
 });
+
 
 /* ---------- REMOVE FROM CLASSROOM(S) ---------- */
 const showRemoveDialog = ref(false);

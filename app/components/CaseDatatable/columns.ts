@@ -1,12 +1,12 @@
 import type { ColumnDef } from "@tanstack/vue-table";
 import { h } from "vue";
 import DropdownAction from "@/components/CaseDatatable/data-table-dropdown.vue";
-import { ArrowUpDown, ChevronDown } from "lucide-vue-next";
+import { ChevronDown } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 
 export interface Case {
@@ -16,13 +16,13 @@ export interface Case {
   classrooms: { id: number; name: string }[];
   completionDate: string;
   status: "not started" | "in progress" | "completed";
-  // action column still needed
 }
 
 interface ColumnOptions {
   classroomId?: number;
   onRemoveFromClassroom?: (caseId: number) => void;
   onRemoveFromClassrooms?: (caseData: Case) => void;
+  onRefresh?: () => void;
 }
 
 export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Case>[] {
@@ -36,7 +36,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
         return h(
           "div",
           { class: "text-center font-normal text-gray-600" },
-          id.toString()
+          id.toString(),
         );
       },
     },
@@ -46,30 +46,48 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
         h("div", { class: "text-center font-normal text-black" }, "Name"),
       cell: ({ row }) => {
         const name = row.getValue("name") as string;
-        return h("div", { class: "text-center font-normal text-gray-600" }, name);
+        return h(
+          "div",
+          { class: "text-center font-normal text-gray-600" },
+          name,
+        );
       },
     },
     {
       accessorKey: "description",
       header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Description"),
+        h(
+          "div",
+          { class: "text-center font-normal text-black" },
+          "Description",
+        ),
       cell: ({ row }) => {
         const description = row.getValue("description") as string;
-        return h("div", { class: "text-center font-normal text-gray-600" }, description);
+        return h(
+          "div",
+          { class: "text-center font-normal text-gray-600" },
+          description,
+        );
       },
     },
     {
       accessorKey: "classrooms",
-      header: () => h("div", { class: "text-center font-normal text-black" }, "Classroom"),
+      header: () =>
+        h("div", { class: "text-center font-normal text-black" }, "Classroom"),
       cell: ({ row }) => {
-        const classrooms = row.getValue("classrooms") as { id: number; name: string }[] | undefined;
+        const classrooms = row.getValue("classrooms") as
+          | { id: number; name: string }[]
+          | undefined;
 
         if (!classrooms || classrooms.length === 0) {
           return h("div", { class: "text-center text-gray-600" }, "-");
         }
 
         const first = classrooms[0]?.name ?? "-";
-        const truncated = first.length > 10 || classrooms.length > 1 ? first.slice(0, 10) + "..." : first;
+        const truncated =
+          first.length > 10 || classrooms.length > 1
+            ? first.slice(0, 10) + "..."
+            : first;
 
         return h(
           Tooltip,
@@ -84,11 +102,12 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
                     h(
                       "div",
                       {
-                        class: "text-center cursor-pointer text-gray-600 hover:text-gray-900 transition",
+                        class:
+                          "text-center cursor-pointer text-gray-600 hover:text-gray-900 transition",
                       },
-                      truncated
+                      truncated,
                     ),
-                }
+                },
               ),
               h(
                 TooltipContent,
@@ -99,26 +118,30 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
                       h(
                         "div",
                         { key: c.id, class: "py-1 text-sm text-gray-600" },
-                        c.name
-                      )
+                        c.name,
+                      ),
                     ),
-                }
+                },
               ),
             ],
-          }
+          },
         );
       },
     },
     {
       accessorKey: "completionDate",
       header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Completion Date"),
+        h(
+          "div",
+          { class: "text-center font-normal text-black" },
+          "Completion Date",
+        ),
       cell: ({ row }) => {
         const completionDate = row.getValue("completionDate") as string;
         return h(
           "div",
           { class: "text-center font-normal text-gray-600" },
-          completionDate
+          completionDate,
         );
       },
     },
@@ -132,13 +155,13 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
         const statusClasses = {
           "not started": "bg-gray-100 text-red-700",
           "in progress": "bg-gray-100 text-blue-700",
-          "completed": "bg-gray-100 text-green-700"
+          completed: "bg-gray-100 text-green-700",
         };
 
         const statusText = {
           "not started": "Not Started",
           "in progress": "In Progress",
-          "completed": "Completed"
+          completed: "Completed",
         };
 
         return h(
@@ -146,7 +169,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
           {
             class: `mx-auto px-2 py-1 rounded text-xs font-medium ${statusClasses[status]}`,
           },
-          statusText[status]
+          statusText[status],
         );
       },
     },
@@ -165,7 +188,8 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
             classroomId: options?.classroomId,
             onRemoveFromClassroom: options?.onRemoveFromClassroom,
             onRemoveFromClassrooms: options?.onRemoveFromClassrooms,
-          })
+            onRefresh: options?.onRefresh,
+          }),
         );
       },
     },

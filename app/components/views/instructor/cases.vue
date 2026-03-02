@@ -9,10 +9,14 @@
       />
       <AssignCaseDialog :cases="casesData" :classrooms="classroomsData" />
     </div>
-    
+
     <!-- Cases Table -->
     <div class="w-full py-2">
-      <DataTable :columns="visibleColumns" :data="casesData" :classrooms="classroomsData" />
+      <DataTable
+        :columns="visibleColumns"
+        :data="casesData"
+        @refresh="refreshCases()"
+      />
     </div>
 
     <!-- Remove from Classroom(s) Modal -->
@@ -80,10 +84,27 @@ import {
 const casesData = ref<Case[]>([]);
 const classroomsData = ref<Classroom[]>([]);
 
+const { data: casesApi, refresh: refreshCases } = await useFetch<Case[]>(
+  "/api/cases/available",
+  {
+    default: () => [],
+  },
+);
+
+const { data: classroomsApi } = await useFetch<Classroom[]>("/api/classrooms", {
+  default: () => [],
+});
+
+watchEffect(() => {
+  casesData.value = casesApi.value ?? [];
+  classroomsData.value = classroomsApi.value ?? [];
+});
+
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "classrooms", "actions"];
+  const columnsToShow = ["id", "name", "description", "classrooms", "status", "actions"];
   return getColumns("instructor", {
     onRemoveFromClassrooms: openRemoveDialog,
+    onRefresh: () => refreshCases(),
   }).filter((column) => {
     const key =
       "id" in column
@@ -95,20 +116,6 @@ const visibleColumns = computed(() => {
   });
 });
 
-// API calls
-const { data: casesApi, refresh } = await useFetch<Case[]>("/api/cases/available", {
-  default: () => [],
-});
-
-const { data: classroomsApi } = await useFetch<Classroom[]>("/api/classrooms", {
-  default: () => [],
-});
-
-// bind into your existing refs
-watchEffect(() => {
-  casesData.value = casesApi.value ?? [];
-  classroomsData.value = classroomsApi.value ?? [];
-});
 
 /* ---------- REMOVE FROM CLASSROOM(S) ---------- */
 const showRemoveDialog = ref(false);
@@ -134,7 +141,7 @@ async function confirmRemoveFromClassrooms() {
       )
     );
     showRemoveDialog.value = false;
-    await refresh();
+    await refreshCases();
   } catch (error) {
     console.error("Failed to remove case from classrooms:", error);
   } finally {

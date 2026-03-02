@@ -938,8 +938,9 @@ serve(async (req: Request) => {
 
       if (dbScores && Object.keys(dbScores).length > 0) {
         const evalPayload = {
-          user_id: session.user_id, // ← renamed
+          user_id: session.user_id,
           case_id: session.case_id,
+          session_id: sessionId, // ← links this evaluation to the specific attempt
           ...dbScores,
           reflection_document: JSON.stringify(
             (evalResult as Record<string, unknown>).evaluation ?? {},
@@ -953,20 +954,6 @@ serve(async (req: Request) => {
             score_keys: Object.keys(dbScores),
           }),
         );
-
-        // Delete any existing evaluation for this user+case, then insert fresh
-        const { error: delErr } = await db
-          .from("evaluations")
-          .delete()
-          .eq("user_id", session.user_id) // ← renamed
-          .eq("case_id", session.case_id);
-
-        if (delErr) {
-          console.error(
-            "[ORCHESTRATOR] Failed to delete old evaluation:",
-            delErr.message,
-          );
-        }
 
         const { data: evalData, error: evalErr } = await db
           .from("evaluations")
