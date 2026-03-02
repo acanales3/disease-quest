@@ -1,18 +1,16 @@
 <template>
-  <div class="w-full max-w-6xl mx-auto flex flex-col gap-8">
+  <div class="space-y-6">
     <div class="border-b border-gray-200 pb-8">
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Learning</p>
-          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight">Cases</h1>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Cases</h1>
           <p class="text-gray-500 text-[15px] mt-2">
-            Continue your clinical simulations and track your progress across cases.
+            Play cases to practice clinical simulations.
           </p>
-          <div class="mt-3 flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 bg-gray-700 text-white text-xs font-medium px-3 py-1 rounded-full">
-              <Icon name="si:book-line" size="15" />
-              {{ data.length }} available cases
-            </span>
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
+            <Icon name="si:book-line" size="15" class="text-white" />
+            <span class="text-[13px] font-medium text-white">{{ data.length }} available cases</span>
           </div>
         </div>
         <div class="sm:min-w-[460px] bg-gradient-to-r from-[#5f2a96] to-[#34204f] border border-[#4a2c6f] rounded-xl px-4 py-3">

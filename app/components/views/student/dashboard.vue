@@ -122,29 +122,38 @@
           <div class="divide-y divide-gray-100">
             <NuxtLink to="/student/classrooms" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
-                <Icon name="simple-icons:googleclassroom" size="14" />
+                <Icon name="simple-icons:googleclassroom" size="15" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">My Classrooms</p>
-                <p class="text-[12px] text-gray-400">View enrolled classrooms</p>
+                <p class="text-[12px] text-gray-400">View and join classrooms</p>
               </div>
             </NuxtLink>
             <NuxtLink to="/student/cases" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
-                <Icon name="si:book-line" size="14" />
+                <Icon name="si:book-line" size="15" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Practice Cases</p>
-                <p class="text-[12px] text-gray-400">Continue your simulations</p>
+                <p class="text-[12px] text-gray-400">Play cases</p>
+              </div>
+            </NuxtLink>
+            <NuxtLink to="/student/analytics" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+              <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
+                <Icon name="uim:analytics" size="15" />
+              </div>
+              <div>
+                <p class="text-[13px] font-medium text-gray-900">Analytics</p>
+                <p class="text-[12px] text-gray-400">View scores by category, case, and classroom</p>
               </div>
             </NuxtLink>
             <NuxtLink to="/student/leaderboard" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
-                <Icon name="lucide:trophy" size="14" />
+                <Icon name="lucide:trophy" size="15" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Leaderboard</p>
-                <p class="text-[12px] text-gray-400">Compare progress with peers</p>
+                <p class="text-[12px] text-gray-400">Ranked by completed cases and average scores.</p>
               </div>
             </NuxtLink>
           </div>
