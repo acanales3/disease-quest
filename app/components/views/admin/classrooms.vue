@@ -1,38 +1,47 @@
 <template>
-  <div class="flex flex-col w-full">
-    <div class="flex justify-center gap-4">
-      <TotalCount
-        :count="data.length"
-        label="Total Classrooms"
-        icon="simple-icons:googleclassroom"
-      />
+  <div class="flex flex-col w-full gap-8">
 
-      <Button
-        variant="outline"
-        class="h-28 w-48 flex flex-col items-center justify-center gap-2 p-4"
-        @click="openCreateModal"
-      >
-        <div class="flex flex-col items-center justify-center gap-2">
-          <Icon name="ic:baseline-add" size="28" class="#ad46ff" />
-          <span class="text-sm">Create Classroom</span>
+    <!-- Header -->
+    <div class="border-b border-gray-200 pb-8">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Content</p>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight">Classrooms</h1>
+          <p class="text-gray-500 text-[15px] mt-2">Create and manage classrooms, assign instructors, and enroll students.</p>
+          <div class="mt-3 flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 bg-[#4d1979] text-white text-xs font-medium px-3 py-1 rounded-full">
+              <Icon name="lucide:layout-grid" size="11" />
+              {{ data.length }} classrooms
+            </span>
+          </div>
         </div>
-      </Button>
+        <Button
+          class="bg-[#4d1979] hover:bg-[#3f1564] text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 shrink-0"
+          @click="openCreateModal"
+        >
+          <Icon name="lucide:plus" size="15" />
+          Create Classroom
+        </Button>
+      </div>
     </div>
 
-    <div v-if="pageMessage" class="w-full py-2">
+    <!-- Status Banner -->
+    <div v-if="pageMessage">
       <div
-        class="rounded-md border px-4 py-3 text-sm"
+        class="flex items-center gap-2 rounded-lg border px-4 py-3 text-sm"
         :class="
           pageMessage.type === 'success'
-            ? 'border-green-200 bg-green-50 text-green-800'
-            : 'border-red-200 bg-red-50 text-red-700'
+            ? 'border-green-200 bg-green-50 text-green-700'
+            : 'border-red-200 bg-red-50 text-red-600'
         "
       >
+        <Icon :name="pageMessage.type === 'success' ? 'lucide:check-circle' : 'lucide:alert-circle'" size="15" />
         {{ pageMessage.text }}
       </div>
     </div>
 
-    <div class="w-full py-2">
+    <!-- Table -->
+    <div>
       <DataTable :columns="visibleColumns" :data="data" user-role="admin" />
     </div>
 

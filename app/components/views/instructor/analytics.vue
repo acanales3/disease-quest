@@ -1,17 +1,49 @@
 <template>
-  <div class="w-full">
+  <div class="w-full max-w-6xl mx-auto space-y-6">
+    <div class="border-b border-gray-200 pb-8">
+      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div>
+          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Insights</p>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight">Analytics</h1>
+          <p class="text-gray-500 text-[15px] mt-2">
+            Analyze classroom performance and assessment outcomes across your assigned cases.
+          </p>
+          <div class="mt-3 flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 bg-gray-700 text-white text-xs font-medium px-3 py-1 rounded-full">
+              <Icon name="lucide:bar-chart-3" size="11" />
+              {{ analyticsData.length }} score records
+            </span>
+          </div>
+        </div>
 
-    <!-- Loading -->
-    <div v-if="pending" class="p-6 text-gray-500">
+        <div class="sm:min-w-[360px] rounded-xl border border-[#4a2c6f] bg-gradient-to-r from-[#5f2a96] to-[#3f2463] px-4 py-3">
+          <p class="text-[11px] font-medium uppercase tracking-wider text-white/80">Performance Snapshot</p>
+          <div class="mt-3 grid grid-cols-3 divide-x divide-white/20">
+            <div class="pr-3">
+              <p class="text-[10px] uppercase tracking-wider text-white/70">Average Score</p>
+              <p class="mt-1 text-[22px] font-semibold text-white tabular-nums leading-none">{{ overallAverage }}%</p>
+            </div>
+            <div class="px-3">
+              <p class="text-[10px] uppercase tracking-wider text-white/70">Cases</p>
+              <p class="mt-1 text-[22px] font-semibold text-white tabular-nums leading-none">{{ uniqueCaseCount }}</p>
+            </div>
+            <div class="pl-3">
+              <p class="text-[10px] uppercase tracking-wider text-white/70">Classrooms</p>
+              <p class="mt-1 text-[22px] font-semibold text-white tabular-nums leading-none">{{ uniqueClassroomCount }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="pending" class="rounded-lg border border-gray-200 bg-white px-4 py-6 text-sm text-gray-500">
       Loading analytics...
     </div>
 
-    <!-- Error -->
-    <div v-else-if="error" class="p-6 text-red-500">
+    <div v-else-if="error" class="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
       Failed to load analytics.
     </div>
 
-    <!-- Charts -->
     <template v-else>
       <ClassroomScores
         class="mb-8"
@@ -52,5 +84,37 @@ const { data, pending, error } = await useFetch<AnalyticsScoreEntry[]>(
  */
 const analyticsData = computed<AnalyticsScoreEntry[]>(() => {
   return data.value ?? []
+})
+
+const uniqueCaseCount = computed(() => {
+  return new Set(analyticsData.value.map((entry) => entry.caseId)).size
+})
+
+const uniqueClassroomCount = computed(() => {
+  return new Set(analyticsData.value.map((entry) => entry.classroomId)).size
+})
+
+const overallAverage = computed(() => {
+  if (!analyticsData.value.length) return 0
+
+  const weightedTotal = analyticsData.value.reduce((sum, entry) => {
+    const categoryAverage =
+      (
+        entry.history_taking_synthesis +
+        entry.physical_exam_interpretation +
+        entry.differential_diagnosis_formulation +
+        entry.diagnostic_tests +
+        entry.management_reasoning +
+        entry.communication_empathy +
+        entry.reflection_metacognition
+      ) / 7
+
+    return sum + categoryAverage * entry.count
+  }, 0)
+
+  const totalCount = analyticsData.value.reduce((sum, entry) => sum + entry.count, 0)
+  if (!totalCount) return 0
+
+  return Math.round((weightedTotal / totalCount) * 10) / 10
 })
 </script>
