@@ -46,6 +46,7 @@ const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   classrooms?: Classroom[];
+  hideClassroomFilter?: boolean;
 }>();
 
 // Bubble the refresh event up to the page so it can re-fetch cases
@@ -154,7 +155,7 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
           />
         </div>
 
-        <DropdownMenu>
+        <DropdownMenu v-if="!hideClassroomFilter">
           <DropdownMenuTrigger as-child>
             <Button variant="outline" class="h-8 px-3 text-[13px] border-gray-200 text-gray-600 font-normal gap-1.5 min-w-[130px] justify-between">
               <span class="truncate">{{ selectedClassroom ? selectedClassroom.name : "All Classes" }}</span>
