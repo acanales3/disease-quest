@@ -1,15 +1,15 @@
 <template>
   <div class="p-6 bg-white border border-gray-200 rounded-xl overflow-x-auto">
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-7">
       <!-- Left-aligned title -->
-      <h2 class="text-lg font-semibold text-gray-900">{{ title }}</h2>
+      <h2 class="text-[20px] font-semibold tracking-tight text-gray-900">{{ title }}</h2>
 
       <!-- Right-aligned dropdowns -->
       <div class="flex gap-3">
         <!-- Category selector -->
         <ui-dropdown-menu>
           <ui-dropdown-menu-trigger as-child>
-            <button class="px-3 h-8 border border-gray-200 rounded-lg text-[13px] min-w-[170px] flex justify-between items-center text-gray-700 bg-white">
+            <button class="px-3.5 h-9 border border-gray-200 rounded-lg text-[13px] font-medium min-w-[180px] flex justify-between items-center text-gray-700 bg-white">
               {{ selectedCategory?.name || 'All Categories' }} ▾
             </button>
           </ui-dropdown-menu-trigger>
@@ -26,7 +26,7 @@
         <!-- Classroom selector -->
         <ui-dropdown-menu>
           <ui-dropdown-menu-trigger as-child>
-            <button class="px-3 h-8 border border-gray-200 rounded-lg text-[13px] min-w-[130px] flex justify-between items-center text-gray-700 bg-white">
+            <button class="px-3.5 h-9 border border-gray-200 rounded-lg text-[13px] font-medium min-w-[140px] flex justify-between items-center text-gray-700 bg-white">
               {{ selectedClassroom?.name || 'All Classrooms' }} ▾
             </button>
           </ui-dropdown-menu-trigger>
@@ -61,10 +61,10 @@
         :margin="{ top: 20, right: 20, bottom: 80, left: 80 }"
       />
     </div>
-     <div v-else-if="loading" class="text-center py-8 text-gray-500">
+     <div v-else-if="loading" class="text-center py-8 text-sm text-gray-500">
         Loading chart...
     </div>
-    <div v-else class="text-center py-8 text-gray-500">
+    <div v-else class="text-center py-8 text-sm text-gray-500">
         No data available for the selected filters.
     </div>
   </div>

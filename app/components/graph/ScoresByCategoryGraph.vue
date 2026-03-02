@@ -1,13 +1,13 @@
 <template>
   <div class="rounded-xl border border-gray-200 bg-white p-6">
-    <div class="flex items-start justify-between mb-6">
-      <h3 class="text-lg font-semibold text-gray-900">Assessment Score by Category</h3>
+    <div class="flex items-start justify-between mb-7">
+      <h3 class="text-[20px] font-semibold tracking-tight text-gray-900">Assessment Score by Category</h3>
 
       <div class="flex gap-3">
         <!-- Case selector -->
         <ui-dropdown-menu>
           <ui-dropdown-menu-trigger as-child>
-            <button class="px-3 h-8 border border-gray-200 rounded-lg text-[13px] min-w-[120px] flex justify-between items-center text-gray-700 bg-white">
+            <button class="px-3.5 h-9 border border-gray-200 rounded-lg text-[13px] font-medium min-w-[130px] flex justify-between items-center text-gray-700 bg-white">
               {{ selectedCase?.name || "All Cases" }} ▾
             </button>
           </ui-dropdown-menu-trigger>
@@ -24,7 +24,7 @@
         <!-- Classroom selector -->
         <ui-dropdown-menu>
           <ui-dropdown-menu-trigger as-child>
-            <button class="px-3 h-8 border border-gray-200 rounded-lg text-[13px] min-w-[130px] flex justify-between items-center text-gray-700 bg-white">
+            <button class="px-3.5 h-9 border border-gray-200 rounded-lg text-[13px] font-medium min-w-[140px] flex justify-between items-center text-gray-700 bg-white">
               {{ selectedClassroom?.name || "All Classrooms" }} ▾
             </button>
           </ui-dropdown-menu-trigger>
@@ -40,18 +40,18 @@
       </div>
     </div>
 
-    <div class="space-y-4" v-if="!loading && processedCategories.length">
+    <div class="space-y-4.5" v-if="!loading && processedCategories.length">
       <template v-for="(cat, i) in processedCategories" :key="i">
         <div class="flex items-center gap-4">
           <div class="flex-1">
             <div
-              class="w-full bg-gray-100 rounded-full h-9 relative overflow-visible"
+              class="w-full bg-gray-100 rounded-full h-10 relative overflow-visible"
             >
-              <div class="bg-[#d9d2ea] h-9 rounded-full transition-all duration-500" :style="{ width: cat.score + '%' }"></div>
+              <div class="bg-[#d9d2ea] h-10 rounded-full transition-all duration-500" :style="{ width: cat.score + '%' }"></div>
 
               <!-- percentage pill anchored to the end of the filled area -->
               <div
-                class="absolute top-1/2 z-10 px-2 py-0.5 bg-white border rounded-full text-xs text-gray-700 shadow-sm transition-all duration-500"
+                class="absolute top-1/2 z-10 px-2.5 py-0.5 bg-white border rounded-full text-[11px] font-medium text-gray-700 shadow-sm transition-all duration-500"
                 :style="{
                   left: pillLeft(cat.score),
                   transform: 'translate(-50%, -50%)',
@@ -62,16 +62,16 @@
             </div>
           </div>
 
-          <div class="w-56 text-right text-sm text-gray-700">
+          <div class="w-60 text-right text-[13px] font-medium text-gray-700 leading-snug">
             {{ cat.label }}
           </div>
         </div>
       </template>
     </div>
-    <div v-else-if="loading" class="text-center py-8 text-gray-500">
+    <div v-else-if="loading" class="text-center py-8 text-sm text-gray-500">
         Loading data...
     </div>
-    <div v-else class="text-center py-8 text-gray-500">
+    <div v-else class="text-center py-8 text-sm text-gray-500">
         No data available for the selected filters.
     </div>
   </div>
