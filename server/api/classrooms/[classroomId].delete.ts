@@ -1,9 +1,14 @@
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server'
+import {
+  serverSupabaseUser,
+  serverSupabaseClient,
+  serverSupabaseServiceRole,
+} from '#supabase/server'
 import { logNotification } from '../../utils/notifications'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
   const client = await serverSupabaseClient(event)
+  const serviceClient = await serverSupabaseServiceRole(event)
 
   // @ts-ignore - supabase user can be { id } or { sub }
   const requesterId = user?.id || user?.sub
@@ -95,8 +100,13 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const notifErr = await logNotification(client, {
+  const notifErr = await logNotification(serviceClient, {
     recipientUserId: requesterId,
+    actorUserId: requesterId,
+    type:
+      role === 'ADMIN'
+        ? 'admin.classroom.deleted'
+        : 'instructor.classroom.deleted',
     message: `${role === 'ADMIN' ? 'Admin' : 'Instructor'} deleted classroom ${classroomId}.`,
   })
   if (notifErr) {

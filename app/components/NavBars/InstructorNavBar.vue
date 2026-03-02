@@ -5,10 +5,10 @@
       :key="link.to"
       :to="link.to"
       exact
-      class="flex items-center gap-2 px-3 py-2 rounded hover:bg-white transition hover:text-black"
-      active-class="bg-white text-black"
+      class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-[#f5f3ff] hover:text-[#4d1979] transition-colors"
+      active-class="bg-[#ede9fe] text-[#4d1979] font-semibold"
     >
-      <Icon :name="link.icon" class="text-xl"/>
+      <Icon :name="link.icon" class="text-xl shrink-0" />
       <span>{{ link.label }}</span>
     </NuxtLink>
   </nav>
@@ -24,4 +24,3 @@ const links = [
   { label: 'Leaderboard', to: '/instructor/leaderboard', icon: 'material-symbols:social-leaderboard-outline-rounded' },
 ]
 </script>
-

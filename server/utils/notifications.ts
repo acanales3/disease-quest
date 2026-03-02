@@ -7,6 +7,10 @@ type NotificationInsert = TablesInsert<"notifications">;
 export type NotificationLogInput = {
   recipientUserId: string;
   message: string;
+  type?: string | null;
+  actorUserId?: string | null;
+  isRead?: boolean;
+  metadata?: Database["public"]["Tables"]["notifications"]["Insert"]["metadata"];
   timestampSent?: string | null;
 };
 
@@ -20,6 +24,12 @@ function toNotificationRow(input: NotificationLogInput): NotificationInsert {
   return {
     user_id: input.recipientUserId,
     message,
+    ...(input.type !== undefined ? { type: input.type } : {}),
+    ...(input.actorUserId !== undefined
+      ? { actor_user_id: input.actorUserId }
+      : {}),
+    ...(input.isRead !== undefined ? { is_read: input.isRead } : {}),
+    ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
     ...(input.timestampSent !== undefined
       ? { timestamp_sent: input.timestampSent }
       : {}),

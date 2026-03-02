@@ -1,9 +1,14 @@
-import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
+import {
+  serverSupabaseUser,
+  serverSupabaseClient,
+  serverSupabaseServiceRole,
+} from "#supabase/server";
 import { logNotification } from "../../utils/notifications";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
   const client = await serverSupabaseClient(event);
+  const serviceClient = await serverSupabaseServiceRole(event);
 
   // @ts-ignore
   const userId = user.id || user.sub;
@@ -122,8 +127,10 @@ export default defineEventHandler(async (event) => {
       parts.length > 0 ? ` Classroom changes: ${parts.join("; ")}.` : "";
   }
 
-  const notifErr = await logNotification(client, {
+  const notifErr = await logNotification(serviceClient, {
     recipientUserId: userId,
+    actorUserId: userId,
+    type: "admin.student.updated",
     message: `Admin updated student profile: ${id}.${classroomActionMessage}`,
   });
   if (notifErr) {

@@ -147,6 +147,8 @@ export default defineEventHandler(async (event) => {
     targetId;
   const notifErr = await logNotification(client, {
     recipientUserId: actorUserId,
+    actorUserId,
+    type: "admin.admin.updated",
     message: `Admin profile updated: ${displayName}.`,
   });
   if (notifErr) {

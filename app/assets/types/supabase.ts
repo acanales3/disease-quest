@@ -426,24 +426,43 @@ export type Database = {
       }
       notifications: {
         Row: {
+          actor_user_id: string | null
           id: number
+          is_read: boolean
           message: string
+          metadata: Json | null
           timestamp_sent: string | null
+          type: string | null
           user_id: string
         }
         Insert: {
+          actor_user_id?: string | null
           id?: never
+          is_read?: boolean
           message: string
+          metadata?: Json | null
           timestamp_sent?: string | null
+          type?: string | null
           user_id: string
         }
         Update: {
+          actor_user_id?: string | null
           id?: never
+          is_read?: boolean
           message?: string
+          metadata?: Json | null
           timestamp_sent?: string | null
+          type?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
