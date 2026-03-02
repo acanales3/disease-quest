@@ -75,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onUnmounted } from 'vue'
 import type { ChatMessage } from '@/composables/useCaseSession'
 
 const props = withDefaults(
@@ -105,6 +105,11 @@ const userMessage = ref('')
 const chatContainer = ref<HTMLElement | null>(null)
 const playingIdx = ref<number | null>(null)
 let currentAudio: HTMLAudioElement | null = null
+let currentUtterance: SpeechSynthesisUtterance | null = null
+const ttsAudioCache = new Map<string, string>()
+const ttsCacheOrder: string[] = []
+const ttsInFlight = new Map<string, Promise<string | null>>()
+const MAX_TTS_CACHE_ENTRIES = 40
 
 const agentLabel = props.agentType === 'tutor' ? 'Mentor' : props.agentType === 'evaluator' ? 'Evaluator' : 'Patient / Family'
 
@@ -148,52 +153,160 @@ function send() {
   userMessage.value = ''
 }
 
+function hashText(input: string): string {
+  let hash = 2166136261
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
+  }
+  return (hash >>> 0).toString(36)
+}
+
+function ttsKey(text: string, role: string): string {
+  const voiceType = voiceTypeMap[role] ?? 'system'
+  const normalized = text.trim()
+  return `${voiceType}:${normalized.length}:${hashText(normalized)}`
+}
+
+function setTtsCache(key: string, audio: string) {
+  if (!ttsAudioCache.has(key)) {
+    ttsCacheOrder.push(key)
+  }
+  ttsAudioCache.set(key, audio)
+  while (ttsCacheOrder.length > MAX_TTS_CACHE_ENTRIES) {
+    const oldest = ttsCacheOrder.shift()
+    if (oldest) ttsAudioCache.delete(oldest)
+  }
+}
+
+async function fetchTtsAudio(text: string, role: string): Promise<string | null> {
+  const normalized = text.trim()
+  if (!normalized) return null
+
+  const key = ttsKey(normalized, role)
+  if (ttsAudioCache.has(key)) {
+    return ttsAudioCache.get(key) || null
+  }
+
+  const existingRequest = ttsInFlight.get(key)
+  if (existingRequest) return existingRequest
+
+  const request = (async () => {
+    try {
+      const res = await $fetch<{ audio?: string | null }>('/api/tts', {
+        method: 'POST',
+        body: {
+          text: normalized,
+          voiceType: voiceTypeMap[role] ?? 'system',
+        },
+      })
+      const audio = res.audio ?? null
+      if (audio) setTtsCache(key, audio)
+      return audio
+    } catch {
+      return null
+    } finally {
+      ttsInFlight.delete(key)
+    }
+  })()
+
+  ttsInFlight.set(key, request)
+  return request
+}
+
+async function warmVoiceCache(text: string, role: string) {
+  await fetchTtsAudio(text, role)
+}
+
+async function playFromBase64(audio: string, idx: number) {
+  const audioSrc = `data:audio/mpeg;base64,${audio}`
+  currentAudio = new Audio(audioSrc)
+  currentAudio.onended = () => {
+    if (playingIdx.value === idx) playingIdx.value = null
+    currentAudio = null
+  }
+  currentAudio.onerror = () => {
+    if (playingIdx.value === idx) playingIdx.value = null
+    currentAudio = null
+  }
+  await currentAudio.play()
+}
+
 async function playVoice(text: string, role: string, idx: number) {
   // If clicking the same message that's playing, stop it
   if (playingIdx.value === idx) {
-    if (currentAudio) {
-      currentAudio.pause()
-      currentAudio.currentTime = 0
-      currentAudio = null
-    }
+    stopPlayback()
     playingIdx.value = null
     return
   }
 
   // Stop any other playing audio
+  stopPlayback()
+
+  playingIdx.value = idx
+
+  try {
+    const cachedAudio = await fetchTtsAudio(text, role)
+    if (cachedAudio) {
+      await playFromBase64(cachedAudio, idx)
+      return
+    }
+
+    await playBrowserVoice(text, role, idx)
+  } catch {
+    await playBrowserVoice(text, role, idx)
+  }
+}
+
+function stopPlayback() {
   if (currentAudio) {
     currentAudio.pause()
     currentAudio.currentTime = 0
     currentAudio = null
   }
 
-  playingIdx.value = idx
-
-  try {
-    const res = await $fetch<{ audio: string }>('/api/tts', {
-      method: 'POST',
-      body: {
-        text,
-        voiceType: voiceTypeMap[role] ?? 'system',
-      },
-    })
-
-    if (res.audio) {
-      const audioSrc = `data:audio/mpeg;base64,${res.audio}`
-      currentAudio = new Audio(audioSrc)
-      currentAudio.onended = () => {
-        playingIdx.value = null
-        currentAudio = null
-      }
-      currentAudio.onerror = () => {
-        playingIdx.value = null
-        currentAudio = null
-      }
-      await currentAudio.play()
-    }
-  } catch {
-    playingIdx.value = null
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel()
   }
+  currentUtterance = null
+}
+
+async function playBrowserVoice(text: string, role: string, idx: number) {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    playingIdx.value = null
+    return
+  }
+
+  const speakableText = text.trim()
+  if (!speakableText) {
+    playingIdx.value = null
+    return
+  }
+
+  const utterance = new SpeechSynthesisUtterance(speakableText)
+  utterance.rate = role === 'tutor' || role === 'evaluator' ? 0.96 : 1
+  utterance.pitch = role === 'patient' ? 1.05 : 1
+
+  const voices = window.speechSynthesis.getVoices()
+  const preferred = voices.find((v) =>
+    role === 'patient'
+      ? /female|samantha|victoria|zira/i.test(v.name)
+      : /male|daniel|alex|david/i.test(v.name)
+  )
+  if (preferred) utterance.voice = preferred
+
+  utterance.onend = () => {
+    if (playingIdx.value === idx) playingIdx.value = null
+    currentUtterance = null
+  }
+  utterance.onerror = () => {
+    if (playingIdx.value === idx) playingIdx.value = null
+    currentUtterance = null
+  }
+
+  currentUtterance = utterance
+  window.speechSynthesis.cancel()
+  window.speechSynthesis.speak(utterance)
 }
 
 // Auto-scroll on new messages or loading change
@@ -206,4 +319,25 @@ watch(
     }
   }
 )
+
+watch(
+  () => props.messages.length,
+  (newLen, oldLen = 0) => {
+    if (newLen <= oldLen) return
+    for (let i = oldLen; i < newLen; i += 1) {
+      const msg = props.messages[i]
+      if (msg && msg.role !== 'student') {
+        void warmVoiceCache(msg.content, msg.role)
+      }
+    }
+  },
+  { immediate: true }
+)
+
+onUnmounted(() => {
+  stopPlayback()
+  ttsAudioCache.clear()
+  ttsCacheOrder.length = 0
+  ttsInFlight.clear()
+})
 </script>
