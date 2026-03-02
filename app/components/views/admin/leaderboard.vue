@@ -5,28 +5,31 @@
       <!-- 2nd Place -->
       <div class="flex flex-col items-center">
         <div
-          class="bg-white rounded-xl shadow-md px-4 py-2 w-40 text-center -mb-6"
+          class="bg-white rounded-xl shadow-md px-4 py-2 w-48 text-center -mb-6"
         >
           <p class="text-sm text-purple-500 font-semibold">2nd</p>
-          <p class="font-medium">{{ displayName(top3[1]) }}</p>
+          <p class="font-medium truncate">{{ top3[1]?.studentName ?? '-' }}</p>
+          <p class="text-xs text-gray-500 truncate">{{ top3[1]?.nickname ?? '-' }}</p>
         </div>
       </div>
 
       <!-- 1st Place -->
       <div class="flex flex-col items-center">
-        <div class="bg-white rounded-xl shadow-md px-6 py-3 w-48 text-center">
+        <div class="bg-white rounded-xl shadow-md px-6 py-3 w-56 text-center">
           <p class="text-md text-purple-500 font-bold">1st</p>
-          <p class="font-semibold text-lg">{{ displayName(top3[0]) }}</p>
+          <p class="font-semibold text-lg truncate">{{ top3[0]?.studentName ?? '-' }}</p>
+          <p class="text-xs text-gray-500 truncate">{{ top3[0]?.nickname ?? '-' }}</p>
         </div>
       </div>
 
       <!-- 3rd Place -->
       <div class="flex flex-col items-center">
         <div
-          class="bg-white rounded-xl shadow-md px-4 py-2 w-40 text-center -mb-6"
+          class="bg-white rounded-xl shadow-md px-4 py-2 w-48 text-center -mb-6"
         >
           <p class="text-sm text-purple-500 font-semibold">3rd</p>
-          <p class="font-medium">{{ displayName(top3[2]) }}</p>
+          <p class="font-medium truncate">{{ top3[2]?.studentName ?? '-' }}</p>
+          <p class="text-xs text-gray-500 truncate">{{ top3[2]?.nickname ?? '-' }}</p>
         </div>
       </div>
     </div>
