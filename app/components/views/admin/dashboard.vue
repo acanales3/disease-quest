@@ -64,7 +64,7 @@
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Classrooms</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Create and edit classrooms, and manage enrolled students</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Create, edit, and manage classrooms, and enroll students</p>
           </div>
         </NuxtLink>
 

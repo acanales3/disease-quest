@@ -4,15 +4,13 @@
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Insights</p>
-          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight">Analytics</h1>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Analytics</h1>
           <p class="text-gray-500 text-[15px] mt-2">
-            Explore assessment scores across classrooms and case categories.
+            View assessment scores by category, case, and classroom.
           </p>
-          <div class="mt-3 flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 bg-[#4d1979] text-white text-xs font-medium px-3 py-1 rounded-full">
-              <Icon name="lucide:bar-chart-3" size="11" />
-              {{ analyticsData.length }} score records
-            </span>
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
+            <Icon name="uim:analytics" size="15" class="text-white" />
+            <span class="text-[13px] font-medium text-white">{{ analyticsData.length }} score records</span>
           </div>
         </div>
       </div>
