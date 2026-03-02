@@ -35,7 +35,7 @@
 
     <div class="w-full py-2">
       <!-- Cases Table -->
-      <DataTable :columns="visibleColumns" :data="data" @refresh="refresh()" />
+      <DataTable :columns="visibleColumns" :data="data" @refresh="refreshCases()" />
     </div>
 
     <!-- Remove from Classroom(s) Modal -->
@@ -127,7 +127,7 @@ const visibleColumns = computed(() => {
   const columnsToShow = ["id", "name", "description", "classrooms", "status", "actions"];
   return getColumns("admin", {
     onRemoveFromClassrooms: openRemoveDialog,
-    onRefresh: () => refresh(),
+    onRefresh: () => refreshCases(),
   }).filter((column) => {
     const key =
       "id" in column
@@ -180,7 +180,7 @@ async function confirmRemoveFromClassrooms() {
       )
     );
     showRemoveDialog.value = false;
-    await refresh();
+    await refreshCases();
     pageMessage.value = {
       type: "success",
       text: `Case removed from ${count} classroom${count > 1 ? "s" : ""} successfully.`,
