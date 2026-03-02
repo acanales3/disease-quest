@@ -38,9 +38,13 @@ const sidebarOpen = ref(false)
         class="fixed inset-y-0 left-0 z-30 w-60 bg-white border-r border-gray-200/80 flex flex-col lg:hidden"
       >
         <div class="flex items-center justify-between gap-2 px-5 h-16 border-b border-gray-100 shrink-0">
-          <span class="text-[19px] font-semibold tracking-tight text-gray-900">
-            Disease<span class="text-[#4d1979]">Quest</span>
-          </span>
+          <div class="flex items-center gap-2">
+            <span class="text-[19px] font-semibold tracking-tight text-gray-900">
+              Disease<span class="text-[#4d1979]">Quest</span>
+            </span>
+            <span class="h-5 w-px bg-gray-300" />
+            <img src="/tcu-logo.png" alt="TCU" class="h-16 w-auto" />
+          </div>
           <button
             @click="sidebarOpen = false"
             class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
@@ -54,10 +58,12 @@ const sidebarOpen = ref(false)
 
     <!-- Desktop sidebar -->
     <aside class="hidden lg:flex w-60 min-h-screen bg-white border-r border-gray-200/80 flex-col shrink-0">
-      <div class="flex items-center px-5 h-16 border-b border-gray-100 shrink-0">
+      <div class="flex items-center gap-2 px-5 h-16 border-b border-gray-100 shrink-0">
         <span class="text-[19px] font-semibold tracking-tight text-gray-900">
           Disease<span class="text-[#4d1979]">Quest</span>
         </span>
+        <span class="h-5 w-px bg-gray-300" />
+        <img src="/tcu-logo.png" alt="TCU" class="h-16 w-auto" />
       </div>
       <NavBarsInstructorNavBar class="flex-1 overflow-y-auto py-3 px-3" />
     </aside>

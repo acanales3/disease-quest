@@ -2,8 +2,10 @@
   <div class="h-screen flex overflow-hidden">
     <!-- Left Panel (fixed height, never scrolls) -->
     <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-14 h-screen" style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 30%, #c4b5fd 70%, #7c3aed 100%)">
-      <div class="relative z-10">
+      <div class="relative z-10 flex items-center gap-3">
         <span class="text-gray-900 text-lg font-semibold tracking-tight">DiseaseQuest</span>
+        <span class="h-5 w-px bg-gray-400/50" />
+        <img src="/tcu-logo.png" alt="TCU Burnett School of Medicine" class="h-22 w-auto" />
       </div>
 
       <div class="relative z-10 max-w-sm">
@@ -25,8 +27,10 @@
       <div class="min-h-full flex flex-col justify-center py-12">
         <div class="w-full max-w-[420px] mx-auto">
           <!-- Mobile logo -->
-          <div class="mb-10 lg:hidden">
+          <div class="mb-10 lg:hidden flex items-center gap-3">
             <span class="text-gray-900 text-lg font-semibold tracking-tight">DiseaseQuest</span>
+            <span class="h-5 w-px bg-gray-300" />
+            <img src="/tcu-logo.png" alt="TCU Burnett School of Medicine" class="h-12 w-auto" />
           </div>
 
           <!-- Back link -->
