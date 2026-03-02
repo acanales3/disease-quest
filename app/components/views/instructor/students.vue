@@ -6,10 +6,10 @@
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Student Management</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Students</h1>
           <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">
-            View enrolled students, monitor participation, and manage classroom membership.
+            View, invite, and manage students.
           </p>
-          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-700">
-            <Icon name="lucide:users" size="13" class="text-white" />
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
+            <Icon name="hugeicons:students" size="15" class="text-white" />
             <span class="text-[13px] font-medium text-white">{{ data.length }} students</span>
           </div>
         </div>

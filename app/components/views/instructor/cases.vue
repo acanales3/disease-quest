@@ -4,15 +4,13 @@
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Content</p>
-          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight">Cases</h1>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Cases</h1>
           <p class="text-gray-500 text-[15px] mt-2">
-            Review your assigned case library and distribute cases to classrooms.
+            Play and assign cases to classrooms.
           </p>
-          <div class="mt-3 flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 bg-gray-700 text-white text-xs font-medium px-3 py-1 rounded-full">
-              <Icon name="lucide:book-open" size="11" />
-              {{ casesData.length }} cases
-            </span>
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
+            <Icon name="si:book-line" size="15" class="text-white" />
+            <span class="text-[13px] font-medium text-white">{{ casesData.length }} cases</span>
           </div>
         </div>
         <div class="shrink-0">
