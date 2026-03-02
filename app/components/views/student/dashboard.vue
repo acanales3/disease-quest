@@ -19,7 +19,7 @@
         </div>
         <div class="shrink-0 flex flex-col items-start sm:items-end gap-2">
           <div v-if="nickname" class="flex flex-col items-center gap-2">
-            <div class="w-28 h-28 overflow-hidden flex items-center justify-center">
+            <div class="w-28 h-28 overflow-hidden flex items-center justify-center transition-transform duration-200 ease-out hover:-translate-y-1 hover:scale-[1.03]">
               <img
                 v-if="avatarUrl"
                 :src="avatarUrl"
