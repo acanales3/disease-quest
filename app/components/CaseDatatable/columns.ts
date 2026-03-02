@@ -1,5 +1,6 @@
 import type { ColumnDef } from "@tanstack/vue-table";
-import { h, resolveComponent } from "vue";
+import { h } from "vue";
+import { CaseDatatableDataTableDropdown as DropdownAction } from "#components";
 import {
   Tooltip,
   TooltipContent,
@@ -20,7 +21,6 @@ export function getColumns(
   role: string,
   onRefresh: () => void = () => {},
 ): ColumnDef<Case>[] {
-  const DropdownAction = resolveComponent("CaseDatatableDataTableDropdown");
   return [
     {
       accessorKey: "id",
