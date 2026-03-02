@@ -46,6 +46,7 @@ const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   classrooms?: Classroom[];
+  hideClassroomFilter?: boolean;
 }>();
 
 const sorting = ref<SortingState>([]);
@@ -141,7 +142,7 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
           @update:model-value="table.getColumn('name')?.setFilterValue($event)"
         />
 
-        <DropdownMenu>
+        <DropdownMenu v-if="!hideClassroomFilter">
           <DropdownMenuTrigger as-child>
             <Button
               class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md min-w-[140px]"

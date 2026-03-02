@@ -61,12 +61,12 @@
 
     <!-- CASES TABLE -->
     <div class="w-full py-2">
-      <CaseDataTable :columns="caseColumns" :data="caseData" />
+      <CaseDataTable :columns="caseColumns" :data="caseData" :hideClassroomFilter="true" />
     </div>
 
     <!-- STUDENT TABLE -->
     <div class="w-full py-2">
-      <StudentDataTable :columns="studentColumns" :data="studentData" />
+      <StudentDataTable :columns="studentColumns" :data="studentData" :hideClassroomFilter="true" />
     </div>
   </div>
 </template>
