@@ -1,8 +1,10 @@
 <template>
   <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col justify-between gap-4 min-h-[138px]">
     <div class="flex items-start justify-between">
-      <p class="text-[13px] font-medium text-gray-500 leading-snug max-w-[120px]">{{ label }}</p>
-      <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] flex items-center justify-center shrink-0">
+      <p class="text-[13px] font-medium text-gray-500 leading-snug" :class="showIcon ? 'max-w-[120px]' : 'max-w-[170px]'">
+        {{ label }}
+      </p>
+      <div v-if="showIcon" class="w-8 h-8 rounded-lg bg-[#f5f3ff] flex items-center justify-center shrink-0">
         <Icon :name="icon" size="15" class="text-[#4d1979]" />
       </div>
     </div>
@@ -33,6 +35,10 @@ defineProps({
   icon: {
     type: String,
     default: "lucide:bar-chart-3",
+  },
+  showIcon: {
+    type: Boolean,
+    default: true,
   },
   meta: {
     type: String,

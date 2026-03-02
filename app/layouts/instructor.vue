@@ -35,38 +35,36 @@ const sidebarOpen = ref(false);
     >
       <aside
         v-show="sidebarOpen"
-        class="fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-100 flex flex-col shadow-sm lg:hidden"
+        class="fixed inset-y-0 left-0 z-30 w-60 bg-white border-r border-gray-200/80 flex flex-col lg:hidden"
       >
-        <div class="flex items-center justify-between gap-2.5 px-6 py-5 border-b border-gray-100">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-[#4d1979] flex items-center justify-center shrink-0">
-              <Icon name="healthicons:autoimmune-disease-outline" class="text-white text-lg" />
-            </div>
-            <span class="text-[15px] font-semibold text-gray-900 tracking-tight">DiseaseQuest</span>
+        <div class="flex items-center justify-between gap-2 px-5 h-16 border-b border-gray-100 shrink-0">
+          <div class="flex items-center">
+            <span class="text-[19px] font-semibold tracking-tight text-gray-900">
+              Disease<span class="text-[#4d1979]">Quest</span>
+            </span>
           </div>
           <button @click="sidebarOpen = false" class="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </div>
-        <NavBarsInstructorNavBar class="flex-1 overflow-y-auto py-4 px-3" @click="sidebarOpen = false" />
+        <NavBarsInstructorNavBar class="flex-1 overflow-y-auto py-3 px-3" @click="sidebarOpen = false" />
       </aside>
     </Transition>
 
     <!-- Desktop sidebar -->
-    <aside class="hidden lg:flex w-64 min-h-screen bg-white border-r border-gray-100 flex-col shrink-0 shadow-sm">
-      <div class="flex items-center gap-2.5 px-6 py-5 border-b border-gray-100">
-        <div class="w-8 h-8 rounded-lg bg-[#4d1979] flex items-center justify-center shrink-0">
-          <Icon name="healthicons:autoimmune-disease-outline" class="text-white text-lg" />
-        </div>
-        <span class="text-[15px] font-semibold text-gray-900 tracking-tight">DiseaseQuest</span>
+    <aside class="hidden lg:flex w-60 min-h-screen bg-white border-r border-gray-200/80 flex-col shrink-0">
+      <div class="flex items-center px-5 h-16 border-b border-gray-100 shrink-0">
+        <span class="text-[19px] font-semibold tracking-tight text-gray-900">
+          Disease<span class="text-[#4d1979]">Quest</span>
+        </span>
       </div>
-      <NavBarsInstructorNavBar class="flex-1 overflow-y-auto py-4 px-3" />
+      <NavBarsInstructorNavBar class="flex-1 overflow-y-auto py-3 px-3" />
     </aside>
 
     <!-- Main -->
     <div class="flex flex-col flex-1 min-w-0">
       <TopNavBar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-      <main class="flex-1 p-6 min-w-0">
+      <main class="flex-1 p-6 lg:p-8 min-w-0">
         <slot />
       </main>
     </div>

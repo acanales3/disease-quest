@@ -1,36 +1,32 @@
 <template>
-  <div
-    class="rounded-lg shadow-sm p-4 pt-6 flex flex-col justify-between w-46 h-28 bg-white relative"
-  >
-    <!-- Top row: icon + title -->
-    <div class="flex items-center gap-2">
-      <Icon
-        :name="trophy.icon"
-        size="40"
-        :class="trophy.color || 'text-[#AF67F0]'"
-      />
-      <p class="text-lg font-bold text-gray-800">
-        {{ trophy.title }}
-      </p>
+  <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col justify-between gap-4 min-h-[138px] relative">
+    <div class="flex items-start justify-between">
+      <p class="text-[13px] font-medium text-gray-500 leading-snug">Current level</p>
+      <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] flex items-center justify-center shrink-0">
+        <Icon :name="trophy.icon" size="18" :class="trophy.color || 'text-[#4d1979]'" />
+      </div>
     </div>
 
-    <!-- Cases completed text -->
-    <p class="text-sm text-gray-500 pl-2">
-      {{ completed }} cases completed
-    </p>
+    <div>
+      <p class="text-[32px] font-semibold text-gray-900 tabular-nums leading-none tracking-tight">
+        {{ trophy.title }}
+      </p>
 
-    <!-- Info button (bottom-right) -->
-    <button
-      @click="showInfo = !showInfo"
-      class="absolute bottom-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded-full"
-    >
-      <Icon name="mdi:information-outline" size="20" />
-    </button>
+      <div class="mt-2 flex items-center gap-1 text-[11px] text-gray-400">
+        <span>{{ completed }} cases completed</span>
+        <button
+          @click="showInfo = !showInfo"
+          class="text-gray-400 hover:text-gray-600 p-0.5 rounded-full"
+        >
+          <Icon name="mdi:information-outline" size="15" />
+        </button>
+      </div>
+    </div>
 
     <!-- Info popup/modal -->
     <div
       v-if="showInfo"
-      class="absolute top-full mt-2 left-0 bg-gray-100 shadow-lg rounded-lg z-50 p-3 pr-1"
+      class="absolute top-full mt-2 right-0 bg-gray-100 shadow-lg rounded-lg z-50 p-3 pr-1"
     >
       <h3 class="font-bold mb-1 text-sm">Level Info</h3>
       <p class="text-xs text-gray-500">

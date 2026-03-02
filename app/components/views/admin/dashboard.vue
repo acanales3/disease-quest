@@ -6,9 +6,8 @@
       <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
         <div>
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Admin Dashboard</p>
-          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug flex items-center gap-2.5">
-            <span>👋</span>
-            <span>Welcome back, {{ user.name }}</span>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">
+            Welcome back, {{ user.name }}
           </h1>
           <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">
             Manage users, classrooms, and cases. Monitor student performance and assessment scores across your institution.

@@ -1,7 +1,17 @@
 <template>
     <div class="w-full min-h-screen bg-white">
     <div class="w-full max-w-4xl mx-auto px-6 py-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Account Settings</h1>
+            <Button
+                variant="outline"
+                class="border-gray-300 text-gray-700 hover:bg-gray-50"
+                @click="goBack"
+            >
+                <Icon name="lucide:arrow-left" size="14" class="mr-2" />
+                Back
+            </Button>
+        </div>
 
         <div class="mb-8">
             <h2 class="text-xl font-semibold text-[#2f174a] mb-4 pb-2 border-b border-[#ede9f5]">
@@ -73,10 +83,7 @@
                 </div>
             </div>
             <div class="flex justify-end gap-3 pt-2 border-t border-[#ede9f5]">
-                <Button variant="outline" class="border-[#d9d2ea] text-[#4d1979] hover:bg-[#f5f3ff]" @click="cancelNameEdits"
-                    >Cancel</Button
-                >
-                <Button class="bg-[#4d1979] text-white hover:bg-[#3f1564]" :disabled="!canSaveName" @click="saveName">
+                <Button class="bg-black text-white hover:bg-gray-800" :disabled="!canSaveName" @click="saveName">
                     {{ isSavingName ? "Saving..." : "Save Name" }}
                 </Button>
             </div>
@@ -115,9 +122,9 @@
                             class="flex-1"
                         />
                         <Button
-                            class="bg-[#4d1979] text-white hover:bg-[#3f1564]"
+                            class="bg-black text-white hover:bg-gray-800"
                             :disabled="isSavingNickname || !canSaveNickname"
-                            @click="saveCustomNickname"
+                            @click="requestNicknameSave"
                         >
                             {{ isSavingNickname ? "Saving..." : "Save" }}
                         </Button>
@@ -149,9 +156,9 @@
             <div class="flex justify-end gap-3 pt-2 border-t border-[#ede9f5]">
                 <Button
                     variant="outline"
-                    class="border-[#d9d2ea] text-[#4d1979] hover:bg-[#f5f3ff]"
+                    class="border-gray-300 text-gray-700 hover:bg-gray-50"
                     :disabled="isRegeneratingNickname"
-                    @click="regenerateNickname"
+                    @click="requestNicknameGenerate"
                 >
                     {{
                         isRegeneratingNickname
@@ -207,8 +214,7 @@
 
         <!-- Password Actions -->
         <div class="flex justify-end gap-3 pt-4 border-t border-[#ede9f5]">
-            <Button variant="outline" class="border-[#d9d2ea] text-[#4d1979] hover:bg-[#f5f3ff]" @click="onCancel">Cancel</Button>
-            <Button class="bg-[#4d1979] text-white hover:bg-[#3f1564]" @click="onSavePassword">Save Password</Button>
+            <Button class="bg-black text-white hover:bg-gray-800" @click="onSavePassword">Save Password</Button>
         </div>
 
         <!-- Confirmation Dialog -->
@@ -222,10 +228,10 @@
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button variant="outline" class="border-[#d9d2ea] text-[#4d1979] hover:bg-[#f5f3ff]" @click="showConfirmDialog = false"
+                    <Button variant="outline" class="border-gray-300 text-gray-700 hover:bg-gray-50" @click="showConfirmDialog = false"
                         >Cancel</Button
                     >
-                    <Button class="bg-[#4d1979] text-white hover:bg-[#3f1564]" @click="confirmSave">Confirm</Button>
+                    <Button class="bg-black text-white hover:bg-gray-800" @click="confirmSave">Confirm</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -240,7 +246,35 @@
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                    <Button class="bg-[#4d1979] text-white hover:bg-[#3f1564]" @click="closeSuccessDialog">OK</Button>
+                    <Button class="bg-black text-white hover:bg-gray-800" @click="closeSuccessDialog">OK</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Nickname Confirmation Dialog -->
+        <Dialog v-model:open="showNicknameConfirmDialog">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Confirm Nickname Update</DialogTitle>
+                    <DialogDescription>
+                        {{
+                            pendingNicknameAction === "random"
+                                ? "Generate a new random nickname? This will replace your current nickname."
+                                : `Save this nickname: "${pendingNicknameValue}"?`
+                        }}
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        class="border-gray-300 text-gray-700 hover:bg-gray-50"
+                        @click="showNicknameConfirmDialog = false"
+                    >
+                        Cancel
+                    </Button>
+                    <Button class="bg-black text-white hover:bg-gray-800" @click="confirmNicknameUpdate">
+                        Confirm
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -254,6 +288,7 @@ import { useRouter } from "vue-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Icon } from "#components";
 import {
     Dialog,
     DialogContent,
@@ -287,6 +322,9 @@ const isSavingNickname = ref(false);
 const nicknameStatus = ref<null | { type: "success" | "error"; message: string }>(
     null,
 );
+const showNicknameConfirmDialog = ref(false);
+const pendingNicknameAction = ref<"custom" | "random" | null>(null);
+const pendingNicknameValue = ref("");
 
 const canSaveNickname = computed(() => {
     const trimmed = nicknameInput.value.trim();
@@ -352,15 +390,6 @@ const canSaveName = computed(() => {
         !validateNameField("Last name", lastName)
     );
 });
-
-const cancelNameEdits = () => {
-    form.value.firstName = originalNames.value.firstName;
-    form.value.lastName = originalNames.value.lastName;
-    nameErrors.value.firstName = "";
-    nameErrors.value.lastName = "";
-    nameStatus.value = null;
-    hasAttemptedNameSave.value = false;
-};
 
 const saveName = async () => {
     nameStatus.value = null;
@@ -445,7 +474,7 @@ const onSavePassword = () => {
     showConfirmDialog.value = true;
 };
 
-const onCancel = () => {
+const goBack = () => {
     router.back();
 };
 
@@ -526,8 +555,21 @@ watch(
     },
 );
 
-const saveCustomNickname = async () => {
+const requestNicknameSave = () => {
     const trimmed = nicknameInput.value.trim();
+    if (trimmed.length < 2 || trimmed.length > 30) return;
+    pendingNicknameAction.value = "custom";
+    pendingNicknameValue.value = trimmed;
+    showNicknameConfirmDialog.value = true;
+};
+
+const requestNicknameGenerate = () => {
+    pendingNicknameAction.value = "random";
+    pendingNicknameValue.value = "";
+    showNicknameConfirmDialog.value = true;
+};
+
+const saveCustomNickname = async (trimmed: string) => {
     if (trimmed.length < 2 || trimmed.length > 30) return;
 
     isSavingNickname.value = true;
@@ -581,6 +623,17 @@ const regenerateNickname = async () => {
     } finally {
         isRegeneratingNickname.value = false;
     }
+};
+
+const confirmNicknameUpdate = async () => {
+    showNicknameConfirmDialog.value = false;
+    if (pendingNicknameAction.value === "custom") {
+        await saveCustomNickname(pendingNicknameValue.value);
+    } else if (pendingNicknameAction.value === "random") {
+        await regenerateNickname();
+    }
+    pendingNicknameAction.value = null;
+    pendingNicknameValue.value = "";
 };
 
 const fetchNickname = async () => {

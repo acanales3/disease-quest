@@ -55,6 +55,17 @@ const pageTitle = computed(() => {
   if (path.startsWith('/admin/admins')) return 'Administrators';
   if (path.startsWith('/admin/analytics')) return 'Analytics';
   if (path.startsWith('/admin/leaderboard')) return 'Leaderboard';
+  if (path.startsWith('/student/dashboard')) return 'Dashboard';
+  if (path.startsWith('/student/classrooms')) return 'Classrooms';
+  if (path.startsWith('/student/cases')) return 'Cases';
+  if (path.startsWith('/student/analytics')) return 'Analytics';
+  if (path.startsWith('/student/leaderboard')) return 'Leaderboard';
+  if (path.startsWith('/instructor/dashboard')) return 'Dashboard';
+  if (path.startsWith('/instructor/classrooms')) return 'Classrooms';
+  if (path.startsWith('/instructor/students')) return 'Students';
+  if (path.startsWith('/instructor/cases')) return 'Cases';
+  if (path.startsWith('/instructor/analytics')) return 'Analytics';
+  if (path.startsWith('/instructor/leaderboard')) return 'Leaderboard';
   if (path.startsWith('/settings')) return 'Account Settings';
 
   return 'Dashboard';
