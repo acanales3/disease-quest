@@ -19,7 +19,12 @@ export interface Case {
   // action column still needed
 }
 
-export function getColumns(role: string): ColumnDef<Case>[] {
+export interface CaseColumnOptions {
+  onEdit?: (caseData: Case) => void;
+  onDelete?: (caseData: Case) => void;
+}
+
+export function getColumns(role: string, options?: CaseColumnOptions): ColumnDef<Case>[] {
   return [
     {
       accessorKey: "id",
@@ -156,6 +161,8 @@ export function getColumns(role: string): ColumnDef<Case>[] {
           h(DropdownAction, {
             caseData,
             role,
+            onEdit: options?.onEdit,
+            onDelete: options?.onDelete,
           })
         );
       },

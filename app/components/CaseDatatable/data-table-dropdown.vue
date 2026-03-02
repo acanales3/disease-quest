@@ -14,9 +14,25 @@ import type { Case } from "./columns";
 interface Props {
   caseData: Case;
   role: string;
+  onEdit?: (caseData: Case) => void;
+  onDelete?: (caseData: Case) => void;
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{
+  edit: [caseData: Case];
+  delete: [caseData: Case];
+}>();
+
+function handleEdit() {
+  emit("edit", props.caseData);
+  props.onEdit?.(props.caseData);
+}
+
+function handleDelete() {
+  emit("delete", props.caseData);
+  props.onDelete?.(props.caseData);
+}
 
 // Determine button text and action based on case status
 const getButtonText = () => {
@@ -55,10 +71,13 @@ const getButtonText = () => {
         </DropdownMenuItem>
       </NuxtLink>
 
-      <DropdownMenuItem v-if="props.role === 'admin'"> Edit </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'" @click="handleEdit">
+        Edit
+      </DropdownMenuItem>
       <DropdownMenuItem
         v-if="props.role === 'admin'"
         class="text-red-600 focus:text-red-600 focus:bg-red-50"
+        @click="handleDelete"
       >
         Delete
       </DropdownMenuItem>
