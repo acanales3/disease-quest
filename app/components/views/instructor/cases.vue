@@ -27,7 +27,21 @@
       {{ errorMessage }}
     </div>
 
-    <div v-else class="w-full">
+    <div v-if="pageMessage" class="w-full py-2">
+      <div
+        class="rounded-md border px-4 py-3 text-sm"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
+      >
+        {{ pageMessage.text }}
+      </div>
+    </div>
+
+    <!-- Cases Table -->
+    <div class="w-full py-2">
       <DataTable
         :columns="visibleColumns"
         :data="casesData"
@@ -35,6 +49,48 @@
         @refresh="refreshCases()"
       />
     </div>
+
+    <!-- Remove from Classroom(s) Modal -->
+    <Dialog v-model:open="showRemoveDialog">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle class="text-red-600">Remove Case from Classroom</DialogTitle>
+          <DialogDescription>
+            Select which classroom(s) to remove
+            <span class="font-semibold">{{ pendingCase?.name }}</span> from.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div v-if="pendingCase" class="py-3 space-y-2 max-h-60 overflow-y-auto">
+          <label
+            v-for="cr in pendingCase.classrooms"
+            :key="cr.id"
+            class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              :value="cr.id"
+              v-model="selectedClassroomIds"
+              class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+            />
+            <span class="text-sm text-gray-700">{{ cr.name }}</span>
+          </label>
+        </div>
+
+        <DialogFooter class="gap-2 sm:justify-end">
+          <Button variant="outline" @click="showRemoveDialog = false">
+            Cancel
+          </Button>
+          <Button
+            class="bg-red-600 text-white hover:bg-red-700"
+            :disabled="selectedClassroomIds.length === 0 || isRemoving"
+            @click="confirmRemoveFromClassrooms"
+          >
+            {{ isRemoving ? "Removing..." : "Remove Selected" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -45,6 +101,15 @@ import { computed, ref, watchEffect } from "vue";
 import { getColumns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const casesData = ref<Case[]>([]);
 const classroomsData = ref<Classroom[]>([]);
@@ -75,8 +140,11 @@ watchEffect(() => {
 });
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "status", "actions"];
-  return getColumns("instructor", () => refreshCases()).filter((column) => {
+  const columnsToShow = ["id", "name", "description", "classrooms", "status", "actions"];
+  return getColumns("instructor", {
+    onRemoveFromClassrooms: openRemoveDialog,
+    onRefresh: () => refreshCases(),
+  }).filter((column) => {
     const key =
       "id" in column
         ? column.id
@@ -87,15 +155,52 @@ const visibleColumns = computed(() => {
   });
 });
 
-const isLoading = computed(() => casesPending.value || classroomsPending.value);
 
-const errorMessage = computed(() => {
-  const message =
-    (casesError.value as any)?.data?.message ||
-    (casesError.value as any)?.statusMessage ||
-    (classroomsError.value as any)?.data?.message ||
-    (classroomsError.value as any)?.statusMessage;
+type PageMessage = { type: "success" | "error"; text: string };
+const pageMessage = ref<PageMessage | null>(null);
 
-  return message ? `Unable to load cases data: ${message}` : "";
-});
+/* ---------- REMOVE FROM CLASSROOM(S) ---------- */
+const showRemoveDialog = ref(false);
+const pendingCase = ref<Case | null>(null);
+const selectedClassroomIds = ref<number[]>([]);
+const isRemoving = ref(false);
+
+function openRemoveDialog(caseData: Case) {
+  pendingCase.value = caseData;
+  selectedClassroomIds.value = [];
+  showRemoveDialog.value = true;
+}
+
+async function confirmRemoveFromClassrooms() {
+  if (!pendingCase.value || selectedClassroomIds.value.length === 0) return;
+  isRemoving.value = true;
+  pageMessage.value = null;
+  const count = selectedClassroomIds.value.length;
+  try {
+    await Promise.all(
+      selectedClassroomIds.value.map((classroomId) =>
+        $fetch(`/api/classrooms/${classroomId}/cases/${pendingCase.value!.id}`, {
+          method: "DELETE",
+        })
+      )
+    );
+    showRemoveDialog.value = false;
+    await refreshCases();
+    pageMessage.value = {
+      type: "success",
+      text: `Case removed from ${count} classroom${count > 1 ? "s" : ""} successfully.`,
+    };
+    setTimeout(() => { pageMessage.value = null; }, 5000);
+  } catch (error: any) {
+    console.error("Failed to remove case from classrooms:", error);
+    pageMessage.value = {
+      type: "error",
+      text: error?.data?.statusMessage || error?.message || "Failed to remove case from classroom(s).",
+    };
+  } finally {
+    isRemoving.value = false;
+    pendingCase.value = null;
+    selectedClassroomIds.value = [];
+  }
+}
 </script>

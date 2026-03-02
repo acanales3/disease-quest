@@ -53,6 +53,19 @@
       Classroom not found.
     </div>
 
+    <div v-if="pageMessage" class="w-full py-2">
+      <div
+        class="rounded-md border px-4 py-3 text-sm"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
+      >
+        {{ pageMessage.text }}
+      </div>
+    </div>
+
     <!-- Cases Table -->
     <div class="w-full py-2">
       <CaseDataTable :columns="caseColumns" :data="caseData" :hideClassroomFilter="true" />
@@ -80,6 +93,31 @@
       @confirm="handleDeleteConfirm"
       @reset="resetDeleteState"
     />
+
+    <!-- Remove Case Confirmation Dialog -->
+    <Dialog v-model:open="showRemoveCaseDialog">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle class="text-red-600">Remove Case from Classroom</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to remove this case from the classroom?
+            Students will no longer be able to access it from this classroom.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="gap-2 sm:justify-end">
+          <Button variant="outline" @click="showRemoveCaseDialog = false">
+            Cancel
+          </Button>
+          <Button
+            class="bg-red-600 text-white hover:bg-red-700"
+            :disabled="isRemovingCase"
+            @click="confirmRemoveCase"
+          >
+            {{ isRemovingCase ? "Removing..." : "Remove" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -105,6 +143,15 @@ import StudentDataTable from "../../StudentDatatable/data-table.vue";
 import { modalBus } from "@/components/AdminEditStudentDialog/modalBusEditStudent";
 import AdminEditStudentDialog from "@/components/AdminEditStudentDialog/AdminEditStudentDialog.vue";
 import DeleteStudentModal from "@/components/DeleteStudentModal/DeleteStudentModal.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type DeleteState =
   | { status: "idle"; message?: string }
@@ -118,6 +165,7 @@ const deleteMode = ref<"delete" | "unenroll">("unenroll");
 const deleteState = ref<DeleteState>({ status: "idle" });
 
 type PageMessage = { type: "success" | "error"; text: string };
+const pageMessage = ref<PageMessage | null>(null);
 
 const route = useRoute();
 const classroomId = Number(route.params.classroomId);
@@ -186,7 +234,10 @@ async function getStudents(): Promise<Student[]> {
 const caseData = ref<Case[]>([]);
 const caseColumns = computed(() => {
   const columnsToShow = ["id", "name", "description", "actions"];
-  return getCaseColumns("admin").filter(column => {
+  return getCaseColumns("admin", {
+    classroomId,
+    onRemoveFromClassroom: handleRemoveCaseFromClassroom,
+  }).filter(column => {
     const key =
       "id" in column
         ? column.id
@@ -203,6 +254,39 @@ async function getCases(): Promise<Case[]> {
   } catch (error) {
     console.error("Failed to fetch cases:", caseData);
     return [];
+  }
+}
+
+const showRemoveCaseDialog = ref(false);
+const pendingRemoveCaseId = ref<number | null>(null);
+const isRemovingCase = ref(false);
+
+function handleRemoveCaseFromClassroom(caseId: number) {
+  pendingRemoveCaseId.value = caseId;
+  showRemoveCaseDialog.value = true;
+}
+
+async function confirmRemoveCase() {
+  if (!pendingRemoveCaseId.value) return;
+  isRemovingCase.value = true;
+  pageMessage.value = null;
+  try {
+    await $fetch(`/api/classrooms/${classroomId}/cases/${pendingRemoveCaseId.value}`, {
+      method: "DELETE",
+    });
+    caseData.value = await getCases();
+    showRemoveCaseDialog.value = false;
+    pageMessage.value = { type: "success", text: "Case removed from classroom successfully." };
+    setTimeout(() => { pageMessage.value = null; }, 5000);
+  } catch (error: any) {
+    console.error("Failed to remove case from classroom:", error);
+    pageMessage.value = {
+      type: "error",
+      text: error?.data?.statusMessage || error?.message || "Failed to remove case from classroom.",
+    };
+  } finally {
+    isRemovingCase.value = false;
+    pendingRemoveCaseId.value = null;
   }
 }
 
