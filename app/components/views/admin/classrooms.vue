@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full gap-8">
+  <div class="space-y-6">
 
     <!-- Header -->
     <div class="border-b border-gray-200 pb-8">

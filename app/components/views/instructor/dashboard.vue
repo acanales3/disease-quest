@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-6xl mx-auto w-full space-y-8">
+  <div class="space-y-6">
     <div class="rounded-2xl overflow-hidden" style="background: linear-gradient(135deg, #3b1566 0%, #5a2590 50%, #3f1d72 100%);">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 px-8 py-7">
         <div>
@@ -115,7 +115,7 @@
           <div class="divide-y divide-gray-100">
             <NuxtLink to="/instructor/students" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
-                <Icon name="hugeicons:students" size="14" />
+                <Icon name="hugeicons:students" size="15" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Students</p>
@@ -124,7 +124,7 @@
             </NuxtLink>
             <NuxtLink to="/instructor/classrooms" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
-                <Icon name="simple-icons:googleclassroom" size="14" />
+                <Icon name="simple-icons:googleclassroom" size="15" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Classrooms</p>
@@ -133,7 +133,7 @@
             </NuxtLink>
             <NuxtLink to="/instructor/cases" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
-                <Icon name="si:book-line" size="14" />
+                <Icon name="si:book-line" size="15" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Cases</p>
@@ -142,7 +142,7 @@
             </NuxtLink>
             <NuxtLink to="/instructor/analytics" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
-                <Icon name="uim:analytics" size="14" />
+                <Icon name="uim:analytics" size="15" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Analytics</p>

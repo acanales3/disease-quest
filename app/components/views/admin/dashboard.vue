@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-6xl mx-auto space-y-12">
+  <div class="space-y-6">
 
     <!-- Header -->
     <div class="rounded-2xl overflow-hidden" style="background: linear-gradient(135deg, #3b1566 0%, #5a2590 50%, #3f1d72 100%);">

@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full max-w-6xl mx-auto space-y-8">
+  <div class="space-y-6">
     <div class="rounded-2xl overflow-hidden" style="background: linear-gradient(135deg, #3b1566 0%, #5a2590 50%, #3f1d72 100%);">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 px-8 py-7">
         <!-- Left: text -->
