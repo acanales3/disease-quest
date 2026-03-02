@@ -121,7 +121,7 @@
           </div>
           <div class="divide-y divide-gray-100">
             <NuxtLink to="/student/classrooms" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
-              <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
+              <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
                 <Icon name="lucide:layout-grid" size="14" />
               </div>
               <div>
@@ -130,7 +130,7 @@
               </div>
             </NuxtLink>
             <NuxtLink to="/student/cases" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
-              <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
+              <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
                 <Icon name="lucide:book-open" size="14" />
               </div>
               <div>
@@ -139,7 +139,7 @@
               </div>
             </NuxtLink>
             <NuxtLink to="/student/leaderboard" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
-              <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
+              <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
                 <Icon name="lucide:trophy" size="14" />
               </div>
               <div>
@@ -232,7 +232,7 @@ onUnmounted(() => {
 const statusClass = (status: StudentCase["status"]) => {
   if (status === "completed") return "bg-green-50 text-green-700 border-green-200"
   if (status === "in progress") return "bg-blue-50 text-blue-600 border-blue-200"
-  return "bg-gray-50 text-gray-500 border-gray-200"
+  return "bg-black text-white border-black"
 }
 
 const statusLabel = (status: StudentCase["status"]) => {

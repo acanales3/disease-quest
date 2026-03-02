@@ -18,7 +18,7 @@
         class="rounded-lg bg-[#f5f3ff] flex items-center justify-center shrink-0"
         :class="compact ? 'w-7 h-7' : 'w-8 h-8'"
       >
-        <Icon :name="icon" :size="compact ? 13 : 15" class="text-[#4d1979]" />
+        <Icon :name="icon" :size="compact ? 13 : 15" class="text-black" />
       </div>
     </div>
     <div class="flex items-end justify-between">
