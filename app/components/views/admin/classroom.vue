@@ -162,6 +162,7 @@ const deleteMode = ref<"delete" | "unenroll">("unenroll");
 const deleteState = ref<DeleteState>({ status: "idle" });
 
 type PageMessage = { type: "success" | "error"; text: string };
+const pageMessage = ref<PageMessage | null>(null);
 
 const route = useRoute();
 const classroomId = Number(route.params.classroomId);
@@ -252,9 +253,6 @@ async function getCases(): Promise<Case[]> {
     return [];
   }
 }
-
-type PageMessage = { type: "success" | "error"; text: string };
-const pageMessage = ref<PageMessage | null>(null);
 
 const showRemoveCaseDialog = ref(false);
 const pendingRemoveCaseId = ref<number | null>(null);
