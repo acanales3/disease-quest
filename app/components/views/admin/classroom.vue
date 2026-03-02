@@ -1,47 +1,50 @@
 <template>
   <div class="space-y-4">
     <!-- CLASSROOM DETAILS -->
-    <div v-if="classroom" class="bg-white shadow rounded p-8 text-center">
-      <h1 class="text-2xl font-bold mb-6 text-gray-900">
-        {{ classroom.name }}
-      </h1>
+    <div v-if="classroom" class="rounded-2xl overflow-hidden shadow-lg" style="background: linear-gradient(135deg, #3b1566 0%, #5a2590 50%, #3f1d72 100%);">
+      <!-- Top bar: label + status badge -->
+      <div class="flex items-center justify-between px-8 pt-6 pb-0">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/40">Manage Classroom</p>
+        <span
+          class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold text-white"
+          :style="classroom.status === 'active'
+            ? 'background: linear-gradient(135deg, #166534, #15803d, #16a34a)'
+            : 'background: linear-gradient(135deg, #7f1d1d, #b91c1c, #dc2626)'"
+        >
+          {{ classroom.status }}
+        </span>
+      </div>
 
-      <div class="grid grid-cols-4 gap-y-6 gap-x-10 max-w-6xl mx-auto text-gray-700">
-        <div>
-          <div class="font-semibold">Code</div>
-          <div>{{ classroom.code }}</div>
-          <div class="font-semibold mt-2">Section</div>
-          <div>{{ classroom.section }}</div>
+      <!-- Classroom name -->
+      <div class="px-8 pt-2 pb-6 border-b border-white/10">
+        <h1 class="text-[26px] font-semibold text-white tracking-tight leading-snug">{{ classroom.name }}</h1>
+      </div>
+
+      <!-- Meta row -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 divide-x divide-white/10">
+        <div class="px-7 py-5">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">Code</p>
+          <p class="text-[15px] font-semibold text-white tabular-nums">{{ classroom.code || '—' }}</p>
         </div>
-
-        <div>
-          <div class="font-semibold">Instructor</div>
-          <div>{{ classroom.instructor }}</div>
-          <div class="font-semibold mt-2">School</div>
-          <div>{{ classroom.school }}</div>
+        <div class="px-7 py-5">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">Section</p>
+          <p class="text-[15px] font-semibold text-white">{{ classroom.section || '—' }}</p>
         </div>
-
-        <div>
-          <div class="font-semibold">Start Date</div>
-          <div>{{ classroom.startDate }}</div>
-          <div class="font-semibold mt-2">End Date</div>
-          <div>{{ classroom.endDate }}</div>
+        <div class="px-7 py-5">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">Instructor</p>
+          <p class="text-[15px] font-semibold text-white">{{ classroom.instructor || '—' }}</p>
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-3 mb-1.5">School</p>
+          <p class="text-[13px] font-medium text-white/80">{{ classroom.school || '—' }}</p>
         </div>
-
-        <div>
-          <div class="font-semibold">Status</div>
-          <span
-            :class="{
-              'text-green-600': classroom.status === 'active',
-              'text-red-600': classroom.status === 'inactive',
-            }"
-          >
-            {{ classroom.status }}
-          </span>
-          <div class="font-semibold mt-2">Invitation Code</div>
-          <div class="font-mono font-bold tracking-widest">
-            {{ classroom.invitationCode || 'N/A' }}
-          </div>
+        <div class="px-7 py-5">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">Start Date</p>
+          <p class="text-[15px] font-semibold text-white tabular-nums">{{ classroom.startDate || '—' }}</p>
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-white/40 mt-3 mb-1.5">End Date</p>
+          <p class="text-[13px] font-medium text-white/80 tabular-nums">{{ classroom.endDate || '—' }}</p>
+        </div>
+        <div class="px-7 py-5">
+          <p class="text-[10px] font-semibold uppercase tracking-wider text-white/40 mb-1.5">Invitation Code</p>
+          <p class="text-[15px] font-mono font-bold tracking-[0.2em] text-white">{{ classroom.invitationCode || 'N/A' }}</p>
         </div>
       </div>
     </div>
