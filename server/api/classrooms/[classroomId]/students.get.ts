@@ -110,6 +110,9 @@ export default defineEventHandler(async (event) => {
     return {
       id: row.user_id,
       name: name,
+      nickname: row.nickname,
+      first_name: userData.first_name || '',
+      last_name: userData.last_name || '',
       email: userData.email,
       school: userData.school || "",
       msyear: row.msyear,
