@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import TopNavBar from '~/components/NavBars/TopNavBar.vue';
-import { ref } from 'vue';
+import TopNavBar from '~/components/NavBars/TopNavBar.vue'
+import { ref } from 'vue'
 
-const sidebarOpen = ref(false);
+const sidebarOpen = ref(false)
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-[#f8f7ff]">
+  <div class="flex min-h-screen bg-gray-50">
 
     <!-- Mobile backdrop -->
     <Transition
@@ -19,7 +19,7 @@ const sidebarOpen = ref(false);
     >
       <div
         v-if="sidebarOpen"
-        class="fixed inset-0 bg-black/30 z-20 lg:hidden"
+        class="fixed inset-0 bg-black/20 z-20 lg:hidden"
         @click="sidebarOpen = false"
       />
     </Transition>
@@ -38,13 +38,14 @@ const sidebarOpen = ref(false);
         class="fixed inset-y-0 left-0 z-30 w-60 bg-white border-r border-gray-200/80 flex flex-col lg:hidden"
       >
         <div class="flex items-center justify-between gap-2 px-5 h-16 border-b border-gray-100 shrink-0">
-          <div class="flex items-center">
-            <span class="text-[19px] font-semibold tracking-tight text-gray-900">
-              Disease<span class="text-[#4d1979]">Quest</span>
-            </span>
-          </div>
-          <button @click="sidebarOpen = false" class="p-1 text-gray-400 hover:text-gray-600 transition-colors rounded">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          <span class="text-[19px] font-semibold tracking-tight text-gray-900">
+            Disease<span class="text-[#4d1979]">Quest</span>
+          </span>
+          <button
+            @click="sidebarOpen = false"
+            class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+          >
+            <Icon name="lucide:x" size="15" />
           </button>
         </div>
         <NavBarsInstructorNavBar class="flex-1 overflow-y-auto py-3 px-3" @click="sidebarOpen = false" />

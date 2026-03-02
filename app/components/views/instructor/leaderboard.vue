@@ -1,38 +1,75 @@
 <template>
-  <div class="flex flex-col items-center justify-center w-full space-y-8">
-    <!-- Top 3 Podium -->
-    <div v-if="top3.length > 0" class="flex items-end justify-center gap-8">
-      <!-- 2nd Place -->
-      <div class="flex flex-col items-center">
-        <div
-          class="bg-white rounded-xl shadow-md px-4 py-2 w-40 text-center -mb-6"
-        >
-          <p class="text-sm text-purple-500 font-semibold">2nd</p>
-          <p class="font-medium">{{ displayName(top3[1]) }}</p>
-        </div>
-      </div>
-
-      <!-- 1st Place -->
-      <div class="flex flex-col items-center">
-        <div class="bg-white rounded-xl shadow-md px-6 py-3 w-48 text-center">
-          <p class="text-md text-purple-500 font-bold">1st</p>
-          <p class="font-semibold text-lg">{{ displayName(top3[0]) }}</p>
-        </div>
-      </div>
-
-      <!-- 3rd Place -->
-      <div class="flex flex-col items-center">
-        <div
-          class="bg-white rounded-xl shadow-md px-4 py-2 w-40 text-center -mb-6"
-        >
-          <p class="text-sm text-purple-500 font-semibold">3rd</p>
-          <p class="font-medium">{{ displayName(top3[2]) }}</p>
+  <div class="w-full max-w-6xl mx-auto space-y-8">
+    <div class="border-b border-gray-200 pb-8">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Insights</p>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Leaderboard</h1>
+          <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">
+            Top performing students ranked by average score across all cases.
+          </p>
         </div>
       </div>
     </div>
 
+    <div v-if="isLoading" class="rounded-lg border border-gray-200 bg-white px-4 py-6 text-sm text-gray-500">
+      Loading leaderboard...
+    </div>
+    <div v-else-if="errorMessage" class="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Top 3 Podium -->
+    <div v-else-if="top3.length > 0" class="flex items-end justify-center gap-3 px-8">
+      <!-- 2nd Place — Silver -->
+      <div class="flex flex-col items-center flex-1 max-w-[220px]">
+        <div class="mb-3 text-center">
+          <div class="w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-2" style="background:linear-gradient(135deg,#e8e8e8,#a8a8a8,#d4d4d4);">
+            <span class="text-base font-bold" style="color:#555;">2</span>
+          </div>
+          <p class="text-sm font-semibold text-gray-800 truncate max-w-[180px]">{{ displayName(top3[1]) }}</p>
+          <p class="text-xs tabular-nums mt-0.5 font-medium text-gray-400">{{ top3[1]?.averageScore != null ? top3[1].averageScore.toFixed(2) + '%' : '—' }}</p>
+        </div>
+        <div class="w-full rounded-t-xl flex items-center justify-center" style="height:80px; background:linear-gradient(135deg,#e8e8e8,#a8a8a8,#d4d4d4);">
+          <span class="text-2xl font-bold" style="color:rgba(255,255,255,0.5)">2</span>
+        </div>
+      </div>
+
+      <!-- 1st Place — Gold -->
+      <div class="flex flex-col items-center flex-1 max-w-[240px]">
+        <div class="mb-3 text-center">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2" style="background:linear-gradient(135deg,#f9e07a,#d4a017,#f5c518);">
+            <Icon name="lucide:crown" size="18" class="text-white drop-shadow" />
+          </div>
+          <p class="text-sm font-bold text-gray-900 truncate max-w-[200px]">{{ displayName(top3[0]) }}</p>
+          <p class="text-xs font-medium tabular-nums mt-0.5" style="color:#b8860b;">{{ top3[0]?.averageScore != null ? top3[0].averageScore.toFixed(2) + '%' : '—' }}</p>
+        </div>
+        <div class="w-full rounded-t-xl flex items-center justify-center" style="height:120px; background:linear-gradient(135deg,#f9e07a,#d4a017,#f5c518);">
+          <span class="text-3xl font-bold" style="color:rgba(255,255,255,0.35)">1</span>
+        </div>
+      </div>
+
+      <!-- 3rd Place — Bronze -->
+      <div class="flex flex-col items-center flex-1 max-w-[220px]">
+        <div class="mb-3 text-center">
+          <div class="w-11 h-11 rounded-full flex items-center justify-center mx-auto mb-2" style="background:linear-gradient(135deg,#e8b87a,#a0522d,#cd7f32);">
+            <span class="text-base font-bold text-white">3</span>
+          </div>
+          <p class="text-sm font-semibold text-gray-800 truncate max-w-[180px]">{{ displayName(top3[2]) }}</p>
+          <p class="text-xs tabular-nums mt-0.5 font-medium" style="color:#a0522d;">{{ top3[2]?.averageScore != null ? top3[2].averageScore.toFixed(2) + '%' : '—' }}</p>
+        </div>
+        <div class="w-full rounded-t-xl flex items-center justify-center" style="height:56px; background:linear-gradient(135deg,#e8b87a,#a0522d,#cd7f32);">
+          <span class="text-2xl font-bold" style="color:rgba(255,255,255,0.35)">3</span>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="rounded-lg border border-gray-200 bg-white px-4 py-6 text-sm text-gray-500">
+      No leaderboard data available.
+    </div>
+
     <!-- Leaderboard Table -->
-    <div class="w-full py-8">
+    <div class="overflow-hidden">
       <DataTable
         :columns="columns"
         :data="data"
@@ -49,13 +86,14 @@ import type { LeaderboardEntry } from "~/assets/interface/Leaderboard";
 import { onMounted, ref, computed } from "vue";
 import { baseColumns } from "@/components/LeaderboardDatatable/columns";
 import DataTable from "@/components/LeaderboardDatatable/data-table.vue";
-import { leaderboard } from "~/assets/interface/Leaderboard";
 
 const props = defineProps<{ role: "admin" | "student" | "instructor" }>();
 
 const allData = ref<LeaderboardEntry[]>([]);
 const data = ref<LeaderboardEntry[]>([]);
 const top3 = ref<LeaderboardEntry[]>([]);
+const isLoading = ref(true);
+const errorMessage = ref("");
 
 const classrooms = ref<{id: number, name: string}[]>([
   { id: -1, name: "All Classrooms" },
@@ -86,11 +124,16 @@ const selectedClassroomId = ref<number>(-1);
 
 async function handleClassroomSelected(classroomId: number) {
     if (classroomId === undefined) return;
-    
+
     selectedClassroomId.value = classroomId;
-    data.value = await getData(classroomId);
-    top3.value = data.value.slice(0, 3);
-    allData.value = data.value;
+    try {
+      errorMessage.value = "";
+      data.value = await getData(classroomId);
+      top3.value = data.value.slice(0, 3);
+      allData.value = data.value;
+    } catch (e: any) {
+      errorMessage.value = e?.data?.message || e?.statusMessage || "Failed to load leaderboard data.";
+    }
 }
 
 function displayName(entry?: LeaderboardEntry) {
@@ -98,13 +141,20 @@ function displayName(entry?: LeaderboardEntry) {
 }
 
 onMounted(async () => {
-    await Promise.all([
-        getData().then(d => {
-            data.value = d;
-            top3.value = d.slice(0, 3);
-            allData.value = d;
-        }),
-        fetchClassrooms()
-    ]);
+    try {
+      errorMessage.value = "";
+      await Promise.all([
+          getData().then(d => {
+              data.value = d;
+              top3.value = d.slice(0, 3);
+              allData.value = d;
+          }),
+          fetchClassrooms()
+      ]);
+    } catch (e: any) {
+      errorMessage.value = e?.data?.message || e?.statusMessage || "Failed to load leaderboard.";
+    } finally {
+      isLoading.value = false;
+    }
 });
 </script>

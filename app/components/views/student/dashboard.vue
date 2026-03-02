@@ -17,7 +17,26 @@
             </span>
           </div>
         </div>
-        <p class="text-xs text-gray-400 shrink-0">{{ today }}</p>
+        <div class="shrink-0 flex flex-col items-start sm:items-end gap-2">
+          <div v-if="nickname" class="flex flex-col items-center gap-2">
+            <div class="w-28 h-28 overflow-hidden flex items-center justify-center">
+              <img
+                v-if="avatarUrl"
+                :src="avatarUrl"
+                :alt="nickname"
+                class="w-full h-full object-contain"
+              />
+              <div v-else-if="avatarLoading" class="flex items-center justify-center">
+                <Icon name="lucide:loader-2" size="24" class="text-[#4d1979] animate-spin" />
+              </div>
+              <Icon v-else name="lucide:user" size="36" class="text-[#c4b5de]" />
+            </div>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-[#4d1979] text-white text-xs font-medium px-3 py-1">
+              Nickname: {{ nickname }}
+            </span>
+          </div>
+          <p class="text-xs text-gray-400">{{ today }}</p>
+        </div>
       </div>
     </div>
 
@@ -32,34 +51,39 @@
     <template v-else>
       <div>
         <p class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-4">Progress Overview</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2.5">
           <TotalCount
-            class="bg-gradient-to-br from-white via-[#fcfbff] to-[#f3effd] border-[#e7ddf8]"
+            class="bg-white border-gray-200 shadow-none"
             icon="mdi:check-circle"
             :count="`${stats?.completedPercent ?? 0}%`"
             label="Cases completed"
+            :compact="true"
           />
           <TotalCount
-            class="bg-gradient-to-br from-white via-[#fcfbff] to-[#f3effd] border-[#e7ddf8]"
+            class="bg-white border-gray-200 shadow-none"
             icon="mdi:clock-outline"
             :count="stats?.inProgress ?? 0"
             label="Cases in progress"
+            :compact="true"
           />
           <TotalCount
-            class="bg-gradient-to-br from-white via-[#fcfbff] to-[#f3effd] border-[#e7ddf8]"
+            class="bg-white border-gray-200 shadow-none"
             icon="lucide:pause-circle"
             :count="`${stats?.notStartedPercent ?? 0}%`"
             label="Cases not started"
+            :compact="true"
           />
           <TotalCount
-            class="bg-gradient-to-br from-white via-[#fcfbff] to-[#f3effd] border-[#e7ddf8]"
+            class="bg-white border-gray-200 shadow-none"
             icon="mdi:fire"
             :count="stats?.login_streak ?? 0"
             label="Login streak"
+            :compact="true"
           />
           <TrophyCard
-            class="bg-gradient-to-br from-white via-[#fcfbff] to-[#f3effd] border-[#e7ddf8]"
+            class="bg-white border-gray-200 shadow-none"
             :completed="stats?.completed ?? 0"
+            :compact="true"
           />
         </div>
       </div>
@@ -132,12 +156,17 @@
 
 <script setup lang="ts">
 import TotalCount from '@/components/ui/TotalCount.vue'
-import { computed } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import TrophyCard from '~/components/TrophyCard/TrophyCard.vue'
 import { Icon } from '#components'
 
 type DashboardResponse = {
-    user: { name?: string | null; first_name?: string | null; last_name?: string | null }
+    user: {
+      name?: string | null
+      first_name?: string | null
+      last_name?: string | null
+      nickname?: string | null
+    }
     stats: any | null
     cases: StudentCase[]
 }
@@ -161,6 +190,43 @@ const userName = computed(() => {
   const u = data.value?.user
   const fullName = [u?.first_name, u?.last_name].filter(Boolean).join(' ').trim()
   return fullName || u?.name || 'Student'
+})
+
+const nickname = computed(() => data.value?.user?.nickname?.trim() || "")
+
+const avatarUrl = ref<string | null>(null)
+const avatarLoading = ref(false)
+let pollTimer: ReturnType<typeof setTimeout> | null = null
+
+async function checkAvatar() {
+  try {
+    const result = await $fetch<{ avatarUrl: string | null; generating: boolean }>("/api/students/avatar")
+    if (result.avatarUrl) {
+      avatarUrl.value = result.avatarUrl
+      avatarLoading.value = false
+      return
+    }
+    if (result.generating) {
+      avatarLoading.value = true
+      pollTimer = setTimeout(checkAvatar, 4000)
+      return
+    }
+    avatarLoading.value = false
+  } catch {
+    avatarUrl.value = null
+    avatarLoading.value = false
+  }
+}
+
+watch(nickname, (nick) => {
+  if (pollTimer) { clearTimeout(pollTimer); pollTimer = null }
+  if (!nick) return
+  avatarLoading.value = true
+  checkAvatar()
+}, { immediate: true })
+
+onUnmounted(() => {
+  if (pollTimer) clearTimeout(pollTimer)
 })
 
 const statusClass = (status: StudentCase["status"]) => {

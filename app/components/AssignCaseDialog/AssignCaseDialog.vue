@@ -70,8 +70,7 @@ const assignCases = async () => {
   <Dialog :open="isOpen" @update:open="onOpenChange">
     <DialogTrigger as-child>
       <Button
-        variant="outline"
-        class="h-9 px-4 rounded-lg border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+        class="h-9 px-4 rounded-lg bg-[#4d1979] hover:bg-[#3f1564] text-white flex items-center gap-2"
       >
         <Icon name="lucide:send" size="14" />
         <span class="text-sm">Assign Case</span>

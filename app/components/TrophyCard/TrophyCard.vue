@@ -1,18 +1,27 @@
 <template>
-  <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col justify-between gap-4 min-h-[138px] relative">
+  <div
+    class="bg-white border border-gray-200 rounded-xl flex flex-col justify-between relative"
+    :class="compact ? 'p-4 gap-3 min-h-[112px]' : 'p-5 gap-4 min-h-[138px]'"
+  >
     <div class="flex items-start justify-between">
-      <p class="text-[13px] font-medium text-gray-500 leading-snug">Current level</p>
-      <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] flex items-center justify-center shrink-0">
-        <Icon :name="trophy.icon" size="18" :class="trophy.color || 'text-[#4d1979]'" />
+      <p class="font-medium text-gray-500 leading-snug" :class="compact ? 'text-[12px]' : 'text-[13px]'">Current level</p>
+      <div
+        class="rounded-lg bg-[#f5f3ff] flex items-center justify-center shrink-0"
+        :class="compact ? 'w-7 h-7' : 'w-8 h-8'"
+      >
+        <Icon :name="trophy.icon" :size="compact ? 15 : 18" :class="trophy.color || 'text-[#4d1979]'" />
       </div>
     </div>
 
     <div>
-      <p class="text-[32px] font-semibold text-gray-900 tabular-nums leading-none tracking-tight">
+      <p
+        class="font-semibold text-gray-900 tabular-nums leading-none tracking-tight"
+        :class="compact ? 'text-[24px]' : 'text-[32px]'"
+      >
         {{ trophy.title }}
       </p>
 
-      <div class="mt-2 flex items-center gap-1 text-[11px] text-gray-400">
+      <div class="flex items-center gap-1 text-gray-400" :class="compact ? 'mt-1.5 text-[10px]' : 'mt-2 text-[11px]'">
         <span>{{ completed }} cases completed</span>
         <button
           @click="showInfo = !showInfo"
@@ -78,6 +87,10 @@ const props = defineProps({
   completed: {
     type: Number,
     required: true,
+  },
+  compact: {
+    type: Boolean,
+    default: false,
   },
 })
 
