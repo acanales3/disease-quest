@@ -50,6 +50,19 @@
       Classroom not found.
     </div>
 
+    <div v-if="pageMessage" class="w-full py-2">
+      <div
+        class="rounded-md border px-4 py-3 text-sm"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
+      >
+        {{ pageMessage.text }}
+      </div>
+    </div>
+
     <!-- Cases Table -->
     <div class="w-full py-2">
       <CaseDataTable :columns="caseColumns" :data="caseData" />
@@ -240,6 +253,9 @@ async function getCases(): Promise<Case[]> {
   }
 }
 
+type PageMessage = { type: "success" | "error"; text: string };
+const pageMessage = ref<PageMessage | null>(null);
+
 const showRemoveCaseDialog = ref(false);
 const pendingRemoveCaseId = ref<number | null>(null);
 const isRemovingCase = ref(false);
@@ -252,14 +268,21 @@ function handleRemoveCaseFromClassroom(caseId: number) {
 async function confirmRemoveCase() {
   if (!pendingRemoveCaseId.value) return;
   isRemovingCase.value = true;
+  pageMessage.value = null;
   try {
     await $fetch(`/api/classrooms/${classroomId}/cases/${pendingRemoveCaseId.value}`, {
       method: "DELETE",
     });
     caseData.value = await getCases();
     showRemoveCaseDialog.value = false;
-  } catch (error) {
+    pageMessage.value = { type: "success", text: "Case removed from classroom successfully." };
+    setTimeout(() => { pageMessage.value = null; }, 5000);
+  } catch (error: any) {
     console.error("Failed to remove case from classroom:", error);
+    pageMessage.value = {
+      type: "error",
+      text: error?.data?.statusMessage || error?.message || "Failed to remove case from classroom.",
+    };
   } finally {
     isRemovingCase.value = false;
     pendingRemoveCaseId.value = null;

@@ -10,6 +10,19 @@
       <AssignCaseDialog :cases="casesData" :classrooms="classroomsData" />
     </div>
 
+    <div v-if="pageMessage" class="w-full py-2">
+      <div
+        class="rounded-md border px-4 py-3 text-sm"
+        :class="
+          pageMessage.type === 'success'
+            ? 'border-green-200 bg-green-50 text-green-800'
+            : 'border-red-200 bg-red-50 text-red-700'
+        "
+      >
+        {{ pageMessage.text }}
+      </div>
+    </div>
+
     <!-- Cases Table -->
     <div class="w-full py-2">
       <DataTable
@@ -117,6 +130,9 @@ const visibleColumns = computed(() => {
 });
 
 
+type PageMessage = { type: "success" | "error"; text: string };
+const pageMessage = ref<PageMessage | null>(null);
+
 /* ---------- REMOVE FROM CLASSROOM(S) ---------- */
 const showRemoveDialog = ref(false);
 const pendingCase = ref<Case | null>(null);
@@ -132,6 +148,8 @@ function openRemoveDialog(caseData: Case) {
 async function confirmRemoveFromClassrooms() {
   if (!pendingCase.value || selectedClassroomIds.value.length === 0) return;
   isRemoving.value = true;
+  pageMessage.value = null;
+  const count = selectedClassroomIds.value.length;
   try {
     await Promise.all(
       selectedClassroomIds.value.map((classroomId) =>
@@ -142,8 +160,17 @@ async function confirmRemoveFromClassrooms() {
     );
     showRemoveDialog.value = false;
     await refreshCases();
-  } catch (error) {
+    pageMessage.value = {
+      type: "success",
+      text: `Case removed from ${count} classroom${count > 1 ? "s" : ""} successfully.`,
+    };
+    setTimeout(() => { pageMessage.value = null; }, 5000);
+  } catch (error: any) {
     console.error("Failed to remove case from classrooms:", error);
+    pageMessage.value = {
+      type: "error",
+      text: error?.data?.statusMessage || error?.message || "Failed to remove case from classroom(s).",
+    };
   } finally {
     isRemoving.value = false;
     pendingCase.value = null;
