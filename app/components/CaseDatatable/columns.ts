@@ -1,6 +1,5 @@
 import type { ColumnDef } from "@tanstack/vue-table";
-import { h } from "vue";
-import DropdownAction from "@/components/CaseDatatable/data-table-dropdown.vue";
+import { h, resolveComponent } from "vue";
 import {
   Tooltip,
   TooltipContent,
@@ -8,7 +7,8 @@ import {
 } from "@/components/ui/tooltip";
 
 export interface Case {
-  id: number;
+  id: number | string;
+  case_id?: number;
   name: string;
   description: string;
   classrooms: { id: number; name: string }[];
@@ -18,13 +18,15 @@ export interface Case {
 }
 
 export function getColumns(role: string): ColumnDef<Case>[] {
+  const DropdownAction = resolveComponent("CaseDatatableDataTableDropdown");
   return [
     {
       accessorKey: "id",
       header: () => h("div", {}, "NO"),
       cell: ({ row }) => {
-        const id = row.getValue("id") as number;
-        return h("div", { class: "text-[13px] text-gray-400" }, id.toString());
+        const original = row.original as Case;
+        const dbId = original.case_id ?? original.id;
+        return h("div", { class: "text-[13px] text-gray-400 tabular-nums" }, String(dbId));
       },
     },
     {
