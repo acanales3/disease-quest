@@ -3,7 +3,7 @@ import { h, resolveComponent } from "vue";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 
 export interface Case {
@@ -14,10 +14,12 @@ export interface Case {
   classrooms: { id: number; name: string }[];
   completionDate: string;
   status: "not started" | "in progress" | "completed";
-  // action column still needed
 }
 
-export function getColumns(role: string): ColumnDef<Case>[] {
+export function getColumns(
+  role: string,
+  onRefresh: () => void = () => {},
+): ColumnDef<Case>[] {
   const DropdownAction = resolveComponent("CaseDatatableDataTableDropdown");
   return [
     {
@@ -49,14 +51,19 @@ export function getColumns(role: string): ColumnDef<Case>[] {
       accessorKey: "classrooms",
       header: () => h("div", {}, "CLASSROOM"),
       cell: ({ row }) => {
-        const classrooms = row.getValue("classrooms") as { id: number; name: string }[] | undefined;
+        const classrooms = row.getValue("classrooms") as
+          | { id: number; name: string }[]
+          | undefined;
 
         if (!classrooms || classrooms.length === 0) {
           return h("div", { class: "text-[13px] text-gray-400" }, "-");
         }
 
         const first = classrooms[0]?.name ?? "-";
-        const truncated = first.length > 10 || classrooms.length > 1 ? first.slice(0, 10) + "..." : first;
+        const truncated =
+          first.length > 10 || classrooms.length > 1
+            ? first.slice(0, 10) + "..."
+            : first;
 
         return h(
           Tooltip,
@@ -73,9 +80,9 @@ export function getColumns(role: string): ColumnDef<Case>[] {
                       {
                         class: "text-[13px] cursor-pointer text-gray-600 hover:text-gray-900 transition",
                       },
-                      truncated
+                      truncated,
                     ),
-                }
+                },
               ),
               h(
                 TooltipContent,
@@ -86,13 +93,13 @@ export function getColumns(role: string): ColumnDef<Case>[] {
                       h(
                         "div",
                         { key: c.id, class: "py-1 text-sm text-gray-600" },
-                        c.name
-                      )
+                        c.name,
+                      ),
                     ),
-                }
+                },
               ),
             ],
-          }
+          },
         );
       },
     },
@@ -119,7 +126,7 @@ export function getColumns(role: string): ColumnDef<Case>[] {
         const statusText = {
           "not started": "Not Started",
           "in progress": "In Progress",
-          "completed": "Completed"
+          completed: "Completed",
         };
 
         return h(
@@ -127,7 +134,7 @@ export function getColumns(role: string): ColumnDef<Case>[] {
           {
             class: `inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${statusClasses[status]}`,
           },
-          statusText[status]
+          statusText[status],
         );
       },
     },
@@ -143,7 +150,8 @@ export function getColumns(role: string): ColumnDef<Case>[] {
           h(DropdownAction, {
             caseData,
             role,
-          })
+            onRefresh, // wire the refresh callback into the dropdown
+          }),
         );
       },
     },

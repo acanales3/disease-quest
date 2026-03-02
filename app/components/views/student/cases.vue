@@ -42,7 +42,7 @@
       Failed to load cases.
     </div>
     <div v-else class="w-full">
-      <DataTable :columns="visibleColumns" :data="data" />
+      <DataTable :columns="visibleColumns" :data="data" @refresh="refresh()" />
     </div>
   </div>
 </template>
@@ -56,35 +56,50 @@ import { Icon } from "#components";
 
 const data = ref<Case[]>([]);
 
-const visibleColumns = computed(() => {
-  const columnsToShow = ['id', 'name', 'description', 'classrooms', 'completionDate', 'status', 'actions'];
-  return getColumns('student').filter(column => {
-    const key = 'id' in column ? column.id : 'accessorKey' in column ? column.accessorKey : undefined;
-    return key ? columnsToShow.includes(String(key)) : false;
-  });
-});
-
-// API call
-const { data: apiData, pending, error } = await useFetch<Case[]>("/api/cases/available", {
-  default: () => [],
-});
+const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
+  "/api/cases/available",
+  {
+    default: () => [],
+  },
+);
 
 watchEffect(() => {
   data.value = apiData.value ?? [];
 });
 
-// Calculate statistics
-const completedCount = computed(() => {
-  return data.value.filter(c => c.status === 'completed').length;
+const visibleColumns = computed(() => {
+  const columnsToShow = [
+    "id",
+    "name",
+    "description",
+    "classrooms",
+    "completionDate",
+    "status",
+    "actions",
+  ];
+  return getColumns("student", () => refresh()).filter((column) => {
+    const key =
+      "id" in column
+        ? column.id
+        : "accessorKey" in column
+          ? column.accessorKey
+          : undefined;
+    return key ? columnsToShow.includes(String(key)) : false;
+  });
 });
 
-const inProgressCount = computed(() => {
-  return data.value.filter(c => c.status === 'in progress').length;
-});
+// Statistics
+const completedCount = computed(
+  () => data.value.filter((c) => c.status === "completed").length,
+);
 
-const notStartedCount = computed(() => {
-  return data.value.filter(c => c.status === 'not started').length;
-});
+const inProgressCount = computed(
+  () => data.value.filter((c) => c.status === "in progress").length,
+);
+
+const notStartedCount = computed(
+  () => data.value.filter((c) => c.status === "not started").length,
+);
 
 const completionPercentage = computed(() => {
   if (data.value.length === 0) return 0;

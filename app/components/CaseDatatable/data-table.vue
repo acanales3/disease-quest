@@ -48,22 +48,29 @@ const props = defineProps<{
   classrooms?: Classroom[];
 }>();
 
+// Bubble the refresh event up to the page so it can re-fetch cases
+const emit = defineEmits<{
+  (e: "refresh"): void;
+}>();
+
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
 
 // Custom filter function for array-based filters
 const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
-  if (!filterValue || (Array.isArray(filterValue) && filterValue.length === 0)) {
+  if (
+    !filterValue ||
+    (Array.isArray(filterValue) && filterValue.length === 0)
+  ) {
     return true;
   }
 
   const cellValue = row.getValue(columnId);
 
   if (columnId === "classrooms" && cellValue) {
-    // cellValue is array of objects {id, name}
     return (cellValue as { id: number; name: string }[]).some((c) =>
-      filterValue.includes(String(c.id))
+      filterValue.includes(String(c.id)),
     );
   }
 
@@ -74,7 +81,6 @@ const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
   return true;
 };
 
-// Modify columns to add filterFn for status and classrooms
 const modifiedColumns = computed(() => {
   return props.columns.map((col: any) => {
     if (col.accessorKey === "status" || col.accessorKey === "classrooms") {
@@ -129,6 +135,7 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
   }
 };
 </script>
+
 <template>
   <div class="bg-white border border-gray-200 rounded-xl w-full max-w-full min-w-0 overflow-hidden">
     <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">

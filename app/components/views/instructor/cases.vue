@@ -30,7 +30,12 @@
     </div>
 
     <div v-else class="w-full">
-      <DataTable :columns="visibleColumns" :data="casesData" :classrooms="classroomsData" />
+      <DataTable
+        :columns="visibleColumns"
+        :data="casesData"
+        :classrooms="classroomsData"
+        @refresh="refreshCases()"
+      />
     </div>
   </div>
 </template>
@@ -46,9 +51,34 @@ import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue
 const casesData = ref<Case[]>([]);
 const classroomsData = ref<Classroom[]>([]);
 
+const {
+  data: casesApi,
+  pending: casesPending,
+  error: casesError,
+  refresh: refreshCases,
+} = await useFetch<Case[]>(
+  "/api/cases/available",
+  {
+    default: () => [],
+  },
+);
+
+const {
+  data: classroomsApi,
+  pending: classroomsPending,
+  error: classroomsError,
+} = await useFetch<Classroom[]>("/api/classrooms", {
+  default: () => [],
+});
+
+watchEffect(() => {
+  casesData.value = casesApi.value ?? [];
+  classroomsData.value = classroomsApi.value ?? [];
+});
+
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "classrooms", "actions"];
-  return getColumns("instructor").filter((column) => {
+  const columnsToShow = ["id", "name", "description", "status", "actions"];
+  return getColumns("instructor", () => refreshCases()).filter((column) => {
     const key =
       "id" in column
         ? column.id
@@ -59,16 +89,8 @@ const visibleColumns = computed(() => {
   });
 });
 
-// API calls
-const { data: casesApi, pending: casesPending, error: casesError } = await useFetch<Case[]>("/api/cases/available", {
-  default: () => [],
-});
-
-const { data: classroomsApi, pending: classroomsPending, error: classroomsError } = await useFetch<Classroom[]>("/api/classrooms", {
-  default: () => [],
-});
-
 const isLoading = computed(() => casesPending.value || classroomsPending.value);
+
 const errorMessage = computed(() => {
   const message =
     (casesError.value as any)?.data?.message ||
@@ -77,11 +99,5 @@ const errorMessage = computed(() => {
     (classroomsError.value as any)?.statusMessage;
 
   return message ? `Unable to load cases data: ${message}` : "";
-});
-
-// bind into your existing refs
-watchEffect(() => {
-  casesData.value = casesApi.value ?? [];
-  classroomsData.value = classroomsApi.value ?? [];
 });
 </script>
