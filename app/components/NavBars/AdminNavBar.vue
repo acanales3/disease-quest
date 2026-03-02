@@ -56,22 +56,22 @@
 
 <script setup>
 const overviewLinks = [
-  { label: 'Dashboard', to: '/admin/dashboard', icon: 'lucide:layout-dashboard' },
+  { label: 'Dashboard', to: '/admin/dashboard', icon: 'iconamoon:home-light' },
 ]
 
 const peopleLinks = [
-  { label: 'Administrators', to: '/admin/admins', icon: 'lucide:shield' },
-  { label: 'Instructors', to: '/admin/instructors', icon: 'lucide:graduation-cap' },
-  { label: 'Students', to: '/admin/students', icon: 'lucide:users' },
+  { label: 'Administrators', to: '/admin/admins', icon: 'eos-icons-admin' },
+  { label: 'Instructors', to: '/admin/instructors', icon: 'hugeicons:teacher' },
+  { label: 'Students', to: '/admin/students', icon: 'hugeicons:students' },
 ]
 
 const contentLinks = [
-  { label: 'Classrooms', to: '/admin/classrooms', icon: 'lucide:layout-grid' },
-  { label: 'Cases', to: '/admin/cases', icon: 'lucide:book-open' },
+  { label: 'Classrooms', to: '/admin/classrooms', icon: 'simple-icons:googleclassroom' },
+  { label: 'Cases', to: '/admin/cases', icon: 'si:book-line' },
 ]
 
 const insightLinks = [
-  { label: 'Analytics', to: '/admin/analytics', icon: 'lucide:bar-chart-3' },
+  { label: 'Analytics', to: '/admin/analytics', icon: 'uim:analytics' },
   { label: 'Leaderboard', to: '/admin/leaderboard', icon: 'lucide:trophy' },
 ]
 </script>
