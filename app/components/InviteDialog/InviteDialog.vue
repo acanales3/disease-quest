@@ -253,7 +253,7 @@ async function sendInvite() {
       </button>
     </DialogTrigger>
 
-    <DialogContent class="sm:max-w-[520px]">
+    <DialogContent class="sm:max-w-[720px] max-h-[80vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Invite {{ title }}</DialogTitle>
         <DialogDescription>{{ description }}</DialogDescription>
