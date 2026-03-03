@@ -63,25 +63,32 @@ const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
     return true;
   }
 
-      const cellValue = row.getValue(columnId);
-      
-      // Special handling for classroom filter which checks against the classrooms array
-      if (columnId === 'classroom' && (row.original as any).classrooms) {
-        if (Array.isArray(filterValue)) {
-            // Check if any of the student's classroom IDs match any of the filter values
-            return (row.original as any).classrooms.some((id: number) => filterValue.includes(String(id)));
-        }
-      }
+  const cellValue = row.getValue(columnId);
 
-      // For array filters, check if cellValue is in the array
-      if (Array.isArray(filterValue)) {
-        // Convert cellValue to string for comparison
-        return filterValue.includes(String(cellValue));
-      }
+  // Special handling for classroom filter which checks against the classrooms array
+  if (columnId === "classroom" && (row.original as any).classrooms) {
+    if (Array.isArray(filterValue)) {
+      const classrooms = (row.original as any).classrooms;
 
-      // Fallback for non-array filters (shouldn't happen with this function)
-      return true;
-    };
+      // `classrooms` is an array of objects like { id, name }.
+      // Match by classroom id against the selected filter values.
+      return classrooms.some((c: any) => {
+        const classroomId =
+          c && typeof c === "object" && "id" in c ? c.id : c;
+        return filterValue.includes(String(classroomId));
+      });
+    }
+  }
+
+  // For array filters, check if cellValue is in the array
+  if (Array.isArray(filterValue)) {
+    // Convert cellValue to string for comparison
+    return filterValue.includes(String(cellValue));
+  }
+
+  // Fallback for non-array filters (shouldn't happen with this function)
+  return true;
+};
 
 // Modify columns to add filterFn for status, msyear, and classroom
 const modifiedColumns = computed(() => {
