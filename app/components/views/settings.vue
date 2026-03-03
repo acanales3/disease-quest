@@ -1,231 +1,339 @@
 <template>
-    <div class="w-full min-h-screen bg-white">
-    <div class="w-full max-w-4xl mx-auto px-6 py-8">
-        <div class="flex items-center justify-between mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Account Settings</h1>
-            <Button
-                variant="outline"
-                class="border-gray-300 text-gray-700 hover:bg-gray-50"
-                @click="goBack"
-            >
-                <Icon name="lucide:arrow-left" size="14" class="mr-2" />
-                Back
-            </Button>
-        </div>
-
-        <div class="mb-8">
-            <h2 class="text-xl font-semibold text-[#2f174a] mb-4 pb-2 border-b border-[#ede9f5]">
-                Profile Name
-            </h2>
-            <div class="grid gap-6 py-4">
-                <div class="grid grid-cols-4 items-center gap-4">
-                    <Label for="firstName" class="text-right">First Name</Label>
-                    <Input
-                        id="firstName"
-                        v-model="form.firstName"
-                        :aria-invalid="Boolean(nameErrors.firstName)"
-                        autocomplete="given-name"
-                        maxlength="50"
-                        class="col-span-3"
-                    />
-                </div>
-                <div
-                    v-if="nameErrors.firstName"
-                    class="grid grid-cols-4 items-start gap-4 -mt-4"
-                >
-                    <div />
-                    <p class="col-span-3 text-sm text-destructive">
-                        {{ nameErrors.firstName }}
+    <div class="min-h-screen bg-[#f5f5f7]">
+        <div class="w-full max-w-4xl mx-auto px-6 py-10">
+            <!-- Page header -->
+            <div class="mb-8 flex items-start justify-between">
+                <div>
+                    <h1 class="text-3xl font-semibold text-gray-900">Account Settings</h1>
+                    <p class="mt-2 text-sm text-gray-500 max-w-xl">
+                        Manage your personal details, contact information, and password
+                        for your account.
                     </p>
                 </div>
-                <div class="grid grid-cols-4 items-center gap-4">
-                    <Label for="lastName" class="text-right">Last Name</Label>
-                    <Input
-                        id="lastName"
-                        v-model="form.lastName"
-                        :aria-invalid="Boolean(nameErrors.lastName)"
-                        autocomplete="family-name"
-                        maxlength="50"
-                        class="col-span-3"
-                    />
-                </div>
-                <div
-                    v-if="nameErrors.lastName"
-                    class="grid grid-cols-4 items-start gap-4 -mt-4"
-                >
-                    <div />
-                    <p class="col-span-3 text-sm text-destructive">
-                        {{ nameErrors.lastName }}
-                    </p>
-                </div>
-                <div class="grid grid-cols-4 items-start gap-4">
-                    <div />
-                    <p class="col-span-3 text-sm text-muted-foreground">
-                        Use 1 to 50 letters. Spaces, hyphens, and apostrophes
-                        are allowed.
-                    </p>
-                </div>
-                <div
-                    v-if="nameStatus"
-                    class="grid grid-cols-4 items-start gap-4 -mt-2"
-                >
-                    <div />
-                    <p
-                        :class="
-                            nameStatus.type === 'success'
-                                ? 'text-green-600'
-                                : 'text-destructive'
-                        "
-                        class="col-span-3 text-sm"
-                    >
-                        {{ nameStatus.message }}
-                    </p>
-                </div>
-            </div>
-            <div class="flex justify-end gap-3 pt-2 border-t border-[#ede9f5]">
-                <Button class="bg-black text-white hover:bg-gray-800" :disabled="!canSaveName" @click="saveName">
-                    {{ isSavingName ? "Saving..." : "Save Name" }}
-                </Button>
-            </div>
-        </div>
-
-        <!-- Nickname Section (students only) -->
-        <div v-if="isStudent" class="mb-8">
-            <h2 class="text-xl font-semibold text-[#2f174a] mb-4 pb-2 border-b border-[#ede9f5]">
-                Nickname
-            </h2>
-            <p class="text-sm text-muted-foreground mb-4">
-                Your nickname is shown on leaderboards to keep your identity
-                confidential. Type your own or generate a random one.
-            </p>
-            <div class="grid gap-6 py-4">
-                <div class="grid grid-cols-4 items-center gap-4">
-                    <Label class="text-right">Current Nickname</Label>
-                    <div class="col-span-3 flex items-center gap-4">
-                        <div class="w-16 h-16 shrink-0 overflow-hidden flex items-center justify-center rounded-lg bg-[#f5f3ff]">
-                            <img
-                                v-if="avatarUrl"
-                                :src="avatarUrl"
-                                :alt="currentNickname"
-                                class="w-full h-full object-contain"
-                            />
-                            <Icon v-else-if="avatarLoading" name="lucide:loader-2" size="20" class="text-[#4d1979]/40 animate-spin" />
-                            <Icon v-else name="lucide:user" size="24" class="text-[#4d1979]/30" />
-                        </div>
-                        <span
-                            class="text-lg font-medium text-[#4d1979] bg-[#f5f3ff] px-4 py-2 rounded-md inline-block"
-                        >
-                            {{ currentNickname || "Not assigned" }}
-                        </span>
-                    </div>
-                </div>
-                <div class="grid grid-cols-4 items-center gap-4">
-                    <Label for="nicknameInput" class="text-right"
-                        >New Nickname</Label
-                    >
-                    <div class="col-span-3 flex items-center gap-2">
-                        <Input
-                            id="nicknameInput"
-                            v-model="nicknameInput"
-                            maxlength="30"
-                            placeholder="Enter a custom nickname"
-                            class="flex-1"
-                        />
-                        <Button
-                            class="bg-black text-white hover:bg-gray-800"
-                            :disabled="isSavingNickname || !canSaveNickname"
-                            @click="requestNicknameSave"
-                        >
-                            {{ isSavingNickname ? "Saving..." : "Save" }}
-                        </Button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-4 items-start gap-4 -mt-4">
-                    <div />
-                    <p class="col-span-3 text-sm text-muted-foreground">
-                        2 to 30 characters. Must be unique.
-                    </p>
-                </div>
-                <div
-                    v-if="nicknameStatus"
-                    class="grid grid-cols-4 items-start gap-4 -mt-2"
-                >
-                    <div />
-                    <p
-                        :class="
-                            nicknameStatus.type === 'success'
-                                ? 'text-green-600'
-                                : 'text-destructive'
-                        "
-                        class="col-span-3 text-sm"
-                    >
-                        {{ nicknameStatus.message }}
-                    </p>
-                </div>
-            </div>
-            <div class="flex justify-end gap-3 pt-2 border-t border-[#ede9f5]">
                 <Button
                     variant="outline"
                     class="border-gray-300 text-gray-700 hover:bg-gray-50"
-                    :disabled="isRegeneratingNickname"
-                    @click="requestNicknameGenerate"
+                    @click="goBack"
                 >
-                    {{
-                        isRegeneratingNickname
-                            ? "Generating..."
-                            : "Generate Random Nickname"
-                    }}
+                    <Icon name="lucide:arrow-left" size="14" class="mr-2" />
+                    Back
                 </Button>
             </div>
-        </div>
 
-        <!-- Security Section -->
-        <div class="mb-8">
-            <h2 class="text-xl font-semibold text-[#2f174a] mb-4 pb-2 border-b border-[#ede9f5]">Security</h2>
-            <div class="grid gap-6 py-4">
-                <div class="grid grid-cols-4 items-center gap-4">
-                    <Label for="currentPassword" class="text-right"
-                        >Current Password</Label
+            <!-- Profile card -->
+            <section
+                class="mb-8 rounded-2xl border border-gray-100 bg-white shadow-sm"
+            >
+                <div class="px-6 py-5 border-b border-gray-100 flex items-start gap-6">
+                    <!-- Student avatar (instead of upload picture) -->
+                    <div
+                        v-if="isStudent"
+                        class="flex items-center justify-center w-20 h-20 rounded-full bg-[#f5f3ff] overflow-hidden shrink-0"
                     >
-                    <Input
-                        id="currentPassword"
-                        v-model="form.currentPassword"
-                        type="password"
-                        class="col-span-3"
-                        placeholder="Enter current password"
-                    />
-                </div>
-                <div class="grid grid-cols-4 items-center gap-4">
-                    <Label for="newPassword" class="text-right"
-                        >New Password</Label
-                    >
-                    <Input
-                        id="newPassword"
-                        v-model="form.newPassword"
-                        type="password"
-                        class="col-span-3"
-                        placeholder="Enter new password"
-                    />
-                </div>
-                <div class="grid grid-cols-4 items-center gap-4">
-                    <Label for="confirmPassword" class="text-right"
-                        >Confirm Password</Label
-                    >
-                    <Input
-                        id="confirmPassword"
-                        v-model="form.confirmPassword"
-                        type="password"
-                        class="col-span-3"
-                        placeholder="Confirm new password"
-                    />
-                </div>
-            </div>
-        </div>
+                        <img
+                            v-if="avatarUrl"
+                            :src="avatarUrl"
+                            :alt="currentNickname || 'Student avatar'"
+                            class="w-full h-full object-contain"
+                        />
+                        <Icon
+                            v-else-if="avatarLoading"
+                            name="lucide:loader-2"
+                            size="22"
+                            class="text-[#4d1979]/40 animate-spin"
+                        />
+                        <Icon
+                            v-else
+                            name="lucide:user"
+                            size="26"
+                            class="text-[#4d1979]/30"
+                        />
+                    </div>
 
-        <!-- Password Actions -->
-        <div class="flex justify-end gap-3 pt-4 border-t border-[#ede9f5]">
-            <Button class="bg-black text-white hover:bg-gray-800" @click="onSavePassword">Save Password</Button>
-        </div>
+                    <div class="flex-1">
+                    
+                        <h2 class="mt-1 text-base font-semibold text-gray-900">
+                            Profile details
+                        </h2>
+                        
+                        <p
+                            v-if="isStudent"
+                            class="mt-2 text-xs text-gray-400"
+                        >
+                            Your avatar and nickname are generated automatically to help
+                            keep your identity private in leaderboards.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Nickname (students) on top, then full name -->
+                <div class="px-6 py-6 space-y-8">
+                    <!-- Nickname (students only) -->
+                    <div
+                        v-if="isStudent"
+                        class="space-y-4"
+                    >
+                        
+                        <div>
+                            <Label class="text-xs text-gray-600"
+                                >Current nickname</Label
+                            >
+                            <div
+                                class="mt-2 inline-flex items-center rounded-md bg-[#f5f3ff] px-4 py-2"
+                            >
+                                <span
+                                    class="text-sm font-medium text-[#4d1979]"
+                                >
+                                    {{ currentNickname || "Not assigned" }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <Label
+                                for="nicknameInput"
+                                class="text-xs text-gray-600"
+                                >New nickname</Label
+                            >
+                            <div
+                                class="flex flex-col gap-2 sm:flex-row sm:items-center"
+                            >
+                                <Input
+                                    id="nicknameInput"
+                                    v-model="nicknameInput"
+                                    maxlength="30"
+                                    placeholder="Enter a custom nickname"
+                                    class="flex-1"
+                                />
+                                <Button
+                                    class="bg-black text-white hover:bg-gray-800 sm:w-auto w-full"
+                                    :disabled="
+                                        isSavingNickname || !canSaveNickname
+                                    "
+                                    @click="requestNicknameSave"
+                                >
+                                    {{
+                                        isSavingNickname ? "Saving..." : "Save"
+                                    }}
+                                </Button>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                2 to 30 characters. Must be unique.
+                            </p>
+                        </div>
+                        <p
+                            v-if="nicknameStatus"
+                            :class="
+                                nicknameStatus.type === 'success'
+                                    ? 'text-green-600'
+                                    : 'text-destructive'
+                            "
+                            class="text-xs"
+                        >
+                            {{ nicknameStatus.message }}
+                        </p>
+                        <div class="flex justify-end">
+                            <Button
+                                variant="outline"
+                                class="border-gray-300 text-gray-700 hover:bg-gray-50"
+                                :disabled="isRegeneratingNickname"
+                                @click="requestNicknameGenerate"
+                            >
+                                {{
+                                    isRegeneratingNickname
+                                        ? "Generating..."
+                                        : "Generate random nickname"
+                                }}
+                            </Button>
+                        </div>
+                    </div>
+
+                    <!-- Full name -->
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-800">
+                                Full name
+                            </h3>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Use 1 to 50 letters. Spaces, hyphens, and
+                                apostrophes are allowed.
+                            </p>
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <Label
+                                    for="firstName"
+                                    class="text-xs text-gray-600"
+                                    >First name</Label
+                                >
+                                <Input
+                                    id="firstName"
+                                    v-model="form.firstName"
+                                    :aria-invalid="Boolean(nameErrors.firstName)"
+                                    autocomplete="given-name"
+                                    maxlength="50"
+                                    class="mt-1"
+                                />
+                                <p
+                                    v-if="nameErrors.firstName"
+                                    class="mt-1 text-xs text-destructive"
+                                >
+                                    {{ nameErrors.firstName }}
+                                </p>
+                            </div>
+                            <div>
+                                <Label
+                                    for="lastName"
+                                    class="text-xs text-gray-600"
+                                    >Last name</Label
+                                >
+                                <Input
+                                    id="lastName"
+                                    v-model="form.lastName"
+                                    :aria-invalid="Boolean(nameErrors.lastName)"
+                                    autocomplete="family-name"
+                                    maxlength="50"
+                                    class="mt-1"
+                                />
+                                <p
+                                    v-if="nameErrors.lastName"
+                                    class="mt-1 text-xs text-destructive"
+                                >
+                                    {{ nameErrors.lastName }}
+                                </p>
+                            </div>
+                        </div>
+                        <p
+                            v-if="nameStatus"
+                            :class="
+                                nameStatus.type === 'success'
+                                    ? 'text-green-600'
+                                    : 'text-destructive'
+                            "
+                            class="text-xs"
+                        >
+                            {{ nameStatus.message }}
+                        </p>
+                        <div class="flex justify-end">
+                            <Button
+                                class="bg-black text-white hover:bg-gray-800"
+                                :disabled="!canSaveName"
+                                @click="saveName"
+                            >
+                                {{ isSavingName ? "Saving..." : "Save name" }}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contact email -->
+            <section
+                class="mb-8 rounded-2xl border border-gray-100 bg-white shadow-sm"
+            >
+                <div class="px-6 py-5 border-b border-gray-100">
+                    <h2 class="mt-1 text-base font-semibold text-gray-900">
+                        Account email
+                    </h2>
+                    <p class="mt-1 text-sm text-gray-500 max-w-md">
+                        The email address used for this account.
+                    </p>
+                </div>
+                <div class="px-6 py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="w-full sm:max-w-sm">
+                        <Label class="text-xs text-gray-600">Email</Label>
+                        <div class="mt-2 flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 bg-gray-50">
+                            <Icon
+                                name="lucide:mail"
+                                size="16"
+                                class="text-gray-400"
+                            />
+                            <span class="text-sm text-gray-800 truncate">
+                                {{ primaryEmail || "No email on file" }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security / password -->
+            <section
+                class="rounded-2xl border border-gray-100 bg-white shadow-sm"
+            >
+                <div class="px-6 py-5 border-b border-gray-100">
+                    <p class="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Password
+                    </p>
+                    <h2 class="mt-1 text-base font-semibold text-gray-900">
+                        Change password
+                    </h2>
+                    <p class="mt-1 text-sm text-gray-500 max-w-md">
+                        Modify your current password to keep your account secure.
+                    </p>
+                </div>
+                <div class="px-6 py-6 space-y-5">
+                    <div class="space-y-4">
+                        <div
+                            class="grid items-center gap-4 sm:grid-cols-[150px,minmax(0,1fr)]"
+                        >
+                            <Label
+                                for="currentPassword"
+                                class="text-xs font-medium text-gray-700"
+                            >
+                                Current password
+                            </Label>
+                            <Input
+                                id="currentPassword"
+                                v-model="form.currentPassword"
+                                type="password"
+                                class="mt-1"
+                                placeholder="Enter current password"
+                            />
+                        </div>
+                        <div
+                            class="grid items-center gap-4 sm:grid-cols-[150px,minmax(0,1fr)]"
+                        >
+                            <Label
+                                for="newPassword"
+                                class="text-xs font-medium text-gray-700"
+                            >
+                                New password
+                            </Label>
+                            <Input
+                                id="newPassword"
+                                v-model="form.newPassword"
+                                type="password"
+                                class="mt-1"
+                                placeholder="Enter new password"
+                            />
+                        </div>
+                        <div
+                            class="grid items-center gap-4 sm:grid-cols-[150px,minmax(0,1fr)]"
+                        >
+                            <Label
+                                for="confirmPassword"
+                                class="text-xs font-medium text-gray-700"
+                            >
+                                Confirm password
+                            </Label>
+                            <Input
+                                id="confirmPassword"
+                                v-model="form.confirmPassword"
+                                type="password"
+                                class="mt-1"
+                                placeholder="Confirm new password"
+                            />
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-2">
+                        <Button
+                            class="bg-black text-white hover:bg-gray-800"
+                            @click="onSavePassword"
+                        >
+                            Save password
+                        </Button>
+                    </div>
+                </div>
+            </section>
 
         <!-- Confirmation Dialog -->
         <Dialog v-model:open="showConfirmDialog">
@@ -325,6 +433,7 @@ const originalNames = ref({
 });
 
 const isStudent = ref(false);
+const primaryEmail = ref("");
 const currentNickname = ref("");
 const nicknameInput = ref("");
 const isRegeneratingNickname = ref(false);
@@ -708,6 +817,8 @@ const loadCurrentUserName = async () => {
     try {
         const profile = await fetchCustomUser();
         if (!profile) return;
+
+        primaryEmail.value = (profile.email ?? "").trim();
 
         if (profile.role?.toUpperCase() === "STUDENT") {
             isStudent.value = true;
