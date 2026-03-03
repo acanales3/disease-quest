@@ -288,7 +288,7 @@
                   </span>
                   <span v-else-if="orderedTestIds.has(test.id)" class="text-[10px] font-semibold uppercase text-green-600">Ordered</span>
                   <span v-else class="text-[10px] text-neutral-400">
-                    {{ test.cost_points }} pts<span v-if="test.tat_minutes"> · ~{{ test.tat_minutes }} min</span>
+                    {{ test.cost_points }} pts
                   </span>
                 </button>
               </div>

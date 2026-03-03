@@ -938,17 +938,13 @@ serve(async (req: Request) => {
       actionTypeDb = "order_test";
     } else if (actionType === "get_results") {
       const testId = payload.testId ?? payload.content ?? "";
-      // Client sends its real-time elapsed minutes (ticking every second).
-      // Use it if it's ahead of the DB value so results unlock on real time, not sync lag.
-      const clientElapsed = typeof payload.clientElapsedMinutes === "number"
-        ? payload.clientElapsedMinutes
-        : 0;
-      const effectiveElapsed = Math.max(elapsedMinutes, clientElapsed);
 
+      // Results are always returned immediately — TAT is display-only.
+      // Pass a large elapsedMinutes so the diagnostic agent never blocks on timing.
       responseData = await callAgent("diagnostic-agent", {
         action: "get_results",
         testId,
-        elapsedMinutes: effectiveElapsed,
+        elapsedMinutes: 99999,
         diagnosticTests,
         testResults,
         orderedTests,
