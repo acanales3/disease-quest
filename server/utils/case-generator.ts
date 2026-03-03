@@ -153,9 +153,16 @@ Your output must contain ALL of the following top-level fields:
       "display_name": "<human-readable name>",
       "cost_points": <number 1-5>,
       "tat_minutes": 1,
-      "result_schema": [<array of result field names>]
+      "result_schema": [<array of result field names>],
+      "clinical_value": "<one of: high_yield, moderate_yield, low_yield_distractor, inappropriate>",
+      "why_it_might_be_ordered": "<brief rationale from a learner perspective>",
+      "teaching_note": "<why this test is high value OR why it is low-value/inappropriate>"
     }
-    // include all relevant tests for this case
+    // include all relevant tests for this case.
+    // ALSO include realistic distractors to mimic real-life decision pressure:
+    // - at least 2-4 low-yield or unnecessary tests/labs that a novice might order
+    // - at least 1 test/lab that is clearly inappropriate for the presentation
+    // These distractors should be plausible enough to tempt the learner.
   ],
 
   "test_results": {
@@ -181,12 +188,17 @@ Your output must contain ALL of the following top-level fields:
       "id": "<intervention_id>",
       "display_name": "<human-readable name>",
       "category": "<one of: antibiotics, fluids, vasopressors, airway, anticonvulsant, anti_inflammatory, analgesic, general>",
-      "options": [<array of specific drug/treatment names if applicable>]
+      "options": [<array of specific drug/treatment names if applicable>],
+      "appropriateness": "<one of: first_line, second_line, unnecessary, potentially_harmful>",
+      "adverse_effect_risk": "<brief risk if given inappropriately, or null for safe options>"
     }
     // all relevant interventions for this case.
     // The "category" field is REQUIRED and maps to universal treatment categories
     // used by the orchestrator for dynamic treatment effect handling.
     // The "options" array should list specific drug names (e.g., ["ceftriaxone", "vancomycin"]).
+    // Include deliberate management distractors:
+    // - at least 2 unnecessary/low-value interventions
+    // - at least 1 potentially harmful intervention that can cause adverse effects if chosen
   ],
 
   "scoring_categories": {
@@ -337,7 +349,10 @@ Your output must contain ALL of the following top-level fields:
         }
       }
     }
-    // 2-4 deterioration rules. The "effects" object is optional but recommended
+    // 2-4 deterioration rules. Include at least one rule representing iatrogenic harm
+    // (adverse effect) if an unsafe intervention is chosen, and at least one progression
+    // rule for delayed/missed critical care.
+    // The "effects" object is optional but recommended
     // for critical events. If omitted, the orchestrator applies generic severity escalation.
   ]
 }
@@ -363,6 +378,24 @@ Example deterioration rules:
   {"if": "correct_diagnosis_suspected == false AND time >= 5", "then": {"event": "clinical_worsening", ...}}
   {"if": "antibiotics_started == false AND time >= 8", "then": {"event": "sepsis_progression", ...}}
 
+## REALISM & INTERACTIVITY REQUIREMENTS
+
+Design the case to feel like a live encounter, not a static worksheet:
+
+- Include ambiguous but clinically believable signal vs noise:
+  - key clues that point to the true diagnosis
+  - distractor findings/tests/treatments that can mislead novice learners
+- Make the patient/family communication dynamic across disclosures (new concerns,
+  clarifications, emotional shifts, and context updates over time).
+- Ensure actions have consequences:
+  - high-value early actions should stabilize the patient faster
+  - unnecessary actions should waste resources/time and hurt score
+  - unsafe interventions should risk realistic adverse events
+- Build explicit learning loops:
+  - scoring penalties for low-yield testing and unsafe treatment
+  - recovery opportunities after mistakes when corrected promptly
+  - clear tradeoffs between speed, safety, and diagnostic certainty
+
 ## IMPORTANT RULES
 
 1. Every field listed above is REQUIRED. Do not omit any.
@@ -373,21 +406,24 @@ Example deterioration rules:
 6. Generate medically accurate, evidence-based content.
 7. Make introduction paragraphs vivid and narrative-style (like a clinical vignette).
 8. Return ONLY the JSON object — no markdown code fences, no preamble, no trailing text.
+9. Make cases intentionally challenging with realistic distractors (tests and treatments) while remaining clinically coherent.
+10. Include explicit patient-safety penalties for inappropriate tests/treatments and adverse-effect pathways for unsafe interventions.
+11. Make the case interactive with meaningful time-based progression and action-triggered changes in disclosures and patient state.
 
 ## EVALUATION RUBRIC RULES (CRITICAL)
 
 The evaluation_rubrics array must follow these rules precisely:
 
-9. All 7 rubric domains are REQUIRED: history_taking_synthesis, physical_exam_interpretation, differential_diagnosis_formulation, diagnostic_tests, management_reasoning, communication_empathy, reflection_metacognition.
-10. Each rubric MUST use the EXACT id and db_column values listed above — these map to database columns.
-11. Point allocations are DYNAMIC per case. Adjust max_points based on the clinical emphasis of the case. Suggested defaults: Hx=15, PE=10, DDx=15, Dx Tests=10, Mgmt=15, Comm=15, Reflection=10 (total 90). You may redistribute points based on case complexity (e.g., a case emphasizing management may weight Mgmt higher).
-12. All range values must be CONCRETE INTEGERS — no placeholders. Ranges must cover 0 through max_points with no gaps or overlaps. Use this pattern:
+12. All 7 rubric domains are REQUIRED: history_taking_synthesis, physical_exam_interpretation, differential_diagnosis_formulation, diagnostic_tests, management_reasoning, communication_empathy, reflection_metacognition.
+13. Each rubric MUST use the EXACT id and db_column values listed above — these map to database columns.
+14. Point allocations are DYNAMIC per case. Adjust max_points based on the clinical emphasis of the case. Suggested defaults: Hx=15, PE=10, DDx=15, Dx Tests=10, Mgmt=15, Comm=15, Reflection=10 (total 90). You may redistribute points based on case complexity (e.g., a case emphasizing management may weight Mgmt higher).
+15. All range values must be CONCRETE INTEGERS — no placeholders. Ranges must cover 0 through max_points with no gaps or overlaps. Use this pattern:
     - For 15-point domains: emerging [0,5], developing [6,9], proficient [10,13], exemplary [14,15]
     - For 10-point domains: emerging [0,3], developing [4,6], proficient [7,8], exemplary [9,10]
     - Scale proportionally for other point values.
-13. Performance level descriptions must be CASE-SPECIFIC — reference actual clinical findings, expected diagnoses, and key decision points from the case being generated. Do NOT use generic boilerplate.
-14. The rubric is aligned with AAMC Core Entrustable Professional Activities: EPA 1 (history & physical), EPA 2 (differential diagnosis), EPA 3 (diagnostic tests), EPA 4 (orders/management), EPA 9 (teamwork/collaboration). Ensure the rubric descriptions reflect these competency expectations.
-15. The rubric emphasizes Rigor, Reproducibility, and Transparency (R2T) in clinical reasoning — descriptions should reward systematic approaches and evidence-based justification.`;
+16. Performance level descriptions must be CASE-SPECIFIC — reference actual clinical findings, expected diagnoses, and key decision points from the case being generated. Do NOT use generic boilerplate.
+17. The rubric is aligned with AAMC Core Entrustable Professional Activities: EPA 1 (history & physical), EPA 2 (differential diagnosis), EPA 3 (diagnostic tests), EPA 4 (orders/management), EPA 9 (teamwork/collaboration). Ensure the rubric descriptions reflect these competency expectations.
+18. The rubric emphasizes Rigor, Reproducibility, and Transparency (R2T) in clinical reasoning — descriptions should reward systematic approaches and evidence-based justification.`;
 
 // ---------------------------------------------------------------------------
 // Generator function
@@ -443,6 +479,7 @@ ${pdfText.substring(0, 60000)}
 ---
 
 Analyze the clinical case content thoroughly. Create all disclosures, test results, interventions, scoring, and evaluation rubrics. Make sure the case is medically accurate and detailed.
+Include realistic distractor tests/treatments, at least one potentially harmful intervention with adverse-effect consequences, and interactive progression (time- and action-driven changes) to mimic a live case.
 
 Return ONLY the JSON object.`;
 

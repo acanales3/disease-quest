@@ -1,5 +1,14 @@
 <template>
-  <div class="flex flex-col h-[calc(100vh-120px)] w-full bg-white">
+  <div class="flex flex-col h-[calc(100vh-120px)] w-full bg-white relative">
+
+    <!-- ═══ RED ALERT FLICKER OVERLAY ═══ -->
+    <Transition name="flicker">
+      <div
+        v-if="alertFlicker"
+        class="pointer-events-none absolute inset-0 z-50 bg-red-600/20"
+        aria-hidden="true"
+      />
+    </Transition>
 
     <!-- ═══ BEDSIDE MONITOR ═══ -->
     <div class="flex-shrink-0 monitor-body mt-4 mx-6 rounded-xl overflow-hidden">
@@ -96,6 +105,10 @@
               <span class="w-2 h-2 rounded-full bg-red-500 monitor-blink"></span>
               <span class="text-red-500 text-[10px] font-bold uppercase tracking-widest font-mono monitor-alert">Seizure</span>
             </div>
+            <div v-if="session?.patientStatus?.hasRespiratoryFailure" class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-red-500 monitor-blink"></span>
+              <span class="text-red-500 text-[10px] font-bold uppercase tracking-widest font-mono monitor-alert">Resp Failure</span>
+            </div>
           </div>
         </div>
       </div>
@@ -138,22 +151,56 @@
     </div>
 
     <!-- ═══ CONTENT ═══ -->
-    <div class="flex-1 min-h-0 flex flex-col">
+    <div class="flex-1 min-h-0 flex">
 
-      <!-- INTERVIEW -->
-      <div v-if="activeTab === 'interview'" class="flex-1 min-h-0 max-w-2xl mx-auto w-full px-6 py-4" style="max-height: 60vh;">
-        <CaseTextArea
-          agent-type="patient"
-          :messages="patientMessages"
-          :loading="patientLoading"
-          :error-msg="error ?? ''"
-          placeholder="Ask the patient's family a question..."
-          @send="handlePatientChat"
-        />
-      </div>
+      <!-- Left: Clinical Feed sidebar -->
+      <aside class="w-[270px] shrink-0 border-r border-neutral-200 bg-white flex flex-col">
+        <div class="px-4 py-2.5 border-b border-neutral-200 flex items-center justify-between shrink-0 bg-neutral-50">
+          <div class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-neutral-600">Ward Log</p>
+          </div>
+          <span class="text-[10px] text-neutral-400 tabular-nums">{{ systemFeedMessages.length }} events</span>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+          <div
+            v-for="(item, i) in [...systemFeedMessages].reverse()"
+            :key="`sys-${i}`"
+            class="px-3 py-2.5 text-[11px] leading-snug border-b border-neutral-100 last:border-0"
+            :class="{
+              'bg-red-50 text-red-800': item.content.startsWith('🚨'),
+              'bg-amber-50 text-amber-800': item.content.startsWith('⚠️'),
+              'bg-blue-50/60 text-blue-800': item.content.startsWith('🔬') || item.content.startsWith('⏳'),
+              'bg-green-50/50 text-green-800': item.content.startsWith('💊'),
+              'text-neutral-500': item.content.startsWith('🕐'),
+              'text-neutral-700': !item.content.startsWith('🚨') && !item.content.startsWith('⚠️') && !item.content.startsWith('🔬') && !item.content.startsWith('⏳') && !item.content.startsWith('💊') && !item.content.startsWith('🕐'),
+            }"
+          >
+            {{ item.content }}
+          </div>
+          <div v-if="!systemFeedMessages.length" class="px-4 py-6 text-center">
+            <p class="text-[11px] text-neutral-400 italic">Awaiting clinical events…</p>
+          </div>
+        </div>
+      </aside>
 
-      <!-- Other tabs (scrollable) -->
-      <div v-else class="flex-1 overflow-y-auto">
+      <!-- Right: main tab content -->
+      <div class="flex-1 min-h-0 flex flex-col items-center">
+
+        <!-- INTERVIEW -->
+        <div v-if="activeTab === 'interview'" class="flex-1 min-h-0 w-full max-w-2xl px-6 py-4" style="max-height: 60vh;">
+          <CaseTextArea
+            agent-type="patient"
+            :messages="interviewMessages"
+            :loading="patientLoading"
+            :error-msg="error ?? ''"
+            placeholder="Ask the patient's family a question..."
+            @send="handlePatientChat"
+          />
+        </div>
+
+        <!-- Other tabs (scrollable) -->
+        <div v-else class="flex-1 overflow-y-auto w-full">
       <div class="max-w-screen-lg mx-auto py-6 px-6">
 
         <!-- EXAM -->
@@ -240,7 +287,9 @@
                     Ordering...
                   </span>
                   <span v-else-if="orderedTestIds.has(test.id)" class="text-[10px] font-semibold uppercase text-green-600">Ordered</span>
-                  <span v-else class="text-[10px] text-neutral-400">{{ test.cost_points }} pts</span>
+                  <span v-else class="text-[10px] text-neutral-400">
+                    {{ test.cost_points }} pts<span v-if="test.tat_minutes"> · ~{{ test.tat_minutes }} min</span>
+                  </span>
                 </button>
               </div>
             </div>
@@ -396,9 +445,10 @@
             Submit Diagnosis
           </button>
         </div>
+        </div>
       </div>
-      </div>
-    </div>
+      </div><!-- end right panel -->
+    </div><!-- end content flex row -->
 
     <!-- ═══ MENTOR DRAWER ═══ -->
     <Teleport to="body">
@@ -425,7 +475,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CaseTextArea from '@/components/CaseTextArea/text-area.vue'
 import { useCaseSession } from '@/composables/useCaseSession'
@@ -468,6 +518,41 @@ const tabs = [
   { id: 'diagnosis' as const, label: 'Diagnosis' },
 ]
 
+const systemFeedMessages = computed(() =>
+  patientMessages.value.filter((m) => m.role === 'system')
+)
+const interviewMessages = computed(() =>
+  patientMessages.value.filter((m) => m.role !== 'system')
+)
+
+// Red alert flicker when a critical event arrives
+const alertFlicker = ref(false)
+let flickerTimer: ReturnType<typeof setTimeout> | null = null
+let lastAlertCount = 0
+
+watch(systemFeedMessages, (msgs) => {
+  const alerts = msgs.filter((m) => m.content.startsWith('🚨'))
+  if (alerts.length > lastAlertCount) {
+    lastAlertCount = alerts.length
+    // Triple flicker: on → off → on → off
+    alertFlicker.value = true
+    if (flickerTimer) clearTimeout(flickerTimer)
+    flickerTimer = setTimeout(() => {
+      alertFlicker.value = false
+      setTimeout(() => {
+        alertFlicker.value = true
+        setTimeout(() => {
+          alertFlicker.value = false
+          setTimeout(() => {
+            alertFlicker.value = true
+            setTimeout(() => { alertFlicker.value = false }, 200)
+          }, 150)
+        }, 200)
+      }, 150)
+    }, 300)
+  }
+}, { deep: true })
+
 // Alert helpers
 const hrAlert = computed(() => (session.value?.vitals?.hr_bpm ?? 0) > 160)
 const bpAlert = computed(() => (session.value?.vitals?.bp_systolic ?? 999) < 60)
@@ -476,7 +561,7 @@ const tempAlert = computed(() => (session.value?.vitals?.temp_f ?? 0) >= 103)
 const crAlert = computed(() => (session.value?.vitals?.cap_refill_sec ?? 0) > 4)
 
 const { data: caseData } = useFetch(`/api/cases/${caseId}`)
-const availableTests = computed(() => (caseData.value as Record<string, unknown>)?.available_tests as Array<{ id: string; name: string; cost_points: number }> ?? [])
+const availableTests = computed(() => (caseData.value as Record<string, unknown>)?.available_tests as Array<{ id: string; name: string; cost_points: number; tat_minutes?: number }> ?? [])
 const availableInterventions = computed(() => (caseData.value as Record<string, unknown>)?.available_interventions as Array<{ id: string; name: string }> ?? [])
 
 onMounted(async () => {
@@ -554,7 +639,7 @@ async function handleOrderTest(testId: string) {
 async function fetchResultsAfterDelay(testId: string, testName: string, tatMinutes: number) {
   pendingResultTests.value.add(testId)
 
-  // Wait 10 real seconds, then advance simulation time to cover the TAT
+  // Wait briefly in real-time, then advance sim time once by intended TAT.
   await new Promise(resolve => setTimeout(resolve, 10_000))
   await advanceTime(tatMinutes)
 
@@ -578,7 +663,7 @@ async function fetchResultsAfterDelay(testId: string, testName: string, tatMinut
       return
     }
     await new Promise(resolve => setTimeout(resolve, 3000))
-    await advanceTime(tatMinutes)
+    await advanceTime(1)
   }
   pendingResultTests.value.delete(testId)
 }
@@ -587,7 +672,7 @@ async function manualRefreshResults() {
   for (const testId of orderedTestIds.value) {
     if (testResultsList.value.find(r => r.testId === testId)) continue
     const testDef = availableTests.value.find(t => t.id === testId)
-    fetchResultsAfterDelay(testId, testDef?.name ?? testId, 60)
+    fetchResultsAfterDelay(testId, testDef?.name ?? testId, testDef?.tat_minutes ?? 30)
   }
 }
 
@@ -648,6 +733,11 @@ function formatResultVal(val: unknown): string {
 .slide-enter-from, .slide-leave-to { transform: translateX(100%); }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.15s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* Red alert flicker */
+.flicker-enter-active { transition: opacity 0.08s ease-in; }
+.flicker-leave-active { transition: opacity 0.18s ease-out; }
+.flicker-enter-from, .flicker-leave-to { opacity: 0; }
 
 /* ── Monitor styles ── */
 .monitor-body {
