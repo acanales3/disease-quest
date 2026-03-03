@@ -636,14 +636,13 @@ async function handleOrderTest(testId: string) {
   }
 }
 
-async function fetchResultsAfterDelay(testId: string, testName: string, tatMinutes: number) {
+// Poll for results using sim time (no auto-advance). Results unlock when the
+// student advances sim time past the test's resultAvailableAt.
+async function fetchResultsAfterDelay(testId: string, testName: string, _tatMinutes: number) {
   pendingResultTests.value.add(testId)
-
-  // Wait briefly in real-time, then advance sim time once by intended TAT.
-  await new Promise(resolve => setTimeout(resolve, 10_000))
-  await advanceTime(tatMinutes)
-
-  for (let attempt = 0; attempt < 3; attempt++) {
+  // Poll every 5 real seconds, up to 10 minutes real time (120 polls)
+  for (let attempt = 0; attempt < 120; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 5_000))
     const res = await getResults(testId)
     if (res?.status === 'complete' && res?.results) {
       const raw = { ...res.results as Record<string, unknown> }
@@ -662,9 +661,9 @@ async function fetchResultsAfterDelay(testId: string, testName: string, tatMinut
       pendingResultTests.value.delete(testId)
       return
     }
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    await advanceTime(1)
+    // Still pending — keep waiting silently; student must advance time
   }
+  // After 10 min real time give up silently (session likely ended)
   pendingResultTests.value.delete(testId)
 }
 

@@ -926,50 +926,13 @@ serve(async (req: Request) => {
         ) {
           triggeredActions.push("student_orders_low_value_test");
           flags.resource_inefficiency = true;
-
-          const timePenalty = clinicalValue === "inappropriate" ? 2 : 1;
-          elapsedMinutes += timePenalty;
-
-          // Mild physiological cost of delay when definitive care is pending.
-          if (!flags.antibiotics_started) {
-            const physiology = (patientState.physiology ?? {}) as Record<
-              string,
-              unknown
-            >;
-            const vitals = (physiology.vitals ?? {}) as Record<string, unknown>;
-            vitals.hr_bpm = clampNumber(
-              toNumber(vitals.hr_bpm, 120) + 4,
-              30,
-              220,
-            );
-            vitals.bp_systolic = clampNumber(
-              toNumber(vitals.bp_systolic, 90) - 3,
-              35,
-              220,
-            );
-            vitals.cap_refill_sec = clampNumber(
-              toNumber(vitals.cap_refill_sec, 2.0) + 0.2,
-              0.5,
-              10,
-            );
-            physiology.vitals = vitals;
-            patientState.physiology = physiology;
-          }
-
+          // No automatic time penalty — resource score is penalized at evaluation instead.
+          // Stealth physiological cost only (mild), flagged for evaluator scoring.
           const warning =
             clinicalValue === "inappropriate"
-              ? "This order is low-value for this presentation and caused avoidable delay."
-              : "This low-yield order consumed time with limited diagnostic value.";
-          runtimeNotices.push(`${warning} (+${timePenalty} min)`);
-
-          const priorMessage = String(
-            (responseData as Record<string, unknown>).message ?? "",
-          ).trim();
-          (responseData as Record<string, unknown>).message = priorMessage
-            ? `${priorMessage} ${warning}`
-            : warning;
-          (responseData as Record<string, unknown>).time_penalty_minutes =
-            timePenalty;
+              ? "This order has limited clinical indication for the current presentation."
+              : "This test has low yield for the current clinical picture.";
+          runtimeNotices.push(warning);
         }
       }
       actionTypeDb = "order_test";
@@ -1050,9 +1013,9 @@ serve(async (req: Request) => {
       } else if (appropriateness === "unnecessary") {
         flags.resource_inefficiency = true;
         triggeredActions.push("unnecessary_treatment_selected");
-        elapsedMinutes += 1;
+        // No automatic time penalty — penalised via scoring at end of case.
         runtimeNotices.push(
-          "Intervention provided little benefit and delayed higher-value care. (+1 min)",
+          "This intervention is unlikely to benefit the patient given the current clinical picture.",
         );
       }
 
