@@ -23,7 +23,7 @@
             <p class="text-white text-sm font-semibold leading-tight truncate monitor-text">{{ session?.caseName ?? '—' }}</p>
             <p class="text-neutral-500 text-[10px] font-mono mt-1">
               <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1 monitor-blink"></span>
-              {{ displayElapsed }} min
+              {{ simClock }}
             </p>
           </div>
 
@@ -475,7 +475,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CaseTextArea from '@/components/CaseTextArea/text-area.vue'
 import { useCaseSession } from '@/composables/useCaseSession'
@@ -553,6 +553,14 @@ watch(systemFeedMessages, (msgs) => {
   }
 }, { deep: true })
 
+// Sim clock display: MM:SS derived from fractional elapsedMinutes
+const simClock = computed(() => {
+  const total = session.value?.elapsedMinutes ?? 0
+  const mins = Math.floor(total)
+  const secs = Math.floor((total - mins) * 60)
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+})
+
 // Alert helpers
 const hrAlert = computed(() => (session.value?.vitals?.hr_bpm ?? 0) > 160)
 const bpAlert = computed(() => (session.value?.vitals?.bp_systolic ?? 999) < 60)
@@ -564,12 +572,48 @@ const { data: caseData } = useFetch(`/api/cases/${caseId}`)
 const availableTests = computed(() => (caseData.value as Record<string, unknown>)?.available_tests as Array<{ id: string; name: string; cost_points: number; tat_minutes?: number }> ?? [])
 const availableInterventions = computed(() => (caseData.value as Record<string, unknown>)?.available_interventions as Array<{ id: string; name: string }> ?? [])
 
+// ── Real-time sim clock ──────────────────────────────────────────
+// 1 real second = 1 sim second → 1 real minute = 1 sim minute.
+// The local ticker increments the display every second.
+// Every 60 seconds we sync to the server (advance_time 1) so the DB
+// stays current, deterioration rules fire, and test results unlock.
+let clockTick: ReturnType<typeof setInterval> | null = null
+let secondsSinceSync = 0
+
+function startSimClock() {
+  if (clockTick) return // already running
+  clockTick = setInterval(async () => {
+    if (!session.value || session.value.status === 'completed') return
+
+    // Tick local display every second
+    session.value.elapsedMinutes = (session.value.elapsedMinutes ?? 0) + (1 / 60)
+
+    secondsSinceSync++
+    if (secondsSinceSync >= 60) {
+      secondsSinceSync = 0
+      // Server sync: advance 1 sim-minute, fire deterioration + result checks
+      try {
+        await advanceTime(1)
+      } catch { /* non-critical */ }
+    }
+  }, 1000)
+}
+
+function stopSimClock() {
+  if (clockTick) { clearInterval(clockTick); clockTick = null }
+}
+
 onMounted(async () => {
   await resumeSession(parseInt(caseId))
   if (session.value?.sessionId) {
     await restoreHistory(session.value.sessionId)
   }
+  if (session.value?.status === 'in_progress' || session.value?.status === 'created') {
+    startSimClock()
+  }
 })
+
+onUnmounted(() => stopSimClock())
 
 async function restoreHistory(sessionId: string) {
   try {
@@ -703,7 +747,7 @@ async function handleSubmitDifferential() {
 async function handleSubmitDiagnosis() { await submitDiagnosis(diagnosisText.value, diagnosisReasoning.value) }
 
 async function handleEndCase() {
-  // Navigate immediately — evaluation page handles the API call with loading UI
+  stopSimClock()
   useState('evaluationSessionId', () => session.value?.sessionId ?? '').value = session.value?.sessionId ?? ''
   router.push(`/case/${caseId}/evaluation`)
 }
