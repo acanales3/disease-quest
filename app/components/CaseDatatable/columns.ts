@@ -17,10 +17,14 @@ export interface Case {
   status: "not started" | "in progress" | "completed";
 }
 
-export function getColumns(
-  role: string,
-  onRefresh: () => void = () => {},
-): ColumnDef<Case>[] {
+interface ColumnOptions {
+  classroomId?: number;
+  onRemoveFromClassroom?: (caseId: number) => void;
+  onRemoveFromClassrooms?: (caseData: Case) => void;
+  onRefresh?: () => void;
+}
+
+export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Case>[] {
   return [
     {
       accessorKey: "id",
@@ -150,7 +154,10 @@ export function getColumns(
           h(DropdownAction, {
             caseData,
             role,
-            onRefresh, // wire the refresh callback into the dropdown
+            classroomId: options?.classroomId,
+            onRemoveFromClassroom: options?.onRemoveFromClassroom,
+            onRemoveFromClassrooms: options?.onRemoveFromClassrooms,
+            onRefresh: options?.onRefresh,
           }),
         );
       },

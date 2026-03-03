@@ -101,7 +101,17 @@
             <div class="grid gap-6 py-4">
                 <div class="grid grid-cols-4 items-center gap-4">
                     <Label class="text-right">Current Nickname</Label>
-                    <div class="col-span-3">
+                    <div class="col-span-3 flex items-center gap-4">
+                        <div class="w-16 h-16 shrink-0 overflow-hidden flex items-center justify-center rounded-lg bg-[#f5f3ff]">
+                            <img
+                                v-if="avatarUrl"
+                                :src="avatarUrl"
+                                :alt="currentNickname"
+                                class="w-full h-full object-contain"
+                            />
+                            <Icon v-else-if="avatarLoading" name="lucide:loader-2" size="20" class="text-[#4d1979]/40 animate-spin" />
+                            <Icon v-else name="lucide:user" size="24" class="text-[#4d1979]/30" />
+                        </div>
                         <span
                             class="text-lg font-medium text-[#4d1979] bg-[#f5f3ff] px-4 py-2 rounded-md inline-block"
                         >
@@ -283,7 +293,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -325,6 +335,48 @@ const nicknameStatus = ref<null | { type: "success" | "error"; message: string }
 const showNicknameConfirmDialog = ref(false);
 const pendingNicknameAction = ref<"custom" | "random" | null>(null);
 const pendingNicknameValue = ref("");
+
+const avatarUrl = ref<string | null>(null);
+const avatarLoading = ref(false);
+let avatarPollTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function checkAvatar(regenerate = false) {
+    try {
+        const query = regenerate ? "?regenerate=true" : "";
+        const result = await $fetch<{ avatarUrl: string | null; generating: boolean }>(`/api/students/avatar${query}`);
+        if (result.avatarUrl) {
+            avatarUrl.value = result.avatarUrl;
+            avatarLoading.value = false;
+            return;
+        }
+        if (result.generating) {
+            avatarLoading.value = true;
+            avatarPollTimer = setTimeout(() => checkAvatar(), 4000);
+            return;
+        }
+        avatarLoading.value = false;
+    } catch {
+        avatarUrl.value = null;
+        avatarLoading.value = false;
+    }
+}
+
+const nicknameInitialized = ref(false);
+watch(currentNickname, (nick) => {
+    if (avatarPollTimer) { clearTimeout(avatarPollTimer); avatarPollTimer = null; }
+    if (!nick) return;
+    if (!nicknameInitialized.value) {
+        nicknameInitialized.value = true;
+        return;
+    }
+    avatarLoading.value = true;
+    avatarUrl.value = null;
+    checkAvatar(true);
+});
+
+onUnmounted(() => {
+    if (avatarPollTimer) clearTimeout(avatarPollTimer);
+});
 
 const canSaveNickname = computed(() => {
     const trimmed = nicknameInput.value.trim();
@@ -641,7 +693,12 @@ const fetchNickname = async () => {
         const result = await $fetch<{ nickname: string | null }>(
             "/api/students/nickname",
         );
-        currentNickname.value = result.nickname ?? "";
+        const nick = result.nickname ?? "";
+        currentNickname.value = nick;
+        if (nick) {
+            avatarLoading.value = true;
+            checkAvatar();
+        }
     } catch {
         // Student record may not exist yet
     }
