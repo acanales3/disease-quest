@@ -421,7 +421,12 @@ export function useCaseSession() {
   async function getResults(testId: string) {
     actionLoading.value = true;
     try {
-      return await sendAction("get_results", { testId });
+      // Pass current client elapsed time so server uses the real sim clock,
+      // not just the last DB-synced value (which may lag by up to 60 seconds).
+      return await sendAction("get_results", {
+        testId,
+        clientElapsedMinutes: Math.floor(session.value?.elapsedMinutes ?? 0),
+      });
     } finally {
       actionLoading.value = false;
     }
@@ -461,7 +466,10 @@ export function useCaseSession() {
   async function advanceTime(minutes: number) {
     actionLoading.value = true;
     try {
-      const r = await sendAction("advance_time", { minutes });
+      const r = await sendAction("advance_time", {
+        minutes,
+        clientElapsedMinutes: Math.floor(session.value?.elapsedMinutes ?? 0),
+      });
       refreshSession();
       return r;
     } finally {
