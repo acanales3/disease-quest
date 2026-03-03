@@ -304,9 +304,13 @@ export function useCaseSession() {
         { method: "POST", body: { actionType, payload } }
       );
 
-      // Lightweight state update from response
+      // Lightweight state update from response — never let server rewind the clock
       if (result.current_time_minutes !== undefined && session.value) {
-        session.value.elapsedMinutes = result.current_time_minutes as number;
+        const serverMinutes = result.current_time_minutes as number;
+        // Only update if server is ahead of local (e.g. server applied a penalty or advance)
+        if (serverMinutes > session.value.elapsedMinutes) {
+          session.value.elapsedMinutes = serverMinutes;
+        }
       }
       if (result.phase && session.value) {
         session.value.phase = result.phase as string;
@@ -329,7 +333,13 @@ export function useCaseSession() {
     if (!session.value?.sessionId) return;
     try {
       const data = await $fetch<SessionState>(`/api/sessions/${session.value.sessionId}`);
+      // Preserve the locally-ticking elapsedMinutes — never let a server snapshot rewind the clock.
+      // Only advance it if the server is genuinely ahead.
+      const localElapsed = session.value.elapsedMinutes;
       session.value = data;
+      if (localElapsed > (data.elapsedMinutes ?? 0)) {
+        session.value.elapsedMinutes = localElapsed;
+      }
     } catch {
       // Silent
     }

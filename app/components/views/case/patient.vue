@@ -628,10 +628,28 @@ async function restoreHistory(sessionId: string) {
     for (const t of h.orderedTests) orderedTestIds.value.add(t)
 
     // Restore test results
+    const completedTestIds = new Set<string>()
     for (const r of h.testResults) {
       if (!testResultsList.value.find(x => x.testId === r.testId)) {
         testResultsList.value.push(r)
         expandedResults.value.add(r.testId)
+      }
+      completedTestIds.add(r.testId)
+    }
+
+    // Start pollers for tests that were ordered but results not yet in.
+    // caseData may not be loaded yet, so fetch it inline if needed.
+    let testDefs = availableTests.value
+    if (!testDefs.length) {
+      try {
+        const cd = await $fetch<Record<string, unknown>>(`/api/cases/${caseId}`)
+        testDefs = (cd?.available_tests as typeof testDefs) ?? []
+      } catch { /* use empty — names will fallback to testId */ }
+    }
+    for (const testId of h.orderedTests) {
+      if (!completedTestIds.has(testId)) {
+        const testDef = testDefs.find(t => t.id === testId)
+        fetchResultsAfterDelay(testId, testDef?.name ?? testId, testDef?.tat_minutes ?? 30)
       }
     }
 
@@ -680,13 +698,19 @@ async function handleOrderTest(testId: string) {
   }
 }
 
-// Poll for results using sim time (no auto-advance). Results unlock when the
-// student advances sim time past the test's resultAvailableAt.
+// Poll for results using sim time. Results unlock when sim time reaches resultAvailableAt.
+// Sim clock ticks 1 min per real minute, so a 15-min TAT test unlocks after 15 real minutes.
+// Polls every 15 real seconds; max 720 polls = 3 hours real time.
 async function fetchResultsAfterDelay(testId: string, testName: string, _tatMinutes: number) {
+  if (pendingResultTests.value.has(testId)) return // already polling
   pendingResultTests.value.add(testId)
-  // Poll every 5 real seconds, up to 10 minutes real time (120 polls)
-  for (let attempt = 0; attempt < 120; attempt++) {
-    await new Promise(resolve => setTimeout(resolve, 5_000))
+  for (let attempt = 0; attempt < 720; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 15_000))
+    // Stop if the test already got a result while we were waiting
+    if (testResultsList.value.find(r => r.testId === testId)) {
+      pendingResultTests.value.delete(testId)
+      return
+    }
     const res = await getResults(testId)
     if (res?.status === 'complete' && res?.results) {
       const raw = { ...res.results as Record<string, unknown> }
@@ -705,9 +729,7 @@ async function fetchResultsAfterDelay(testId: string, testName: string, _tatMinu
       pendingResultTests.value.delete(testId)
       return
     }
-    // Still pending — keep waiting silently; student must advance time
   }
-  // After 10 min real time give up silently (session likely ended)
   pendingResultTests.value.delete(testId)
 }
 
