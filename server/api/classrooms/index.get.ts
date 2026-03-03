@@ -1,4 +1,4 @@
-import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
+import { serverSupabaseUser, serverSupabaseClient, serverSupabaseServiceRole } from "#supabase/server";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -74,7 +74,8 @@ export default defineEventHandler(async (event) => {
   }
 
   if (role === "STUDENT") {
-    const { data: enrollments, error } = await client
+    const serviceClient = serverSupabaseServiceRole(event);
+    const { data: enrollments, error } = await serviceClient
       .from("classroom_students")
       .select(`classrooms ( ${selectQuery} )`)
       .eq("student_id", userId);
