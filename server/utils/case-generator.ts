@@ -1,12 +1,10 @@
 /**
  * AI Case Content Generator
  *
- * Uses OpenAI o4-mini (reasoning model) to generate a complete clinical
- * simulation case JSON from extracted PDF text. Includes retry-aware
- * error feedback so the model can self-correct.
+ * Proxies to the Supabase Edge Function `case-generator` which holds the
+ * OPENAI_API_KEY securely. Includes retry-aware error feedback so the
+ * model can self-correct.
  */
-
-import OpenAI from "openai";
 
 // ---------------------------------------------------------------------------
 // System prompt — defines the exact JSON schema the AI must produce
@@ -449,23 +447,17 @@ export async function generateCaseContent(
   description: string,
   previousError: string | null = null
 ): Promise<GenerationResult> {
-  console.log("[CASE-GEN] Starting case content generation...");
+  console.log("[CASE-GEN] Starting case content generation via edge function...");
   console.log(`[CASE-GEN] PDF text length: ${pdfText.length} chars`);
   console.log(`[CASE-GEN] Case name: "${caseName}"`);
   console.log(`[CASE-GEN] Is retry: ${!!previousError}`);
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    console.log("[CASE-GEN] ERROR: OPENAI_API_KEY not set!");
-    return {
-      content: null,
-      rawResponse: "",
-      error: "OPENAI_API_KEY is not configured on the server.",
-    };
-  }
-  console.log("[CASE-GEN] OpenAI API key found");
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || "";
 
-  const openai = new OpenAI({ apiKey });
+  if (!supabaseUrl) {
+    return { content: null, rawResponse: "", error: "SUPABASE_URL is not configured." };
+  }
 
   // Build user prompt
   let userPrompt = `Generate a complete DiseaseQuest clinical simulation case from the following information.
@@ -483,7 +475,6 @@ Include realistic distractor tests/treatments, at least one potentially harmful 
 
 Return ONLY the JSON object.`;
 
-  // If retrying, prepend the error for self-correction
   if (previousError) {
     userPrompt = `IMPORTANT: Your previous attempt to generate this case JSON had errors. Please fix them and regenerate.
 
@@ -496,71 +487,65 @@ ${userPrompt}`;
   }
 
   try {
-    console.log("[CASE-GEN] Sending request to OpenAI o4-mini...");
-    console.log(`[CASE-GEN] Prompt length: ${userPrompt.length} chars`);
+    console.log("[CASE-GEN] Calling case-generator edge function...");
     const callStart = Date.now();
 
-    const response = await openai.chat.completions.create({
-      model: "o4-mini",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userPrompt },
-      ],
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    // Try service key first, fall back to anon key (edge function deployed with --no-verify-jwt)
+    if (serviceKey && serviceKey.split(".").length === 3) {
+      headers["Authorization"] = `Bearer ${serviceKey}`;
+      headers["apikey"] = serviceKey;
+    }
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/case-generator`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ systemPrompt: SYSTEM_PROMPT, userPrompt }),
     });
 
     const elapsed = Date.now() - callStart;
-    console.log(`[CASE-GEN] OpenAI responded in ${elapsed}ms (${(elapsed / 1000).toFixed(1)}s)`);
-    console.log(`[CASE-GEN] Usage: ${JSON.stringify(response.usage ?? {})}`);
+    console.log(`[CASE-GEN] Edge function responded in ${elapsed}ms (${(elapsed / 1000).toFixed(1)}s)`);
 
-    const rawResponse = response.choices?.[0]?.message?.content ?? "";
-    console.log(`[CASE-GEN] Response length: ${rawResponse.length} chars`);
-
-    if (!rawResponse.trim()) {
-      console.log("[CASE-GEN] ERROR: Empty response from OpenAI");
-      return {
-        content: null,
-        rawResponse,
-        error: "OpenAI returned an empty response.",
-      };
+    if (!res.ok) {
+      const errText = await res.text();
+      console.log(`[CASE-GEN] Edge function error (${res.status}): ${errText}`);
+      return { content: null, rawResponse: "", error: `Edge function error (${res.status}): ${errText}` };
     }
 
-    // Try to parse as JSON — strip markdown fences if present
+    const data = await res.json() as { content?: string; error?: string; usage?: Record<string, number> };
+
+    if (data.error) {
+      console.log(`[CASE-GEN] Edge function returned error: ${data.error}`);
+      return { content: null, rawResponse: "", error: data.error };
+    }
+
+    const rawResponse = data.content ?? "";
+    console.log(`[CASE-GEN] Response length: ${rawResponse.length} chars`);
+    if (data.usage) console.log(`[CASE-GEN] Usage: ${JSON.stringify(data.usage)}`);
+
+    if (!rawResponse.trim()) {
+      return { content: null, rawResponse, error: "OpenAI returned an empty response." };
+    }
+
+    // Strip markdown fences if present
     let jsonStr = rawResponse.trim();
     if (jsonStr.startsWith("```")) {
-      console.log("[CASE-GEN] Stripping markdown code fences from response");
-      jsonStr = jsonStr
-        .replace(/^```(?:json)?\s*\n?/, "")
-        .replace(/\n?```\s*$/, "");
+      jsonStr = jsonStr.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
     }
 
     try {
       const parsed = JSON.parse(jsonStr);
       const keys = Object.keys(parsed);
-      console.log(`[CASE-GEN] JSON parsed successfully — ${keys.length} top-level keys`);
-      console.log(`[CASE-GEN] Keys: ${keys.join(", ")}`);
-      return {
-        content: parsed,
-        rawResponse,
-        error: null,
-      };
+      console.log(`[CASE-GEN] JSON parsed successfully — ${keys.length} top-level keys: ${keys.join(", ")}`);
+      return { content: parsed, rawResponse, error: null };
     } catch (parseErr: unknown) {
-      const msg =
-        parseErr instanceof Error ? parseErr.message : String(parseErr);
+      const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
       console.log(`[CASE-GEN] JSON PARSE FAILED: ${msg}`);
-      console.log(`[CASE-GEN] First 300 chars of response: ${rawResponse.substring(0, 300)}`);
-      return {
-        content: null,
-        rawResponse: rawResponse.substring(0, 500),
-        error: `Failed to parse AI response as JSON: ${msg}`,
-      };
+      return { content: null, rawResponse: rawResponse.substring(0, 500), error: `Failed to parse AI response as JSON: ${msg}` };
     }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.log(`[CASE-GEN] OpenAI API CALL FAILED: ${msg}`);
-    return {
-      content: null,
-      rawResponse: "",
-      error: `OpenAI API call failed: ${msg}`,
-    };
+    console.log(`[CASE-GEN] CALL FAILED: ${msg}`);
+    return { content: null, rawResponse: "", error: `Case generation call failed: ${msg}` };
   }
 }
