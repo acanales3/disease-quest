@@ -64,12 +64,12 @@ const peopleLinks = [
 ]
 
 const contentLinks = [
-  { label: 'Classrooms', to: '/instructor/classrooms', icon: 'lucide:layout-grid' },
+  { label: 'Classrooms', to: '/instructor/classrooms', icon: 'simple-icons:googleclassroom' },
   { label: 'Cases', to: '/instructor/cases', icon: 'si:book-line' },
 ]
 
 const insightLinks = [
   { label: 'Analytics', to: '/instructor/analytics', icon: 'uim:analytics' },
-  { label: 'Leaderboard', to: '/instructor/leaderboard', icon: 'material-symbols:social-leaderboard-outline-rounded' },
+  { label: 'Leaderboard', to: '/instructor/leaderboard', icon: 'lucide:trophy' },
 ]
 </script>

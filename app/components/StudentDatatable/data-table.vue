@@ -47,6 +47,7 @@ const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   classrooms?: Classroom[]; // Add classrooms prop
+  hideClassroomFilter?: boolean;
 }>();
 
 const sorting = ref<SortingState>([]);
@@ -193,7 +194,7 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
           />
         </div>
 
-        <DropdownMenu>
+        <DropdownMenu v-if="!hideClassroomFilter">
           <DropdownMenuTrigger as-child>
             <button class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
               {{ selectedClassroom ? selectedClassroom.name : "All Classes" }}

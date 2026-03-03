@@ -47,12 +47,12 @@ const overviewLinks = [
 ]
 
 const learningLinks = [
-  { label: 'Classrooms', to: '/student/classrooms', icon: 'lucide:layout-grid' },
+  { label: 'Classrooms', to: '/student/classrooms', icon: 'simple-icons:googleclassroom' },
   { label: 'Cases', to: '/student/cases', icon: 'si:book-line' },
 ]
 
 const insightLinks = [
   { label: 'Analytics', to: '/student/analytics', icon: 'uim:analytics' },
-  { label: 'Leaderboard', to: '/student/leaderboard', icon: 'material-symbols:social-leaderboard-outline-rounded' },
+  { label: 'Leaderboard', to: '/student/leaderboard', icon: 'lucide:trophy' },
 ]
 </script>

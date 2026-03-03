@@ -6,9 +6,9 @@
         <div>
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Admin Management</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Administrators</h1>
-          <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">Add admins and remove admin access.</p>
+          <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">View, invite, edit, and manage administrators.</p>
           <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
-            <Icon name="lucide:shield" size="13" class="text-white" />
+            <Icon name="eos-icons-admin" size="15" class="text-white" />
             <span class="text-[13px] font-medium text-white">{{ data.length }} administrators</span>
           </div>
         </div>

@@ -14,15 +14,25 @@ import type { Case } from "./columns";
 interface Props {
   caseData: Case;
   role: string;
+  classroomId?: number;
 }
 
 const props = defineProps<Props>();
 const router = useRouter();
 
-// Emitted so the parent table can refresh its data after a replay reset
 const emit = defineEmits<{
+  (e: "removeFromClassroom", caseId: number): void;
+  (e: "removeFromClassrooms", caseData: Case): void;
   (e: "refresh"): void;
 }>();
+
+const onRemoveFromClassroom = () => {
+  emit("removeFromClassroom", props.caseData.id);
+};
+
+const onRemoveFromClassrooms = () => {
+  emit("removeFromClassrooms", props.caseData);
+};
 
 const isReplaying = ref(false);
 
@@ -111,6 +121,20 @@ const handleReplay = async () => {
         class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
       >
         Delete
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && props.classroomId"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+        @click="onRemoveFromClassroom"
+      >
+        Remove from Classroom
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && !props.classroomId && props.caseData.classrooms?.length"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+        @click="onRemoveFromClassrooms"
+      >
+        Remove from Classroom
       </DropdownMenuItem>
       <DropdownMenuItem
         v-if="props.caseData.status === 'completed'"
