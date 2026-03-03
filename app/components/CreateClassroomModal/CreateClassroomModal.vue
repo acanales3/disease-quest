@@ -53,8 +53,29 @@ async function fetchInstructors() {
   instructorsLoading.value = true;
   instructorsError.value = "";
   try {
-    const data = await $fetch<InstructorOption[]>("/api/instructors");
-    instructors.value = data;
+    const [instructorData, adminData] = await Promise.all([
+      $fetch<any[]>("/api/instructors"),
+      $fetch<any[]>("/api/admins"),
+    ]);
+
+    const instructorIds = new Set(instructorData.map((i: any) => i.id));
+    const merged: InstructorOption[] = instructorData.map((i: any) => ({
+      id: i.id,
+      name: i.name,
+      email: i.email,
+    }));
+
+    for (const admin of adminData) {
+      if (!instructorIds.has(admin.userId)) {
+        merged.push({
+          id: admin.userId,
+          name: `${admin.name} (Admin)`,
+          email: admin.email,
+        });
+      }
+    }
+
+    instructors.value = merged;
   } catch (e: any) {
     instructorsError.value =
       e?.data?.message || e?.statusMessage || "Failed to load instructors.";
