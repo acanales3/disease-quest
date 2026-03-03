@@ -698,36 +698,32 @@ async function handleOrderTest(testId: string) {
   }
 }
 
-// Poll for results using sim time. Results unlock when sim time reaches resultAvailableAt.
-// Sim clock ticks 1 min per real minute, so a 15-min TAT test unlocks after 15 real minutes.
-// Polls every 15 real seconds; max 720 polls = 3 hours real time.
+// Results come in 10 real seconds after ordering, regardless of TAT.
 async function fetchResultsAfterDelay(testId: string, testName: string, _tatMinutes: number) {
   if (pendingResultTests.value.has(testId)) return // already polling
   pendingResultTests.value.add(testId)
-  for (let attempt = 0; attempt < 720; attempt++) {
-    await new Promise(resolve => setTimeout(resolve, 15_000))
-    // Stop if the test already got a result while we were waiting
-    if (testResultsList.value.find(r => r.testId === testId)) {
-      pendingResultTests.value.delete(testId)
-      return
-    }
-    const res = await getResults(testId)
-    if (res?.status === 'complete' && res?.results) {
-      const raw = { ...res.results as Record<string, unknown> }
-      const interpretation = raw.interpretation as string | undefined
-      delete raw.interpretation
-      delete raw.wbc_value
-      const d = Object.keys(raw).length > 0
-        ? raw
-        : interpretation
-          ? { summary: interpretation }
-          : { result: 'No detailed values available' }
-      if (!testResultsList.value.find(r => r.testId === testId)) {
-        testResultsList.value.push({ testId, testName, data: d })
-        expandedResults.value.add(testId)
-      }
-      pendingResultTests.value.delete(testId)
-      return
+
+  await new Promise(resolve => setTimeout(resolve, 10_000))
+
+  if (testResultsList.value.find(r => r.testId === testId)) {
+    pendingResultTests.value.delete(testId)
+    return
+  }
+
+  const res = await getResults(testId)
+  if (res?.status === 'complete' && res?.results) {
+    const raw = { ...res.results as Record<string, unknown> }
+    const interpretation = raw.interpretation as string | undefined
+    delete raw.interpretation
+    delete raw.wbc_value
+    const d = Object.keys(raw).length > 0
+      ? raw
+      : interpretation
+        ? { summary: interpretation }
+        : { result: 'No detailed values available' }
+    if (!testResultsList.value.find(r => r.testId === testId)) {
+      testResultsList.value.push({ testId, testName, data: d })
+      expandedResults.value.add(testId)
     }
   }
   pendingResultTests.value.delete(testId)
