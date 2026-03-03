@@ -251,6 +251,7 @@ export function validateCaseSchema(content: unknown): ValidationResult {
 
   // ------ diagnostic_tests items ------
   if (isNonEmptyArray(c.diagnostic_tests)) {
+    let hasDistractorOrInappropriateTest = false;
     for (let i = 0; i < (c.diagnostic_tests as unknown[]).length; i++) {
       const t = (c.diagnostic_tests as unknown[])[i];
       if (!isObject(t)) {
@@ -262,6 +263,20 @@ export function validateCaseSchema(content: unknown): ValidationResult {
         errors.push(`diagnostic_tests[${i}].id is missing`);
       if (!isNonEmptyString(obj.display_name))
         errors.push(`diagnostic_tests[${i}].display_name is missing`);
+
+      const clinicalValue = obj.clinical_value;
+      if (
+        clinicalValue === "low_yield_distractor" ||
+        clinicalValue === "inappropriate"
+      ) {
+        hasDistractorOrInappropriateTest = true;
+      }
+    }
+
+    if (!hasDistractorOrInappropriateTest) {
+      errors.push(
+        'diagnostic_tests must include at least one distractor/inappropriate option via clinical_value ("low_yield_distractor" or "inappropriate")'
+      );
     }
   }
 
@@ -271,6 +286,7 @@ export function validateCaseSchema(content: unknown): ValidationResult {
     "anticonvulsant", "anti_inflammatory", "analgesic", "general",
   ];
   if (isNonEmptyArray(c.interventions)) {
+    let hasPotentiallyHarmfulIntervention = false;
     for (let i = 0; i < (c.interventions as unknown[]).length; i++) {
       const inter = (c.interventions as unknown[])[i];
       if (!isObject(inter)) {
@@ -289,6 +305,16 @@ export function validateCaseSchema(content: unknown): ValidationResult {
           `interventions[${i}].category "${obj.category}" is not valid. Must be one of: ${VALID_INTERVENTION_CATEGORIES.join(", ")}`
         );
       }
+
+      if (obj.appropriateness === "potentially_harmful") {
+        hasPotentiallyHarmfulIntervention = true;
+      }
+    }
+
+    if (!hasPotentiallyHarmfulIntervention) {
+      errors.push(
+        'interventions must include at least one potentially harmful option via appropriateness = "potentially_harmful"'
+      );
     }
   }
 
@@ -425,6 +451,33 @@ export function validateCaseSchema(content: unknown): ValidationResult {
     if (Object.keys(cats).length === 0) {
       errors.push("scoring_categories must have at least one category");
     }
+
+    // Encourage realistic, safety-focused case design.
+    for (const requiredCat of ["resource_management", "patient_safety"]) {
+      if (!Object.prototype.hasOwnProperty.call(cats, requiredCat)) {
+        errors.push(`scoring_categories must include "${requiredCat}"`);
+      }
+    }
+
+    const patientSafety = cats.patient_safety;
+    if (isObject(patientSafety)) {
+      const penalties = (patientSafety as Record<string, unknown>).penalties;
+      if (!isNonEmptyArray(penalties)) {
+        errors.push(
+          "scoring_categories.patient_safety.penalties must be a non-empty array"
+        );
+      } else {
+        const hasNegativePenalty = (penalties as unknown[]).some((p) =>
+          isObject(p) && typeof (p as Record<string, unknown>).points === "number" && ((p as Record<string, unknown>).points as number) < 0
+        );
+        if (!hasNegativePenalty) {
+          errors.push(
+            "scoring_categories.patient_safety.penalties must include at least one negative-point penalty"
+          );
+        }
+      }
+    }
+
     for (const [catName, catVal] of Object.entries(cats)) {
       if (!isObject(catVal)) {
         errors.push(`scoring_categories.${catName} must be an object`);
