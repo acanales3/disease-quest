@@ -27,7 +27,7 @@ const emit = defineEmits<{
 }>();
 
 const onRemoveFromClassroom = () => {
-  emit("removeFromClassroom", props.caseData.id);
+  emit("removeFromClassroom", Number(props.caseData.id));
 };
 
 const onRemoveFromClassrooms = () => {

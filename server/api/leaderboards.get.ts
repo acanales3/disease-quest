@@ -77,7 +77,9 @@ export default defineEventHandler(
       dbQuery = dbQuery.eq("leaderboards.classroom_id", classroomId);
     }
 
-    dbQuery = dbQuery.order("rank", { ascending: true });
+    dbQuery = dbQuery
+      .order("cases_completed", { ascending: false })
+      .order("average_score", { ascending: false });
 
     const { data, error } = await dbQuery;
 
@@ -85,7 +87,7 @@ export default defineEventHandler(
       throw createError({ statusCode: 500, statusMessage: error.message });
     if (!data || data.length === 0) return [];
 
-    return data.map((row: any) => {
+    const mappedData = data.map((row: any) => {
       let studentName = undefined;
       if (isAdmin && row.students?.users) {
         const u = row.students.users;
@@ -104,5 +106,21 @@ export default defineEventHandler(
         studentName,
       } as LeaderboardEntry;
     });
+
+    // Break ties in logic: if casesCompleted and averageScore are identical,
+    // fallback to sorting alphabetically (by studentName for Admin, or nickname).
+    mappedData.sort((a, b) => {
+      if (a.casesCompleted !== b.casesCompleted) {
+        return b.casesCompleted - a.casesCompleted;
+      }
+      if (a.averageScore !== b.averageScore) {
+        return b.averageScore - a.averageScore;
+      }
+      const nameA = a.studentName || a.nickname || "";
+      const nameB = b.studentName || b.nickname || "";
+      return nameA.localeCompare(nameB);
+    });
+
+    return mappedData;
   },
 );

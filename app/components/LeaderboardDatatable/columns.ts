@@ -41,9 +41,8 @@ export const baseColumns: ColumnDef<LeaderboardEntry>[] = [
       const formatted = typeof score === "number" ? `${score.toFixed(2)}%` : "-";
       const isHigh = typeof score === "number" && score >= 70;
       return h("span", {
-        class: `inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold tabular-nums ${
-          isHigh ? "bg-green-50 text-green-700 border border-green-200" : "bg-gray-50 text-gray-600 border border-gray-200"
-        }`,
+        class: `inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold tabular-nums ${isHigh ? "bg-green-50 text-green-700 border border-green-200" : "bg-gray-50 text-gray-600 border border-gray-200"
+          }`,
       }, formatted);
     },
   },
