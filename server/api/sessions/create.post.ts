@@ -38,7 +38,8 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event);
   const caseId = body?.caseId;
-  console.log("[session/create] caseId:", caseId);
+  const classroomId = body?.classroomId;
+  console.log("[session/create] caseId:", caseId, "classroomId:", classroomId);
 
   if (!caseId) {
     throw createError({ statusCode: 400, message: "caseId is required" });
@@ -159,6 +160,7 @@ export default defineEventHandler(async (event) => {
     .insert({
       user_id: userId,
       case_id: caseId,
+      classroom_id: classroomId || null,
       status: "created",
       phase: "prologue",
       elapsed_minutes: 0,
