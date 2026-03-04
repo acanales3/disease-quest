@@ -9,7 +9,7 @@
             View and join classrooms.
           </p>
           <div class="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-md bg-[#4d1979]">
-            <ClassroomIcon :size="21" icon-class="text-white" />
+            <ClassroomIcon :size="15" icon-class="text-white" />
             <span class="text-[13px] font-medium text-white">{{ data.length }} classrooms</span>
           </div>
         </div>
