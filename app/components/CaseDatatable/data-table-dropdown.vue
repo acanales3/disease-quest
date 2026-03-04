@@ -14,27 +14,38 @@ import type { Case } from "./columns";
 interface Props {
   caseData: Case;
   role: string;
-  onEdit?: (caseData: Case) => void;
-  onDelete?: (caseData: Case) => void;
+  classroomId?: number;
 }
 
 const props = defineProps<Props>();
+const router = useRouter();
+
 const emit = defineEmits<{
-  edit: [caseData: Case];
-  delete: [caseData: Case];
+  (e: "edit", caseData: Case): void;
+  (e: "delete", caseData: Case): void;
+  (e: "removeFromClassroom", caseId: number): void;
+  (e: "removeFromClassrooms", caseData: Case): void;
+  (e: "refresh"): void;
 }>();
 
-function handleEdit() {
+const isReplaying = ref(false);
+
+function onEdit() {
   emit("edit", props.caseData);
-  props.onEdit?.(props.caseData);
 }
 
-function handleDelete() {
+function onDelete() {
   emit("delete", props.caseData);
-  props.onDelete?.(props.caseData);
 }
 
-// Determine button text and action based on case status
+function onRemoveFromClassroom() {
+  emit("removeFromClassroom", props.caseData.id as number);
+}
+
+function onRemoveFromClassrooms() {
+  emit("removeFromClassrooms", props.caseData);
+}
+
 const getButtonText = () => {
   switch (props.caseData.status) {
     case "not started":
@@ -47,11 +58,42 @@ const getButtonText = () => {
       return "Begin";
   }
 };
-</script>
 
-<!-- eventually want to make this dynmaic where the actions shown are based on the role of the user -->
-<!-- for now, we will just show the same actions for all users (Play, Edit, Delete) -->
-<!-- we will also need to make the actions do something by emitting events -->
+const handlePrimaryAction = async () => {
+  if (props.caseData.status === "completed") {
+    await handleReplay();
+  } else {
+    router.push(`/case/${props.caseData.id}/introduction`);
+  }
+};
+
+const handleReplay = async () => {
+  isReplaying.value = true;
+
+  try {
+    const activeRes = await $fetch<{ sessionId: string | null }>(
+      `/api/sessions/active?caseId=${props.caseData.id}&includeCompleted=true`,
+    );
+
+    if (!activeRes.sessionId) {
+      emit("refresh");
+      return;
+    }
+
+    await $fetch("/api/sessions/replay", {
+      method: "POST",
+      body: { sessionId: activeRes.sessionId },
+    });
+
+    emit("refresh");
+  } catch (err) {
+    console.error("Replay failed:", err);
+    emit("refresh");
+  } finally {
+    isReplaying.value = false;
+  }
+};
+</script>
 
 <template>
   <DropdownMenu>
@@ -65,26 +107,50 @@ const getButtonText = () => {
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
 
-      <NuxtLink :to="`/case/${props.caseData.id}/introduction`">
-        <DropdownMenuItem>
-          {{ getButtonText() }}
-        </DropdownMenuItem>
-      </NuxtLink>
+      <DropdownMenuItem
+        :disabled="isReplaying"
+        class="cursor-pointer"
+        @click="handlePrimaryAction"
+      >
+        <span v-if="isReplaying">Resetting...</span>
+        <span v-else>{{ getButtonText() }}</span>
+      </DropdownMenuItem>
 
-      <DropdownMenuItem v-if="props.role === 'admin'" @click="handleEdit">
+      <DropdownMenuItem
+        v-if="props.role === 'admin'"
+        class="cursor-pointer"
+        @click="onEdit"
+      >
         Edit
       </DropdownMenuItem>
       <DropdownMenuItem
         v-if="props.role === 'admin'"
-        class="text-red-600 focus:text-red-600 focus:bg-red-50"
-        @click="handleDelete"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+        @click="onDelete"
       >
         Delete
       </DropdownMenuItem>
       <DropdownMenuItem
-        v-if="props.role === 'student' && props.caseData.status === 'completed'"
-        >Review Case</DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && props.classroomId"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+        @click="onRemoveFromClassroom"
       >
+        Remove from Classroom
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && !props.classroomId && props.caseData.classrooms?.length"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+        @click="onRemoveFromClassrooms"
+      >
+        Remove from Classroom
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="props.caseData.status === 'completed'"
+        class="cursor-pointer"
+        @click="router.push(`/case/${props.caseData.id}/results`)"
+      >
+        Review Case
+      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

@@ -1,22 +1,25 @@
 <template>
-  <div class="container rounded-lg bg-white p-6">
-    <div class="flex items-start justify-between mb-6">
-      <h3 class="text-xl font-medium">Assessment Score by Category</h3>
+  <div class="rounded-xl border border-gray-200 bg-white p-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-widest text-[#4d1979] mb-1">Analytics</p>
+        <h3 class="text-[18px] font-semibold tracking-tight text-gray-900">Assessment Score by Category</h3>
+      </div>
 
-      <div class="flex gap-3">
+      <div class="flex gap-2">
         <!-- Case selector -->
         <ui-dropdown-menu>
           <ui-dropdown-menu-trigger as-child>
-            <button class="px-3 py-2 bg-gray-100 rounded text-sm min-w-[100px] flex justify-between items-center">
-              {{ selectedCase?.name || "All Cases" }} ▾
+            <button class="px-3 h-8 border border-gray-200 rounded-lg text-[12px] font-medium min-w-[120px] flex justify-between items-center gap-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors">
+              <span class="truncate">{{ selectedCase?.name || "All Cases" }}</span>
+              <span class="text-gray-400 text-[10px]">▾</span>
             </button>
           </ui-dropdown-menu-trigger>
           <ui-dropdown-menu-content class="w-44 max-h-60 overflow-y-auto">
-             <ui-dropdown-menu-item @click="selectedCase = null">All Cases</ui-dropdown-menu-item>
+            <ui-dropdown-menu-item @click="selectedCase = null">All Cases</ui-dropdown-menu-item>
             <template v-for="c in cases" :key="c.id">
-              <ui-dropdown-menu-item @click="selectedCase = c">{{
-                c.name
-              }}</ui-dropdown-menu-item>
+              <ui-dropdown-menu-item @click="selectedCase = c">{{ c.name }}</ui-dropdown-menu-item>
             </template>
           </ui-dropdown-menu-content>
         </ui-dropdown-menu>
@@ -24,64 +27,65 @@
         <!-- Classroom selector -->
         <ui-dropdown-menu>
           <ui-dropdown-menu-trigger as-child>
-            <button class="px-3 py-2 bg-gray-100 rounded text-sm min-w-[120px] flex justify-between items-center">
-              {{ selectedClassroom?.name || "All Classrooms" }} ▾
+            <button class="px-3 h-8 border border-gray-200 rounded-lg text-[12px] font-medium min-w-[130px] flex justify-between items-center gap-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors">
+              <span class="truncate">{{ selectedClassroom?.name || "All Classrooms" }}</span>
+              <span class="text-gray-400 text-[10px]">▾</span>
             </button>
           </ui-dropdown-menu-trigger>
           <ui-dropdown-menu-content class="w-44 max-h-60 overflow-y-auto">
-             <ui-dropdown-menu-item @click="selectedClassroom = null">All Classrooms</ui-dropdown-menu-item>
+            <ui-dropdown-menu-item @click="selectedClassroom = null">All Classrooms</ui-dropdown-menu-item>
             <template v-for="r in classroomsList" :key="r.id">
-              <ui-dropdown-menu-item @click="selectedClassroom = r">{{
-                r.name
-              }}</ui-dropdown-menu-item>
+              <ui-dropdown-menu-item @click="selectedClassroom = r">{{ r.name }}</ui-dropdown-menu-item>
             </template>
           </ui-dropdown-menu-content>
         </ui-dropdown-menu>
       </div>
     </div>
 
-    <div class="space-y-4" v-if="!loading && processedCategories.length">
+    <!-- Bars -->
+    <div class="space-y-3" v-if="!loading && processedCategories.length">
       <template v-for="(cat, i) in processedCategories" :key="i">
         <div class="flex items-center gap-4">
-          <div class="flex-1">
-            <div
-              class="w-full bg-gray-100 rounded-full h-9 relative overflow-visible"
-            >
+          <!-- Bar -->
+          <div class="flex-1 relative">
+            <div class="w-full bg-gray-100 rounded-full h-8 relative overflow-visible">
               <div
-                class="bg-indigo-200 h-9 rounded-full transition-all duration-500"
-                :style="{ width: cat.score + '%' }"
-              ></div>
-
-              <!-- percentage pill anchored to the end of the filled area -->
-              <div
-                class="absolute top-1/2 z-10 px-2 py-0.5 bg-white border rounded-full text-xs text-gray-700 shadow-sm transition-all duration-500"
+                class="h-8 rounded-full"
                 :style="{
-                  left: pillLeft(cat.score),
+                  width: animated ? cat.score + '%' : '0%',
+                  background: 'linear-gradient(90deg, #0f766e, #0d9488)',
+                  transition: `width 600ms cubic-bezier(0.4,0,0.2,1) ${i * 80}ms`,
+                }"
+              ></div>
+              <!-- Pill -->
+              <div
+                class="absolute top-1/2 z-10 px-2.5 py-0.5 bg-white rounded-md text-[11px] font-semibold text-gray-800 shadow-[0_1px_4px_rgba(0,0,0,0.12)] tabular-nums tracking-tight"
+                :style="{
+                  left: animated ? pillLeft(cat.score) : '0%',
                   transform: 'translate(-50%, -50%)',
+                  transition: `left 600ms cubic-bezier(0.4,0,0.2,1) ${i * 80}ms, opacity 300ms ease ${i * 80}ms`,
+                  opacity: animated ? 1 : 0,
                 }"
               >
                 {{ cat.score }}%
               </div>
             </div>
           </div>
-
-          <div class="w-56 text-right text-sm text-gray-700">
+          <!-- Label -->
+          <div class="w-56 text-right text-[12px] font-medium text-gray-500 leading-snug shrink-0">
             {{ cat.label }}
           </div>
         </div>
       </template>
     </div>
-    <div v-else-if="loading" class="text-center py-8 text-gray-500">
-        Loading data...
-    </div>
-    <div v-else class="text-center py-8 text-gray-500">
-        No data available for the selected filters.
-    </div>
+
+    <div v-else-if="loading" class="text-center py-8 text-sm text-gray-400">Loading data...</div>
+    <div v-else class="text-center py-8 text-sm text-gray-400">No data available for the selected filters.</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watchEffect } from "vue";
+import { ref, computed, watchEffect, watch, nextTick, onMounted } from "vue";
 import type { AnalyticsScoreEntry } from '@/types/analytics'
 import { useRoute } from '#imports'
 
@@ -158,6 +162,15 @@ const processedCategories = computed<Category[]>(() => {
       { label: 'Reflection and Metacognition', score: avg('reflection_metacognition') },
     ]
 })
+
+// Animation: bars grow from 0 to their target on load/filter change
+const animated = ref(false)
+
+watch(processedCategories, async () => {
+  animated.value = false
+  await nextTick()
+  setTimeout(() => { animated.value = true }, 30)
+}, { immediate: true })
 
 const pillLeft = (score: number) => {
   const min = 3; // percent from left edge

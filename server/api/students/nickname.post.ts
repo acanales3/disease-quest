@@ -77,5 +77,10 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // Delete cached avatar so it regenerates with the new nickname
+  await (client as any).storage
+    .from("avatars")
+    .remove([`${userId}.png`]);
+
   return { nickname };
 });

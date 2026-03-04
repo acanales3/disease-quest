@@ -1,38 +1,45 @@
 <template>
-  <div class="flex flex-col w-full">
-    <div class="flex justify-center gap-4">
-      <TotalCount
-        :count="data.length"
-        label="Total Classrooms"
-        icon="simple-icons:googleclassroom"
-      />
+  <div class="space-y-6">
 
-      <Button
-        variant="outline"
-        class="h-28 w-48 flex flex-col items-center justify-center gap-2 p-4"
-        @click="openCreateModal"
-      >
-        <div class="flex flex-col items-center justify-center gap-2">
-          <Icon name="ic:baseline-add" size="28" class="#ad46ff" />
-          <span class="text-sm">Create Classroom</span>
+    <!-- Header -->
+    <div class="border-b border-gray-200 pb-8">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Content</p>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Classrooms</h1>
+          <p class="text-gray-500 text-[15px] mt-2">Create, edit, and manage classrooms.</p>
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
+            <Icon name="simple-icons:googleclassroom" size="15" class="text-white" />
+            <span class="text-[13px] font-medium text-white">{{ data.length }} classrooms</span>
+          </div>
         </div>
-      </Button>
+        <Button
+          class="bg-[#4d1979] hover:bg-[#3f1564] text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 shrink-0"
+          @click="openCreateModal"
+        >
+          <Icon name="lucide:plus" size="15" />
+          Create Classroom
+        </Button>
+      </div>
     </div>
 
-    <div v-if="pageMessage" class="w-full py-2">
+    <!-- Status Banner -->
+    <div v-if="pageMessage">
       <div
-        class="rounded-md border px-4 py-3 text-sm"
+        class="flex items-center gap-2 rounded-lg border px-4 py-3 text-sm"
         :class="
           pageMessage.type === 'success'
-            ? 'border-green-200 bg-green-50 text-green-800'
-            : 'border-red-200 bg-red-50 text-red-700'
+            ? 'border-green-200 bg-green-50 text-green-700'
+            : 'border-red-200 bg-red-50 text-red-600'
         "
       >
+        <Icon :name="pageMessage.type === 'success' ? 'lucide:check-circle' : 'lucide:alert-circle'" size="15" />
         {{ pageMessage.text }}
       </div>
     </div>
 
-    <div class="w-full py-2">
+    <!-- Table -->
+    <div>
       <DataTable :columns="visibleColumns" :data="data" user-role="admin" />
     </div>
 
@@ -175,7 +182,11 @@ async function handleDeleteConfirm(classroom: Classroom) {
 
 async function getData(): Promise<Classroom[]> {
   try {
-    return await $fetch<Classroom[]>("/api/classrooms");
+    const raw = await $fetch<any[]>("/api/classrooms");
+    return raw.map((c) => ({
+      ...c,
+      instructor: c.instructor_name ?? c.instructor ?? "",
+    }));
   } catch (error) {
     console.error("Failed to fetch classrooms:", error);
     return [];

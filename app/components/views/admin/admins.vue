@@ -1,30 +1,38 @@
 <template>
-  <div class="flex flex-col w-full">
-    <!-- Administrator Count & Invite -->
-    <div class="flex justify-center gap-4">
-      <TotalCount
-        icon="eos-icons-admin"
-        :count="data.length"
-        label="Total Administrators"
-      />
-      <InviteDialog dialog-type="administrator" />
-    </div>
-
-    <!-- Fetch / action error banner -->
-    <div v-if="uiError" class="w-full py-2">
-      <div
-        class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-      >
-        {{ uiError }}
+  <div class="space-y-6">
+    <!-- Page Header -->
+    <div class="border-b border-gray-200 pb-8">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Admin Management</p>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Administrators</h1>
+          <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">View, invite, edit, and manage administrators.</p>
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
+            <Icon name="eos-icons-admin" size="15" class="text-white" />
+            <span class="text-[13px] font-medium text-white">{{ data.length }} administrators</span>
+          </div>
+        </div>
+        <div class="shrink-0">
+          <InviteDialog dialog-type="administrator" />
+        </div>
       </div>
     </div>
 
+    <!-- Error banner -->
+    <div
+      v-if="uiError"
+      class="flex items-start gap-2.5 text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-lg"
+    >
+      <Icon name="lucide:alert-circle" class="text-base mt-0.5 shrink-0" />
+      {{ uiError }}
+    </div>
+
     <!-- Administrator Table -->
-    <div class="w-full py-2">
+    <div class="overflow-hidden">
       <DataTable :columns="visibleColumns" :data="data" />
     </div>
 
-    <!-- Edit Admin Modal (modalBus drives it) -->
+    <!-- Edit Admin Modal -->
     <AdminEditAdminDialog
       :show="modalBus.openEditModal"
       :data="modalBus.editData"
@@ -53,9 +61,6 @@ import { modalBus } from "@/components/AdminEditAdminDialog/modalBusEditAdmin";
 
 import DeleteAdminModal from "@/components/DeleteAdminModal/DeleteAdminModal.vue";
 
-// =======================
-// Data fetching
-// =======================
 const { data, pending, error, refresh } = await useFetch<Administrator[]>(
   "/api/admins",
   {
@@ -65,16 +70,10 @@ const { data, pending, error, refresh } = await useFetch<Administrator[]>(
 
 const uiError = ref("");
 
-// =======================
-// Page banner message
-// =======================
 const pageMessage = ref<null | { type: "success" | "error"; text: string }>(
   null,
 );
 
-// =======================
-// Edit handling
-// =======================
 const saveAdminEdits = async (admin: Administrator) => {
   uiError.value = "";
 
@@ -113,21 +112,16 @@ const saveAdminEdits = async (admin: Administrator) => {
   }
 };
 
-// =======================
-// Delete modal state
-// =======================
 const isDeleteModalOpen = ref(false);
 const adminToDelete = ref<Administrator | null>(null);
 const isDeleting = ref(false);
 
-// Called from dropdown "Delete"
 function handleDeleteClick(admin: Administrator) {
   uiError.value = "";
   adminToDelete.value = admin;
   isDeleteModalOpen.value = true;
 }
 
-// Confirm delete -> call backend API: DELETE /api/admins/:id
 async function handleDeleteConfirm(admin: Administrator) {
   uiError.value = "";
 
@@ -145,14 +139,11 @@ async function handleDeleteConfirm(admin: Administrator) {
       method: "DELETE",
     });
 
-    // Optimistic UI update: remove deleted admin from list
     data.value = data.value.filter((a) => a.userId !== admin.userId);
 
-    // Close modal
     isDeleteModalOpen.value = false;
     adminToDelete.value = null;
   } catch (e: any) {
-    // Keep modal closed (it already closes after confirm), but show error banner
     const msg =
       e?.data?.message ||
       e?.message ||
@@ -166,7 +157,6 @@ async function handleDeleteConfirm(admin: Administrator) {
   }
 }
 
-// Columns: onDelete opens delete modal
 const visibleColumns = computed(() =>
   getColumns("admin", {
     onDelete: handleDeleteClick,

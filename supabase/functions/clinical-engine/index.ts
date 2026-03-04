@@ -93,7 +93,7 @@ BASELINE VITALS (start of case):
 DETERIORATION RULES (from case definition):
 ${detRulesText || '  None defined'}
 
-AVAILABLE INTERVENTIONS:
+AVAILABLE INTERVENTIONS (for reference only — do NOT apply effects of interventions NOT in the TREATMENTS GIVEN list below):
 ${interventionsText || '  None'}
 
 DISCLOSURES REVEALED SO FAR:
@@ -117,7 +117,7 @@ CURRENT PATIENT STATE:
 - Dexamethasone: ${body.patientState.dexamethasone_given}
 
 ELAPSED TIME: ${body.elapsedMinutes} minutes
-TREATMENTS GIVEN SO FAR: ${body.treatmentsGiven.join(', ') || 'None'}
+TREATMENTS GIVEN SO FAR: ${body.treatmentsGiven.join(', ') || 'None — no treatments administered yet'}
 TESTS ORDERED: ${body.testsOrdered.join(', ') || 'None'}
 
 FLAGS:
@@ -126,6 +126,11 @@ FLAGS:
 - Shock addressed: ${body.flags.shock_addressed}
 
 THE STUDENT JUST DID: ${body.lastAction.type} — "${body.lastAction.detail}"
+
+CRITICAL RULES:
+- You MUST ONLY apply physiological effects of treatments that appear in "TREATMENTS GIVEN SO FAR". If that list is empty or does not contain a treatment, you CANNOT reference adverse effects, benefits, or reactions from it.
+- Do NOT invent treatments. Do NOT apply adverse effects from the "AVAILABLE INTERVENTIONS" list unless those interventions are in TREATMENTS GIVEN SO FAR.
+- new_event must be null unless a genuine clinical event is occurring based on elapsed time + untreated disease. It must NEVER reference a treatment that was not given.
 
 Based on the FULL CASE CONTEXT and real pathophysiology, determine what happens next.
 

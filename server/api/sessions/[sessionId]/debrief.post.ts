@@ -132,38 +132,44 @@ YOUR ROLE:
 
 TONE: Warm, constructive, educational. Like a supportive attending doing a post-case debrief.`;
 
-  const openaiKey = process.env.OPENAI_API_KEY;
-  let responseText = "";
+  const config = useRuntimeConfig(event);
+  const supabaseUrl =
+    process.env.SUPABASE_URL || config.public?.supabase?.url || "";
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    "";
 
-  if (openaiKey) {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${openaiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        temperature: 0.7,
-        max_tokens: 1500,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: question },
-        ],
-      }),
+  if (!supabaseUrl || !serviceKey) {
+    throw createError({
+      statusCode: 500,
+      message:
+        "Supabase configuration missing (SUPABASE_URL or SUPABASE_SERVICE_KEY)",
     });
-
-    if (!res.ok) {
-      throw createError({ statusCode: 502, message: "AI service error" });
-    }
-
-    const data = await res.json();
-    responseText =
-      data.choices?.[0]?.message?.content ?? "I couldn't generate a response.";
-  } else {
-    responseText =
-      "Debrief chat requires OPENAI_API_KEY to be set in the Nuxt server environment.";
   }
+
+  const edgeRes = await fetch(`${supabaseUrl}/functions/v1/debrief-agent`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+    },
+    body: JSON.stringify({
+      question,
+      systemPrompt,
+    }),
+  });
+
+  if (!edgeRes.ok) {
+    const errText = await edgeRes.text().catch(() => "");
+    console.error("Debrief edge function error:", edgeRes.status, errText);
+    throw createError({ statusCode: 502, message: "Debrief generation failed" });
+  }
+
+  const edgeData = await edgeRes.json().catch(() => ({}));
+  const responseText =
+    edgeData?.response ?? "I couldn't generate a debrief response.";
 
   await (client.from("session_messages") as any).insert([
     {
