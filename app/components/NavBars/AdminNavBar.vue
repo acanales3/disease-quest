@@ -28,6 +28,15 @@
 
     <p class="px-3 pt-5 pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Content</p>
     <NuxtLink
+      to="/admin/classrooms"
+      exact
+      class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-600 hover:bg-[#f5f3ff] hover:text-[#4d1979] transition-colors"
+      active-class="!bg-[#ede9fe] !text-[#4d1979] font-semibold"
+    >
+      <ClassroomIcon :size="18" class="shrink-0" />
+      <span>Classrooms</span>
+    </NuxtLink>
+    <NuxtLink
       v-for="link in contentLinks"
       :key="link.to"
       :to="link.to"
@@ -55,6 +64,7 @@
 </template>
 
 <script setup>
+import ClassroomIcon from '../icons/ClassroomIcon.vue'
 const overviewLinks = [
   { label: 'Dashboard', to: '/admin/dashboard', icon: 'iconamoon:home-light' },
 ]
@@ -66,7 +76,6 @@ const peopleLinks = [
 ]
 
 const contentLinks = [
-  { label: 'Classrooms', to: '/admin/classrooms', icon: 'simple-icons:googleclassroom' },
   { label: 'Cases', to: '/admin/cases', icon: 'si:book-line' },
 ]
 

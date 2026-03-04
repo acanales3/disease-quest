@@ -8,8 +8,8 @@
           <p class="text-gray-500 text-[15px] mt-2">
             Create, edit, and manage classrooms.
           </p>
-          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
-            <Icon name="simple-icons:googleclassroom" size="15" class="text-white" />
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-md bg-[#4d1979]">
+            <ClassroomIcon :size="21" icon-class="text-white" />
             <span class="text-[13px] font-medium text-white">{{ data.length }} classrooms</span>
           </div>
         </div>
@@ -91,6 +91,7 @@ import { Icon } from "#components";
 import CreateClassroomModal from "../../CreateClassroomModal/CreateClassroomModal.vue";
 import EditClassroomModal from "../../EditClassroomModal/EditClassroomModal.vue";
 import DeleteClassroomModal from "../../DeleteClassroomModal/DeleteClassroomModal.vue";
+import ClassroomIcon from "../../icons/ClassroomIcon.vue";
 import useSupabaseAuth from "~/composables/useSupabaseAuth";
 
 type DeleteState =
