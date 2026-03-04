@@ -19,6 +19,8 @@ export interface Case {
 
 interface ColumnOptions {
   classroomId?: number;
+  onEdit?: (caseData: Case) => void;
+  onDelete?: (caseData: Case) => void;
   onRemoveFromClassroom?: (caseId: number) => void;
   onRemoveFromClassrooms?: (caseData: Case) => void;
   onRefresh?: () => void;
@@ -155,6 +157,8 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
             caseData,
             role,
             classroomId: options?.classroomId,
+            onEdit: options?.onEdit,
+            onDelete: options?.onDelete,
             onRemoveFromClassroom: options?.onRemoveFromClassroom,
             onRemoveFromClassrooms: options?.onRemoveFromClassrooms,
             onRefresh: options?.onRefresh,
@@ -164,3 +168,4 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
     },
   ];
 }
+

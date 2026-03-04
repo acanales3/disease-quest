@@ -21,10 +21,20 @@ const props = defineProps<Props>();
 const router = useRouter();
 
 const emit = defineEmits<{
+  (e: "edit", caseData: Case): void;
+  (e: "delete", caseData: Case): void;
   (e: "removeFromClassroom", caseId: number): void;
   (e: "removeFromClassrooms", caseData: Case): void;
   (e: "refresh"): void;
 }>();
+
+const onEdit = () => {
+  emit("edit", props.caseData);
+};
+
+const onDelete = () => {
+  emit("delete", props.caseData);
+};
 
 const onRemoveFromClassroom = () => {
   emit("removeFromClassroom", props.caseData.id);
@@ -113,12 +123,13 @@ const handleReplay = async () => {
         <span v-else>{{ getButtonText() }}</span>
       </DropdownMenuItem>
 
-      <DropdownMenuItem v-if="props.role === 'admin'" class="cursor-pointer">
+      <DropdownMenuItem v-if="props.role === 'admin'" class="cursor-pointer" @click="onEdit">
         Edit
       </DropdownMenuItem>
       <DropdownMenuItem
         v-if="props.role === 'admin'"
         class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+        @click="onDelete"
       >
         Delete
       </DropdownMenuItem>
@@ -146,3 +157,4 @@ const handleReplay = async () => {
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
+
