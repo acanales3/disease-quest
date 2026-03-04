@@ -130,9 +130,13 @@ export default defineEventHandler(async (event) => {
         console.log("[action/end_case] db_scores:", JSON.stringify(dbScores));
 
         if (dbScores && Object.keys(dbScores).length > 0) {
-          // Always INSERT a fresh evaluation row — never delete or upsert.
-          // Each completed attempt gets its own permanent evaluation entry.
-          // This preserves history for analytics, leaderboards, and progress tracking.
+          // Delete any existing evaluation for this session to prevent duplicates 
+          // (e.g., if end_case is triggered multiple times)
+          await serviceClient
+            .from("evaluations")
+            .delete()
+            .eq("session_id", sessionId);
+
           const evalPayload = {
             user_id: sessionUserId,
             case_id: caseId,
