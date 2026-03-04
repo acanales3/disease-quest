@@ -65,7 +65,10 @@ const getButtonText = () => {
       </DropdownMenuItem>
       <DropdownMenuItem
         v-if="props.role === 'student' && props.caseData.status === 'completed'"
-        @click="caseEvaluationModalBus.open(props.caseData.id)"
+        @click="() => {
+          const caseId = Number(String(props.caseData.id).split('-')[0]);
+          caseEvaluationModalBus.open(caseId);
+        }"
         >
         Review Case
         </DropdownMenuItem

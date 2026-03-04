@@ -9,10 +9,10 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
     }
 
-    const userId = user.id;
+    const userId = user.sub;
 
-    const queryParams = getQuery(event)
-    const caseId = queryParams.id ? Number(queryParams.id) : null
+    const caseIdParam = event.context.params?.id;
+    const caseId = caseIdParam ? Number(caseIdParam) : null;
 
     if (!caseId) {
         throw createError({
@@ -45,9 +45,10 @@ export default defineEventHandler(async (event) => {
         )
         )
     `)
-        .eq('student_id', userId)
+        .eq('user_id', userId)
         .eq('case_id', caseId)
-        .single()
+        .order('created_at', { ascending: false }) // sort by newest first
+        .limit(1) // only get most recent
 
     if (error) {
         throw createError({
@@ -56,27 +57,27 @@ export default defineEventHandler(async (event) => {
         });
     }
 
-    if (!data) {
+    if (!data || data.length == 0) {
         throw createError({
             statusCode: 404,
             statusMessage: "Evaluations not found!"
         })
     }
 
+    const latestEvaluation = data[0];
+
     return {
-        id: data.id,
-        caseId: data.case_id,
-        caseName: data.cases?.name,
-        classroomId: data.cases?.classroom_cases?.[0]?.classrooms?.id,
-        classroomName: data.cases?.classroom_cases?.[0]?.classrooms?.name,
-        scores: {
-            communicationEmpathy: data.communication_empathy,
-            diagnosticTests: data.diagnostic_tests,
-            differentialDiagnosisFormulation: data.differential_diagnosis_formulation,
-            historyTakingSynthesis: data.history_taking_synthesis,
-            managementReasoning: data.management_reasoning,
-            physicalExamInterpretation: data.physical_exam_interpretation,
-            reflectionMetacognition: data.reflection_metacognition
-        }
+        caseId: latestEvaluation.case_id,
+        caseName: latestEvaluation.cases?.name,
+        classroomId: latestEvaluation.cases?.classroom_cases?.[0]?.classrooms?.id,
+        classroomName: latestEvaluation.cases?.classroom_cases?.[0]?.classrooms?.name,
+        count: 1, // single evaluation = 1
+        history_taking_synthesis: (latestEvaluation.history_taking_synthesis ?? 0) * 100,
+        physical_exam_interpretation: (latestEvaluation.physical_exam_interpretation ?? 0) * 100,
+        differential_diagnosis_formulation: (latestEvaluation.differential_diagnosis_formulation ?? 0) * 100,
+        diagnostic_tests: (latestEvaluation.diagnostic_tests ?? 0) * 100,
+        management_reasoning: (latestEvaluation.management_reasoning ?? 0) * 100,
+        communication_empathy: (latestEvaluation.communication_empathy ?? 0) * 100,
+        reflection_metacognition: (latestEvaluation.reflection_metacognition ?? 0) * 100
     }
 })

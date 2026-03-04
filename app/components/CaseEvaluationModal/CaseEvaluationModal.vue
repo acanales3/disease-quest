@@ -1,13 +1,20 @@
 <template>
-  <Dialog
-    :open="caseEvaluationModalBus.openModal"
-    @update:open="handleOpenChange"
-  >
+  <Dialog :open="caseEvaluationModalBus.openModal" @update:open="handleOpenChange">
     <DialogContent>
-      <ClassroomScores
-        v-if="evaluationData.length"
-        class="mb-8"
-        :data="evaluationData"
+      <DialogHeader>
+        <DialogTitle>
+          Evaluation Metrics
+        </DialogTitle>
+      </DialogHeader>
+      <ClassroomScores 
+        v-if="evaluationData.length" 
+        class="mb-8" 
+        :data="evaluationData" 
+        :render-dropdowns="false" 
+        :render-session-dropdown="true"
+        :sessions="sessions"
+        :initial-session-id="selectedSessionId"
+        @session-change="handleSessionChange"  
       />
 
       <div v-else class="text-center py-6 text-gray-500">
@@ -20,6 +27,8 @@
 <script setup lang="ts">
 import {
   Dialog,
+  DialogTitle,
+  DialogHeader,
   DialogContent,
 } from "@/components/ui/dialog";
 
@@ -29,6 +38,9 @@ import { caseEvaluationModalBus } from "@/components/CaseEvaluationModal/modalBu
 
 const evaluationData = ref<any[]>([]);
 const loading = ref(false);
+
+const sessions = ref<{ id: number; label: string }[]>([])
+const selectedSessionId = ref<number | null>(null)
 
 const handleOpenChange = (value: boolean) => {
   if (!value) {
@@ -45,11 +57,24 @@ watch(
     evaluationData.value = [];
 
     try {
-      const response = await $fetch(
-        `/api/analytics/${newCaseId}/score`
-      );
+      const classroomId = caseEvaluationModalBus.classroomId
 
-      evaluationData.value = [response];
+      // Fetch sessions
+      const sessionResponse = await $fetch(
+        `/api/case-sessions/${newCaseId}?classroomId=${classroomId}`
+      )
+
+      sessions.value = sessionResponse
+
+      // Default session = the one used to open modal
+      selectedSessionId.value = caseEvaluationModalBus.sessionId
+
+      // Fetch evaluation for that session
+      const response = await $fetch(
+        `/api/analytics/session/${selectedSessionId.value}/score`
+      )
+      evaluationData.value = [response]
+
     } catch (err) {
       console.error(err);
     } finally {
@@ -57,4 +82,24 @@ watch(
     }
   }
 );
+
+const handleSessionChange = async (sessionId: number) => {
+  loading.value = true;
+  evaluationData.value = [];
+
+  try {
+    selectedSessionId.value = sessionId
+
+    const response = await $fetch(
+      `/api/analytics/session/${sessionId}/score`
+    )
+
+    evaluationData.value = [response]
+
+  } catch (err) {
+    console.error(err);
+  } finally {
+    loading.value = false;
+  }
+}
 </script>

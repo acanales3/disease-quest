@@ -23,6 +23,9 @@
     <div class="w-full py-2">
       <DataTable :columns="visibleColumns" :data="data" />
     </div>
+
+    <CaseEvaluationModal />
+
   </div>
 </template>
 
@@ -32,6 +35,9 @@ import { ref, computed, watchEffect } from "vue";
 import { getColumns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import TotalCount from "../../ui/TotalCount.vue";
+
+import CaseEvaluationModal from "~/components/CaseEvaluationModal/CaseEvaluationModal.vue";
+import { caseEvaluationModalBus } from "~/components/CaseEvaluationModal/modalBusCaseEvaluation";
 
 const data = ref<Case[]>([]);
 

@@ -4,23 +4,31 @@ import { reactive } from "vue";
 
 export interface CaseEvaluationModalBus {
   caseId: number | null;
+  classroomId: number | null;
+  sessionId: number | null;
   openModal: boolean;
-  open: (caseId: number) => void;
+  open: (caseId: number, classroomId: number, sessionId: number) => void;
   close: () => void;
 }
 
 export const caseEvaluationModalBus = reactive<CaseEvaluationModalBus>({
   caseId: null,
+  classroomId: null,
+  sessionId: null,
   openModal: false,
 
-  open(caseId: number) {
+  open(caseId: number, classroomId: number, sessionId: number) {
     this.caseId = caseId;
+    this.classroomId = classroomId;
+    this.sessionId = sessionId;
     this.openModal = true;
   },
 
   close() {
     this.openModal = false;
     this.caseId = null;
+    this.classroomId = null;
+    this.sessionId = null;
   }
 
 });
