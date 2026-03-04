@@ -1,56 +1,78 @@
 <template>
   <div
-    class="rounded-lg shadow-sm p-4 pt-6 flex flex-col justify-between w-46 h-28 bg-white relative"
-  >
-    <!-- Top row: icon + title -->
-    <div class="flex items-center gap-2">
-      <Icon
-        :name="trophy.icon"
-        size="40"
-        :class="trophy.color || 'text-[#AF67F0]'"
-      />
-      <p class="text-lg font-bold text-gray-800">
-        {{ trophy.title }}
-      </p>
-    </div>
-
-    <!-- Cases completed text -->
-    <p class="text-sm text-gray-500 pl-2">
-      {{ completed }} cases completed
+  class="bg-white border border-gray-200 rounded-xl grid grid-cols-[1fr_auto] relative"
+  :class="compact ? 'p-4 gap-3 min-h-[112px]' : 'p-5 gap-4 min-h-[138px]'"
+>
+  <!-- LEFT SIDE (content) -->
+  <div class="flex flex-col h-full">
+    <!-- TOP -->
+    <p
+      class="font-medium text-gray-500 leading-snug"
+      :class="compact ? 'text-[12px]' : 'text-[13px]'"
+    >
+      Current level
     </p>
 
-    <!-- Info button (bottom-right) -->
-    <button
-      @click="showInfo = !showInfo"
-      class="absolute bottom-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded-full"
-    >
-      <Icon name="mdi:information-outline" size="20" />
-    </button>
+    <!-- ONLY SPACE THAT GROWS -->
+    <div class="flex-1"></div>
 
-    <!-- Info popup/modal -->
-    <div
-      v-if="showInfo"
-      class="absolute top-full mt-2 left-0 bg-gray-100 shadow-lg rounded-lg z-50 p-3 pr-1"
-    >
-      <h3 class="font-bold mb-1 text-sm">Level Info</h3>
-      <p class="text-xs text-gray-500">
-        (Cases completed needed per level)
+    <!-- BOTTOM BLOCK (title + cases together) -->
+    <div>
+      <p
+        class="font-semibold text-gray-900 tabular-nums leading-none tracking-tight"
+        :class="compact ? 'text-[24px]' : 'text-[32px]'"
+      >
+        {{ trophy.title }}
       </p>
-      <ul class="space-y-1 text-xs">
-        <li
-          v-for="level in LEVELS"
-          :key="level.title"
-          class="flex items-center gap-2"
+
+      <div
+        class="flex items-center gap-1 text-gray-400"
+        :class="compact ? 'mt-1 text-[8px]' : 'mt-2 text-[11px]'"
+      >
+        <span>{{ completed }} cases completed</span>
+        <button
+          @click="showInfo = !showInfo"
+          class="text-gray-400 hover:text-gray-600 p-0.5 rounded-full"
         >
-          <Icon :name="level.icon" size="16" :class="level.color" />
-          <span class="font-medium">{{ level.title }}</span>
-          <span class="text-gray-500">
-            ({{ level.min }} cases)
-          </span>
-        </li>
-      </ul>
+          <Icon name="mdi:information-outline" size="15" />
+        </button>
+      </div>
     </div>
   </div>
+
+  <!-- RIGHT SIDE (trophy area) -->
+  <div class="flex items-center justify-center pl-2">
+    <Icon
+      :name="trophy.icon"
+      :size="compact ? 70 : 100"
+      :class="trophy.color || 'text-[#4d1979]'"
+    />
+  </div>
+
+  <!-- Info popup -->
+  <div
+    v-if="showInfo"
+    class="absolute top-full mt-2 right-0 bg-gray-100 shadow-lg rounded-lg z-50 p-3 pr-1"
+  >
+    <h3 class="font-bold mb-1 text-sm">Level Information</h3>
+    <p class="text-xs text-gray-500">
+      (Cases completed needed per level)
+    </p>
+    <ul class="space-y-1 text-xs">
+      <li
+        v-for="level in LEVELS"
+        :key="level.title"
+        class="flex items-center gap-2"
+      >
+        <Icon :name="level.icon" size="16" :class="level.color" />
+        <span class="font-medium">{{ level.title }}</span>
+        <span class="text-gray-500">
+          ({{ level.min }} cases)
+        </span>
+      </li>
+    </ul>
+  </div>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -66,8 +88,8 @@ type Level = {
 
 // Trophy levels
 const LEVELS: Level[] = [
-  { min: 0, icon: "game-icons-sport-medal", title: "Beginner", color: "text-green-600" },
-  { min: 1, icon: "game-icons-ribbon-medal", title: "Bronze", color: "text-amber-900" },
+  { min: 0, icon: "game-icons-ribbon-medal", title: "Beginner", color: "text-green-600" },
+  { min: 1, icon: "game-icons-sport-medal", title: "Bronze", color: "text-amber-900" },
   { min: 3, icon: "game-icons-medal", title: "Silver", color: "text-gray-400" },
   { min: 5, icon: "game-icons-star-medal", title: "Gold", color: "text-yellow-500" },
   { min: 7, icon: "game-icons-trophy-cup", title: "Platinum", color: "text-cyan-400" },
@@ -82,6 +104,10 @@ const props = defineProps({
   completed: {
     type: Number,
     required: true,
+  },
+  compact: {
+    type: Boolean,
+    default: false,
   },
 })
 

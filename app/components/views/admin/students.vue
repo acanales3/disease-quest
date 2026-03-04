@@ -1,30 +1,43 @@
 <template>
-  <div class="flex flex-col w-full">
-    <!-- Student Count & Student Invite -->
-    <div class="flex justify-center gap-4">
-      <TotalCount
-        icon="hugeicons:students"
-        :count="data.length"
-        label="Total Students"
-      />
-      <InviteDialog dialog-type="student" />
+  <div class="space-y-6">
+    <!-- Page Header -->
+    <div class="border-b border-gray-200 pb-8">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Student Management</p>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Students</h1>
+          <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">View, invite, edit, and manage students.</p>
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
+            <Icon name="hugeicons:students" size="15" class="text-white" />
+            <span class="text-[13px] font-medium text-white">{{ data.length }} students</span>
+          </div>
+        </div>
+        <div class="shrink-0">
+          <InviteDialog dialog-type="student" />
+        </div>
+      </div>
     </div>
 
-    <div v-if="pageMessage" class="w-full py-2">
+    <!-- Success / Error banner -->
+    <div v-if="pageMessage">
       <div
-        class="rounded-md border px-4 py-3 text-sm"
+        class="flex items-start gap-2.5 text-sm px-4 py-3 rounded-lg border"
         :class="
           pageMessage.type === 'success'
             ? 'border-green-200 bg-green-50 text-green-800'
             : 'border-red-200 bg-red-50 text-red-700'
         "
       >
+        <Icon
+          :name="pageMessage.type === 'success' ? 'lucide:check-circle' : 'lucide:alert-circle'"
+          class="text-base mt-0.5 shrink-0"
+        />
         {{ pageMessage.text }}
       </div>
     </div>
 
     <!-- Student Table -->
-    <div class="w-full py-2">
+    <div class="overflow-hidden">
       <DataTable
         :columns="visibleColumns"
         :data="data"

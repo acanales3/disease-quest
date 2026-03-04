@@ -245,18 +245,15 @@ async function sendInvite() {
 <template>
   <Dialog>
     <DialogTrigger as-child>
-      <Button
-        variant="outline"
-        class="h-28 w-48 flex flex-col items-center justify-center gap-2 p-4"
+      <button
+        class="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-[#4d1979] text-white text-sm font-medium hover:bg-[#3d1361] transition-colors"
       >
-        <div class="flex flex-col items-center justify-center gap-2">
-          <Icon name="ic:baseline-person-add" size="24" />
-          <span class="text-sm">Invite {{ title }}</span>
-        </div>
-      </Button>
+        <Icon name="lucide:user-plus" size="15" />
+        Invite {{ title }}
+      </button>
     </DialogTrigger>
 
-    <DialogContent class="sm:max-w-[520px]">
+    <DialogContent class="sm:max-w-[720px] max-h-[80vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Invite {{ title }}</DialogTitle>
         <DialogDescription>{{ description }}</DialogDescription>

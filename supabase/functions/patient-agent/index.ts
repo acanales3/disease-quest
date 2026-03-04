@@ -16,9 +16,13 @@ interface PatientAgentRequest {
   disclosures: Array<{ id: string; content: Record<string, unknown> }>;
   conversationHistory: Array<{ role: string; content: string }>;
   elapsedMinutes: number;
+  interactionTone?: "empathetic" | "neutral" | "abrasive";
 }
 
-function buildSystemPrompt(ps: Record<string, unknown>): string {
+function buildSystemPrompt(
+  ps: Record<string, unknown>,
+  interactionTone: "empathetic" | "neutral" | "abrasive" = "neutral",
+): string {
   const physiology = (ps.physiology ?? {}) as Record<string, unknown>;
   const vitals = (physiology.vitals ?? {}) as Record<string, unknown>;
   const socialCtx = (ps.social_context ?? {}) as Record<string, unknown>;
@@ -69,6 +73,9 @@ COMMUNICATION STYLE:
 - Express worry and concern naturally
 - If the student is dismissive or rude, become less cooperative
 - If the student is empathetic, open up more
+- Latest student communication tone: ${interactionTone}
+- If cooperation_level is guarded/hesitant OR tone is abrasive, keep answers brief and cautious.
+- If cooperation_level is open/cooperative OR tone is empathetic, give fuller contextual details when asked.
 
 Remember: You are NOT a medical professional. You don't know what's wrong. You're scared and want help.`;
 }
@@ -80,9 +87,15 @@ serve(async (req: Request) => {
 
   try {
     const body: PatientAgentRequest = await req.json();
-    const { question, patientState, conversationHistory, elapsedMinutes } = body;
+    const {
+      question,
+      patientState,
+      conversationHistory,
+      elapsedMinutes,
+      interactionTone,
+    } = body;
 
-    const systemPrompt = buildSystemPrompt(patientState);
+    const systemPrompt = buildSystemPrompt(patientState, interactionTone);
 
     // Build conversation messages
     const messages: ChatMessage[] = [{ role: "system", content: systemPrompt }];

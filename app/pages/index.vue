@@ -1,107 +1,133 @@
 <template>
-  <div
-    class="min-h-screen flex flex-col items-center justify-center bg-linear-to-b from-[rgb(175,103,240)] to-white"
-  >
-    <!-- Icon and Title -->
-    <div class="flex items-center space-x-3 mb-8">
-      <div class="p-4 bg-white rounded-full shadow-lg">
-        <Icon name="healthicons:autoimmune-disease-outline" class="text-6xl" />
-      </div>
-      <h1 class="text-4xl font-bold text-white drop-shadow-lg">
-        Welcome to DiseaseQuest
-      </h1>
+  <div class="w-full min-h-screen bg-white flex items-center justify-center relative overflow-hidden">
+    <div
+      class="absolute inset-0 z-0"
+      style="background: radial-gradient(125% 125% at 50% 10%, #fff 50%, #4d1979 100%)"
+    />
+
+    <div class="absolute top-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4">
+      <span class="brand-name text-2xl tracking-tight text-gray-900">
+        Disease<span class="text-[#4d1979]">Quest</span>
+      </span>
+      <span class="h-7 w-px bg-gray-300" />
+      <img src="/tcu-logo.png" alt="TCU Burnett School of Medicine" class="h-32 w-auto" />
     </div>
 
-    <!-- Buttons -->
-    <div class="flex space-x-6">
-      <NuxtLink
-        to="/login"
-        class="px-8 py-3 bg-white text-[#AF67F0] font-semibold rounded-2xl shadow-md hover:bg-[#f2e6ff] transition-all duration-300"
-      >
-        Login
-      </NuxtLink>
-      <NuxtLink
-        to="/register"
-        class="px-8 py-3 bg-[#AF67F0] text-white font-semibold rounded-2xl shadow-md hover:bg-[#9c4be8] transition-all duration-300"
-      >
-        Register
-      </NuxtLink>
+    <div class="relative z-10 w-full max-w-2xl mx-auto px-6 flex flex-col items-center text-center gap-6">
+      <h1 class="text-5xl md:text-7xl tracking-tighter font-normal text-gray-900 text-center leading-[1.15]">
+        <span class="block">Case-based learning</span>
+        <span class="block">made <span class="relative inline-grid text-left"><span class="invisible col-start-1 row-start-1 font-semibold">interactive</span><span
+              class="col-start-1 row-start-1 font-semibold text-[#4d1979] text-left"
+            >{{ displayedText }}<span class="inline-block w-[3px] h-[0.85em] bg-[#4d1979] align-baseline ml-0.5 animate-blink" /></span></span></span>
+      </h1>
+
+      <p class="text-lg md:text-xl leading-relaxed tracking-tight text-muted-foreground max-w-xl">
+        Practice diagnosis, treatment planning, and clinical decision-making
+        through realistic, interactive patient simulations.
+      </p>
+
+      <div class="flex flex-row gap-3 pt-2">
+        <Button size="lg" variant="outline" @click="router.push('/login')">
+          Login
+        </Button>
+        <Button
+          size="lg"
+          class="bg-[#4d1979] hover:bg-[#3d1361] text-white"
+          @click="router.push('/register')"
+        >
+          Register
+        </Button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import useSupabaseAuth from "~/composables/useSupabaseAuth";
+import { Button } from "@/components/ui/button";
 
-const email = ref("");
-const password = ref("");
-const error = ref("");
-const isLoading = ref(false);
+definePageMeta({
+  layout: false,
+});
 
 const router = useRouter();
 const supabase = useSupabaseClient();
-const { login } = useSupabaseAuth();
 
-// Check if already logged in on mount
+const titles = ["interactive", "engaging", "intuitive", "effective", "smarter"];
+const displayedText = ref("");
+
+let timeoutId: ReturnType<typeof setTimeout> | null = null;
+let wordIndex = 0;
+let charIndex = 0;
+let isDeleting = false;
+
+function tick() {
+  const currentWord = titles[wordIndex];
+
+  if (!isDeleting) {
+    charIndex++;
+    displayedText.value = currentWord.slice(0, charIndex);
+
+    if (charIndex === currentWord.length) {
+      timeoutId = setTimeout(() => {
+        isDeleting = true;
+        tick();
+      }, 1500);
+      return;
+    }
+    timeoutId = setTimeout(tick, 80);
+  } else {
+    charIndex--;
+    displayedText.value = currentWord.slice(0, charIndex);
+
+    if (charIndex === 0) {
+      isDeleting = false;
+      wordIndex = (wordIndex + 1) % titles.length;
+      timeoutId = setTimeout(tick, 300);
+      return;
+    }
+    timeoutId = setTimeout(tick, 40);
+  }
+}
+
 onMounted(async () => {
+  tick();
+
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
   if (session?.user) {
-    console.log("User already logged in, fetching profile...");
-
-    // Get user profile to determine role
     const { getUserProfile } = useUsers();
     const { data: profile } = await getUserProfile(session.user.id);
 
     if (profile?.role) {
-      console.log("Already logged in, redirecting to dashboard");
       router.push(`/${profile.role.toLowerCase()}/dashboard`);
     }
   }
 });
 
-const handleLogin = async () => {
-  error.value = "";
-  isLoading.value = true;
-
-  try {
-    const { error: loginErr, customUser: profile } = await login(
-      email.value,
-      password.value,
-    );
-
-    if (loginErr) {
-      error.value = loginErr.message;
-      isLoading.value = false;
-      return;
-    }
-
-    if (!profile?.role) {
-      error.value = "No profile found for user. Please contact support.";
-      isLoading.value = false;
-      return;
-    }
-
-    console.log("Login successful:", {
-      userId: profile.id,
-      role: profile.role,
-      email: profile.email,
-    });
-
-    // Redirect by role
-    const targetPath = `/${profile.role.toLowerCase()}/dashboard`;
-    console.log("Redirecting to:", targetPath);
-
-    // Use window.location for a hard redirect to ensure middleware runs
-    window.location.href = targetPath;
-  } catch (err) {
-    console.error("Login error:", err);
-    error.value = "An unexpected error occurred. Please try again.";
-    isLoading.value = false;
+onUnmounted(() => {
+  if (timeoutId) {
+    clearTimeout(timeoutId);
   }
-};
+});
 </script>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-blink {
+  animation: blink 0.8s step-end infinite;
+}
+.brand-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+</style>

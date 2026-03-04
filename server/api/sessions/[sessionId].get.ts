@@ -5,6 +5,29 @@
 import { defineEventHandler, createError, getRouterParam } from "h3";
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 
+type CaseSessionRow = {
+  id: string;
+  case_id: number;
+  user_id: string;
+  status: string;
+  phase: string;
+  elapsed_minutes: number;
+  unlocked_disclosures: string[] | null;
+  differential_history: Array<Record<string, unknown>> | null;
+  final_diagnosis: Record<string, unknown> | null;
+  management_plan: string[] | null;
+  scoring: Record<string, unknown> | null;
+  flags: Record<string, unknown> | null;
+  patient_state: Record<string, unknown> | null;
+  started_at: string | null;
+  completed_at: string | null;
+};
+
+type CaseRow = {
+  name: string;
+  content: Record<string, unknown> | null;
+};
+
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
   const client = await serverSupabaseClient(event);
@@ -20,23 +43,23 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "Session ID is required" });
   }
 
-  const { data: session, error } = await client
+  const { data: session, error } = (await client
     .from("case_sessions")
     .select("*")
     .eq("id", sessionId)
     .eq("user_id", userId)
-    .single();
+    .single()) as { data: CaseSessionRow | null; error: any };
 
   if (error || !session) {
     throw createError({ statusCode: 404, message: "Session not found" });
   }
 
   // Load case name
-  const { data: caseRow } = await client
+  const { data: caseRow } = (await client
     .from("cases")
     .select("name, content")
     .eq("id", session.case_id)
-    .single();
+    .single()) as { data: CaseRow | null; error: any };
 
   const content = caseRow?.content as Record<string, unknown> | null;
   const physiology = ((session.patient_state ?? {}) as Record<string, unknown>)
@@ -75,6 +98,7 @@ export default defineEventHandler(async (event) => {
       mentalStatus: physiology?.mental_status ?? "unknown",
       hasShock: physiology?.has_shock ?? false,
       hasSeizure: physiology?.has_seizure ?? false,
+      hasRespiratoryFailure: physiology?.has_respiratory_failure ?? false,
     },
     startedAt: session.started_at,
     completedAt: session.completed_at,

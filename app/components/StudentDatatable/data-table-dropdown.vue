@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import type { Student } from "./columns";
-import { modalBus } from "@/components/AdminEditStudentDialog/modalBusEditStudent"
+import { modalBus } from "@/components/AdminEditStudentDialog/modalBusEditStudent";
 
 interface Props {
   student: Student;
@@ -29,13 +29,12 @@ function onEdit() {
 }
 
 function onDelete() {
-  emit('delete', props.student);
+  emit("delete", props.student);
 }
 
 function onRemoveFromClassroom() {
   emit("removeFromClassroom", props.student);
 }
-
 </script>
 
 <template>
@@ -49,7 +48,9 @@ function onRemoveFromClassroom() {
     <DropdownMenuContent align="end">
       <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit">Edit</DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'" @click="onEdit"
+        >Edit</DropdownMenuItem
+      >
       <DropdownMenuItem
         v-if="props.role === 'admin' || props.role === 'instructor'"
         class="text-red-600 focus:text-red-600 focus:bg-red-50"
@@ -64,7 +65,6 @@ function onRemoveFromClassroom() {
       >
         Delete Student
       </DropdownMenuItem>
-      
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

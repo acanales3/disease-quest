@@ -19,22 +19,29 @@ const emit = defineEmits<{
   (e: "apply-filters", filters: FilterCriteria): void;
 }>();
 
-const props = withDefaults(defineProps<{
-  classrooms?: Classroom[];
-  showMsyear?: boolean;
-  showClassroom?: boolean;
-  showStatus?: boolean;
-  balancedBasicLayout?: boolean;
-  role?: "student" | "instructor"; // NEW: identify type
-}>(), {
-  showMsyear: true,
-  showClassroom: true,
-  showStatus: true,
-  balancedBasicLayout: false,
-});
+const props = withDefaults(
+  defineProps<{
+    classrooms?: Classroom[];
+    showMsyear?: boolean;
+    showClassroom?: boolean;
+    showStatus?: boolean;
+    balancedBasicLayout?: boolean;
+    role?: "student" | "instructor";
+    hideClassroomFilter?: boolean;
+  }>(),
+  {
+    showMsyear: true,
+    showClassroom: true,
+    showStatus: true,
+    balancedBasicLayout: false,
+    hideClassroomFilter: false,
+  },
+);
 
 const showMsyear = props.showMsyear;
-const showClassroom = props.showClassroom;
+const showClassroom = computed(
+  () => props.showClassroom && !props.hideClassroomFilter,
+);
 const showStatus = props.showStatus;
 const useBalancedBasicLayout = props.balancedBasicLayout;
 
@@ -50,13 +57,11 @@ interface FilterCriteria {
 const isOpen = ref(false);
 const msyearOptions = ["1", "2", "3", "4"];
 
-// Status options depend on role
 const statusOptions = computed(() => {
   if (props.role === "instructor") return ["active", "deactivated"];
   return ["registered", "unregistered"];
 });
 
-// Temporary filters (UI state)
 const tempFilters = ref({
   firstName: "",
   lastName: "",
@@ -67,7 +72,6 @@ const tempFilters = ref({
   status: [] as string[],
 });
 
-// Saved filters (persisted state)
 const savedFilters = ref({
   firstName: "",
   lastName: "",
@@ -81,25 +85,40 @@ const savedFilters = ref({
 
 const toggleMsyear = (year: string) => {
   const index = tempFilters.value.msyear.indexOf(year);
-  index === -1 ? tempFilters.value.msyear.push(year) : tempFilters.value.msyear.splice(index, 1);
+  index === -1
+    ? tempFilters.value.msyear.push(year)
+    : tempFilters.value.msyear.splice(index, 1);
 };
 
 const toggleClassroom = (classroom: string) => {
   const index = tempFilters.value.classroom.indexOf(classroom);
-  index === -1 ? tempFilters.value.classroom.push(classroom) : tempFilters.value.classroom.splice(index, 1);
+  index === -1
+    ? tempFilters.value.classroom.push(classroom)
+    : tempFilters.value.classroom.splice(index, 1);
 };
 
 const toggleStatus = (status: string) => {
   const index = tempFilters.value.status.indexOf(status);
-  index === -1 ? tempFilters.value.status.push(status) : tempFilters.value.status.splice(index, 1);
+  index === -1
+    ? tempFilters.value.status.push(status)
+    : tempFilters.value.status.splice(index, 1);
 };
 
 const resetFilters = () => {
-  tempFilters.value = { firstName: "", lastName: "", email: "", school: "", msyear: [], classroom: [], status: [] };
+  tempFilters.value = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    school: "",
+    msyear: [],
+    classroom: [],
+    status: [],
+  };
 };
 
 const saveFilters = () => {
-  const combinedName = `${tempFilters.value.firstName} ${tempFilters.value.lastName}`.trim();
+  const combinedName =
+    `${tempFilters.value.firstName} ${tempFilters.value.lastName}`.trim();
 
   savedFilters.value = {
     firstName: tempFilters.value.firstName,
@@ -167,7 +186,10 @@ const onOpenChange = (open: boolean) => {
     <DialogContent class="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Filters</DialogTitle>
-        <DialogDescription>Add search criteria to filter results. All fields are optional.</DialogDescription>
+        <DialogDescription
+          >Add search criteria to filter results. All fields are
+          optional.</DialogDescription
+        >
       </DialogHeader>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
@@ -176,12 +198,18 @@ const onOpenChange = (open: boolean) => {
           <div class="flex flex-col gap-5">
             <div class="flex flex-col gap-1.5">
               <Label>First Name</Label>
-              <Input v-model="tempFilters.firstName" placeholder="Enter first name" />
+              <Input
+                v-model="tempFilters.firstName"
+                placeholder="Enter first name"
+              />
             </div>
 
             <div class="flex flex-col gap-1.5">
               <Label>Last Name</Label>
-              <Input v-model="tempFilters.lastName" placeholder="Enter last name" />
+              <Input
+                v-model="tempFilters.lastName"
+                placeholder="Enter last name"
+              />
             </div>
           </div>
 
@@ -199,107 +227,130 @@ const onOpenChange = (open: boolean) => {
           </div>
         </template>
         <template v-else>
-        <!-- LEFT COLUMN -->
-        <div class="flex flex-col gap-5">
-          <div class="flex flex-col gap-1.5">
-            <Label>First Name</Label>
-            <Input v-model="tempFilters.firstName" placeholder="Enter first name" />
-          </div>
-
-          <div class="flex flex-col gap-1.5">
-            <Label>Last Name</Label>
-            <Input v-model="tempFilters.lastName" placeholder="Enter last name" />
-          </div>
-
-          <div class="flex flex-col gap-1.5">
-            <Label>Email</Label>
-            <Input v-model="tempFilters.email" placeholder="Enter email" />
-          </div>
-
-          <div v-if="showStatus" class="flex flex-col gap-1.5">
-            <Label>Status</Label>
-            <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
-              <div
-                v-for="statusOption in statusOptions"
-                :key="statusOption"
-                class="flex items-center gap-2"
-              >
-                <input
-                  type="checkbox"
-                  :checked="tempFilters.status.includes(statusOption)"
-                  @change="toggleStatus(statusOption)"
-                  class="w-4 h-4 cursor-pointer"
-                />
-                <label class="capitalize text-sm cursor-pointer">
-                  {{ statusOption }}
-                </label>
-              </div>
-
-              <div v-if="tempFilters.status.length === 0" class="text-xs text-gray-400">
-                No status selected
-              </div>
+          <!-- LEFT COLUMN -->
+          <div class="flex flex-col gap-5">
+            <div class="flex flex-col gap-1.5">
+              <Label>First Name</Label>
+              <Input
+                v-model="tempFilters.firstName"
+                placeholder="Enter first name"
+              />
             </div>
-          </div>
-        </div>
 
-        <!-- RIGHT COLUMN -->
-        <div class="flex flex-col gap-5">
-          <div class="flex flex-col gap-1.5">
-            <Label>School</Label>
-            <Input v-model="tempFilters.school" placeholder="Enter school" />
-          </div>
+            <div class="flex flex-col gap-1.5">
+              <Label>Last Name</Label>
+              <Input
+                v-model="tempFilters.lastName"
+                placeholder="Enter last name"
+              />
+            </div>
 
-          <div v-if="showMsyear" class="flex flex-col gap-1.5">
-            <Label>MS Year</Label>
-            <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
-              <div
-                v-for="year in msyearOptions"
-                :key="year"
-                class="flex items-center gap-2"
-              >
-                <input
-                  type="checkbox"
-                  :checked="tempFilters.msyear.includes(year)"
-                  @change="toggleMsyear(year)"
-                  class="w-4 h-4 cursor-pointer"
-                />
-                <label class="text-sm cursor-pointer">Year {{ year }}</label>
-              </div>
+            <div class="flex flex-col gap-1.5">
+              <Label>Email</Label>
+              <Input v-model="tempFilters.email" placeholder="Enter email" />
+            </div>
 
-              <div v-if="tempFilters.msyear.length === 0" class="text-xs text-gray-400">
-                No years selected
+            <div v-if="showStatus" class="flex flex-col gap-1.5">
+              <Label>Status</Label>
+              <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
+                <div
+                  v-for="statusOption in statusOptions"
+                  :key="statusOption"
+                  class="flex items-center gap-2"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="tempFilters.status.includes(statusOption)"
+                    @change="toggleStatus(statusOption)"
+                    class="w-4 h-4 cursor-pointer"
+                  />
+                  <label class="capitalize text-sm cursor-pointer">
+                    {{ statusOption }}
+                  </label>
+                </div>
+
+                <div
+                  v-if="tempFilters.status.length === 0"
+                  class="text-xs text-gray-400"
+                >
+                  No status selected
+                </div>
               </div>
             </div>
           </div>
 
-          <div v-if="showClassroom" class="flex flex-col gap-1.5">
-            <Label>Classroom</Label>
-            <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
-              <div
-                v-for="classroom in props.classrooms"
-                :key="classroom.id"
-                class="flex items-center gap-2"
-              >
-                <input
-                  type="checkbox"
-                  :checked="tempFilters.classroom.includes(String(classroom.id))"
-                  @change="toggleClassroom(String(classroom.id))"
-                  class="w-4 h-4 cursor-pointer"
-                />
-                <label class="text-sm cursor-pointer">{{ classroom.name }}</label>
-              </div>
+          <!-- RIGHT COLUMN -->
+          <div class="flex flex-col gap-5">
+            <div class="flex flex-col gap-1.5">
+              <Label>School</Label>
+              <Input v-model="tempFilters.school" placeholder="Enter school" />
+            </div>
 
-              <div v-if="tempFilters.classroom.length === 0" class="text-xs text-gray-400">
-                No classrooms selected
+            <div v-if="showMsyear" class="flex flex-col gap-1.5">
+              <Label>MS Year</Label>
+              <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
+                <div
+                  v-for="year in msyearOptions"
+                  :key="year"
+                  class="flex items-center gap-2"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="tempFilters.msyear.includes(year)"
+                    @change="toggleMsyear(year)"
+                    class="w-4 h-4 cursor-pointer"
+                  />
+                  <label class="text-sm cursor-pointer">Year {{ year }}</label>
+                </div>
+
+                <div
+                  v-if="tempFilters.msyear.length === 0"
+                  class="text-xs text-gray-400"
+                >
+                  No years selected
+                </div>
+              </div>
+            </div>
+
+            <div v-if="showClassroom" class="flex flex-col gap-1.5">
+              <Label>Classroom</Label>
+              <div class="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
+                <div
+                  v-for="classroom in props.classrooms"
+                  :key="classroom.id"
+                  class="flex items-center gap-2"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="
+                      tempFilters.classroom.includes(String(classroom.id))
+                    "
+                    @change="toggleClassroom(String(classroom.id))"
+                    class="w-4 h-4 cursor-pointer"
+                  />
+                  <label class="text-sm cursor-pointer">{{
+                    classroom.name
+                  }}</label>
+                </div>
+
+                <div
+                  v-if="tempFilters.classroom.length === 0"
+                  class="text-xs text-gray-400"
+                >
+                  No classrooms selected
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </template>
       </div>
 
       <DialogFooter class="w-full flex items-center">
-        <Button variant="outline" @click="resetFilters" class="flex items-center gap-2">
+        <Button
+          variant="outline"
+          @click="resetFilters"
+          class="flex items-center gap-2"
+        >
           <Icon name="mdi:refresh" size="16" />
           Reset
         </Button>

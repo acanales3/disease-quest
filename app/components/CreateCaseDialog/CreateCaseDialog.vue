@@ -170,11 +170,9 @@ async function handleSubmit() {
 <template>
   <Dialog :open="isOpen" @update:open="onOpenChange">
     <DialogTrigger as-child>
-      <Button variant="outline" class="h-28 w-48 flex flex-col items-center justify-center gap-2 p-4">
-        <div class="flex flex-col items-center justify-center gap-2">
-          <Icon name="hugeicons:plus-sign-square" size="24" class="text-purple-500"/>
-          <span class="text-sm">Create Case</span>
-        </div>
+      <Button class="bg-[#4d1979] hover:bg-[#3f1564] text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 h-9">
+        <Icon name="lucide:plus" size="15" />
+        <span>Create Case</span>
       </Button>
     </DialogTrigger>
     <DialogContent class="sm:max-w-[480px]" :class="{ 'pointer-events-none': isLoading }">

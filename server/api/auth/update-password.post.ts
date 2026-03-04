@@ -208,6 +208,8 @@ export default defineEventHandler(async (event) => {
 
         const notifErr = await logNotification(adminClient, {
             recipientUserId: userId,
+            actorUserId: userId,
+            type: "auth.password_reset_completed",
             message: 'Password reset complete. Password updated successfully.',
         })
         if (notifErr) {

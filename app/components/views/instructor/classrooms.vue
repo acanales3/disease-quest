@@ -1,39 +1,53 @@
 <template>
-  <div class="flex flex-col w-full">
-    <div class="flex justify-center gap-4">
-      <TotalCount
-        :count="data.length"
-        label="Total Classrooms"
-        icon="simple-icons:googleclassroom"
-      />
-
-      <Button
-        variant="outline"
-        class="h-28 w-48 flex flex-col items-center justify-center gap-2 p-4"
-        @click="openCreateModal"
-      >
-        <div class="flex flex-col items-center justify-center gap-2">
-          <Icon name="ic:baseline-add" size="28" class="#ad46ff" />
-          <span class="text-sm">Create Classroom</span>
+  <div class="space-y-6">
+    <div class="border-b border-gray-200 pb-8">
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Content</p>
+          <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Classrooms</h1>
+          <p class="text-gray-500 text-[15px] mt-2">
+            Create, edit, and manage classrooms.
+          </p>
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
+            <Icon name="simple-icons:googleclassroom" size="15" class="text-white" />
+            <span class="text-[13px] font-medium text-white">{{ data.length }} classrooms</span>
+          </div>
         </div>
-      </Button>
+
+        <Button
+          class="bg-[#4d1979] hover:bg-[#3f1564] text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 shrink-0"
+          @click="openCreateModal"
+        >
+          <Icon name="lucide:plus" size="15" />
+          Create Classroom
+        </Button>
+      </div>
     </div>
 
     <!-- Success / invite-code banner -->
-    <div v-if="pageMessage" class="w-full py-2">
+    <div v-if="pageMessage">
       <div
-        class="rounded-md border px-4 py-3 text-sm"
+        class="flex items-center gap-2 rounded-lg border px-4 py-3 text-sm"
         :class="
           pageMessage.type === 'success'
             ? 'border-green-200 bg-green-50 text-green-800'
             : 'border-red-200 bg-red-50 text-red-700'
         "
       >
+        <Icon :name="pageMessage.type === 'success' ? 'lucide:check-circle' : 'lucide:alert-circle'" size="15" />
         {{ pageMessage.text }}
       </div>
     </div>
 
-    <div class="w-full py-2">
+    <div v-if="isLoading" class="rounded-lg border border-gray-200 bg-white px-4 py-6 text-sm text-gray-500">
+      Loading classrooms...
+    </div>
+
+    <div v-else-if="loadError" class="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
+      {{ loadError }}
+    </div>
+
+    <div v-else class="w-full">
       <DataTable
         :columns="visibleColumns"
         :data="data"
@@ -72,7 +86,6 @@ import type { Classroom } from "../../ClassroomDatatable/columns";
 import { onMounted, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import DataTable from "../../ClassroomDatatable/data-table.vue";
-import TotalCount from "../../ui/TotalCount.vue";
 import { Button } from "../../ui/button";
 import { Icon } from "#components";
 import CreateClassroomModal from "../../CreateClassroomModal/CreateClassroomModal.vue";
@@ -101,6 +114,8 @@ const pageMessage = ref<{ type: "success" | "error"; text: string } | null>(
   null,
 );
 const deleteState = ref<DeleteState>({ status: "idle" });
+const isLoading = ref(true);
+const loadError = ref("");
 
 const visibleColumns = computed(() => {
   const columnsToShow = [
@@ -228,7 +243,14 @@ function handleClassroomUpdated(updatedClassroom: Classroom) {
 }
 
 onMounted(async () => {
-  await fetchCurrentUser();
-  data.value = await getData();
+  try {
+    loadError.value = "";
+    await fetchCurrentUser();
+    data.value = await getData();
+  } catch {
+    loadError.value = "Unable to load classrooms right now.";
+  } finally {
+    isLoading.value = false;
+  }
 });
 </script>

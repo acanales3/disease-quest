@@ -46,23 +46,44 @@ async function callAgent(
   body: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
 
-  const res = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
-    method: "POST",
-    headers: {
+  // Some environments don't expose JWT keys to edge runtime.
+  // If no JWT is available, call without auth headers (functions are deployed with --no-verify-jwt).
+  const candidateTokens = [serviceKey, anonKey].filter((t) =>
+    typeof t === "string" && t.split(".").length === 3
+  );
+  const requests: Array<Record<string, string>> = [];
+  for (const token of candidateTokens) {
+    requests.push({
       "Content-Type": "application/json",
-      Authorization: `Bearer ${serviceKey}`,
-      apikey: serviceKey,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Agent ${fnName} failed (${res.status}): ${errText}`);
+      Authorization: `Bearer ${token}`,
+      apikey: token,
+    });
   }
-  return res.json();
+  if (requests.length === 0) {
+    requests.push({ "Content-Type": "application/json" });
+  }
+
+  let lastStatus = 500;
+  let lastErrText = "Unknown error";
+
+  for (const headers of requests) {
+    const res = await fetch(`${supabaseUrl}/functions/v1/${fnName}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) return res.json();
+
+    lastStatus = res.status;
+    lastErrText = await res.text();
+    if (res.status !== 401 && res.status !== 403) break;
+  }
+
+  throw new Error(`Agent ${fnName} failed (${lastStatus}): ${lastErrText}`);
 }
 
 // ── Helper: check disclosure unlocks ────────────────────────────
@@ -384,6 +405,188 @@ function classifyTreatment(
   return "unknown";
 }
 
+type BedsideTone = "empathetic" | "neutral" | "abrasive";
+
+const MENTAL_STATUS_ORDER = [
+  "alert",
+  "drowsy",
+  "lethargic",
+  "obtunded",
+  "stuporous",
+  "comatose",
+];
+
+function toNumber(value: unknown, fallback: number): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function worsenMentalStatus(current: unknown): string {
+  const idx = MENTAL_STATUS_ORDER.indexOf(String(current ?? "alert"));
+  if (idx < 0) return "drowsy";
+  return MENTAL_STATUS_ORDER[Math.min(idx + 1, MENTAL_STATUS_ORDER.length - 1)];
+}
+
+function assessBedsideManner(question: string): BedsideTone {
+  const q = question.toLowerCase();
+  const empatheticSignals = [
+    "please",
+    "thank you",
+    "i understand",
+    "i'm sorry",
+    "im sorry",
+    "that sounds hard",
+    "we're here to help",
+    "can you tell me",
+    "take your time",
+  ];
+  const abrasiveSignals = [
+    "hurry",
+    "just answer",
+    "whatever",
+    "stop crying",
+    "calm down",
+    "be quiet",
+    "that's irrelevant",
+    "quick answer",
+  ];
+
+  const empatheticHits = empatheticSignals.filter((s) => q.includes(s)).length;
+  const abrasiveHits = abrasiveSignals.filter((s) => q.includes(s)).length;
+
+  if (empatheticHits > abrasiveHits) return "empathetic";
+  if (abrasiveHits > empatheticHits) return "abrasive";
+  return "neutral";
+}
+
+function findInterventionDefinition(
+  treatmentText: string,
+  caseInterventions: Array<Record<string, unknown>>,
+): Record<string, unknown> | null {
+  const lower = treatmentText.toLowerCase().trim();
+  if (!lower) return null;
+
+  for (const intervention of caseInterventions) {
+    const displayName = String(intervention.display_name ?? "").toLowerCase();
+    const options = ((intervention.options ?? []) as string[]).map((o) =>
+      String(o).toLowerCase(),
+    );
+
+    if (displayName && (displayName === lower || lower.includes(displayName))) {
+      return intervention;
+    }
+
+    if (
+      options.some((opt) => opt && (opt === lower || lower.includes(opt)))
+    ) {
+      return intervention;
+    }
+  }
+
+  return null;
+}
+
+function applyUnsafeTreatmentEffect(
+  patientState: Record<string, unknown>,
+  treatmentCategory: string,
+  adverseEffectRisk?: string,
+): { patientState: Record<string, unknown>; eventNote: string } {
+  const ps = { ...patientState };
+  const physiology = { ...(ps.physiology as Record<string, unknown>) };
+  const vitals = { ...(physiology.vitals as Record<string, unknown>) };
+  let note = "Possible iatrogenic complication after unsafe intervention.";
+
+  if (treatmentCategory === "vasopressors") {
+    vitals.hr_bpm = clampNumber(toNumber(vitals.hr_bpm, 120) + 18, 30, 220);
+    vitals.bp_systolic = clampNumber(
+      toNumber(vitals.bp_systolic, 90) + 20,
+      35,
+      220,
+    );
+    vitals.bp_diastolic = clampNumber(
+      toNumber(vitals.bp_diastolic, 60) + 12,
+      20,
+      130,
+    );
+    note = "Possible catecholamine overshoot causing tachycardia/hypertension.";
+  } else if (treatmentCategory === "fluids") {
+    vitals.rr_bpm = clampNumber(toNumber(vitals.rr_bpm, 20) + 6, 6, 55);
+    vitals.spo2_percent = clampNumber(
+      toNumber(vitals.spo2_percent, 96) - 4,
+      55,
+      100,
+    );
+    vitals.cap_refill_sec = clampNumber(
+      toNumber(vitals.cap_refill_sec, 2.5) + 0.4,
+      0.5,
+      10,
+    );
+    note = "Possible fluid overload with new respiratory distress.";
+  } else if (treatmentCategory === "airway") {
+    vitals.bp_systolic = clampNumber(
+      toNumber(vitals.bp_systolic, 90) - 12,
+      35,
+      220,
+    );
+    vitals.bp_diastolic = clampNumber(
+      toNumber(vitals.bp_diastolic, 60) - 8,
+      20,
+      130,
+    );
+    vitals.hr_bpm = clampNumber(toNumber(vitals.hr_bpm, 110) + 8, 30, 220);
+    physiology.mental_status = worsenMentalStatus(physiology.mental_status);
+    note = "Sedation/intubation complication with hypotension.";
+  } else if (treatmentCategory === "anticonvulsant") {
+    vitals.rr_bpm = clampNumber(toNumber(vitals.rr_bpm, 20) - 4, 6, 55);
+    vitals.spo2_percent = clampNumber(
+      toNumber(vitals.spo2_percent, 96) - 3,
+      55,
+      100,
+    );
+    physiology.mental_status = worsenMentalStatus(physiology.mental_status);
+    note = "Medication over-sedation with depressed respirations.";
+  } else {
+    vitals.hr_bpm = clampNumber(toNumber(vitals.hr_bpm, 110) + 12, 30, 220);
+    vitals.bp_systolic = clampNumber(
+      toNumber(vitals.bp_systolic, 90) - 10,
+      35,
+      220,
+    );
+    vitals.spo2_percent = clampNumber(
+      toNumber(vitals.spo2_percent, 96) - 2,
+      55,
+      100,
+    );
+    const skinFindings = Array.isArray(physiology.skin_findings)
+      ? [...(physiology.skin_findings as string[])]
+      : [];
+    if (!skinFindings.includes("new urticarial rash")) {
+      skinFindings.push("new urticarial rash");
+    }
+    physiology.skin_findings = skinFindings;
+    note = "Possible adverse drug reaction with hemodynamic instability.";
+  }
+
+  if (
+    toNumber(vitals.spo2_percent, 100) <= 90 ||
+    toNumber(vitals.rr_bpm, 20) >= 30
+  ) {
+    physiology.has_respiratory_failure = true;
+  }
+
+  if (adverseEffectRisk && adverseEffectRisk !== "null") {
+    note = adverseEffectRisk;
+  }
+
+  physiology.vitals = vitals;
+  ps.physiology = physiology;
+  return { patientState: ps, eventNote: note };
+}
+
 // ── Helper: apply treatment to patient state (generic) ──────────
 function applyTreatment(
   patientState: Record<string, unknown>,
@@ -567,35 +770,59 @@ serve(async (req: Request) => {
         };
       } else if (resp.ordered_at !== undefined) {
         // Fallback: reconstruct from response fields
+        const testDef = diagnosticTests.find((t) => String(t.id ?? "") === String(tid));
+        const defaultTat = Number(testDef?.tat_minutes ?? testDef?.turnaround_time_minutes ?? 30);
+        const orderedAt = (resp.ordered_at ?? a.elapsed_minutes ?? 0) as number;
         orderedTests[tid] = {
           testId: tid,
-          orderedAt: (resp.ordered_at ?? a.elapsed_minutes ?? 0) as number,
-          resultAvailableAt: (resp.expected_result_at ??
-            ((a.elapsed_minutes as number) ?? 0) + 1) as number,
+          orderedAt,
+          resultAvailableAt: (resp.expected_result_at ?? orderedAt + defaultTat) as number,
         };
       } else {
-        // Last resort: use action timestamp
+        // Last resort: use action timestamp + test TAT from case definition
+        const testDef = diagnosticTests.find((t) => String(t.id ?? "") === String(tid));
+        const defaultTat = Number(testDef?.tat_minutes ?? testDef?.turnaround_time_minutes ?? 30);
+        const orderedAt = (a.elapsed_minutes ?? 0) as number;
         orderedTests[tid] = {
           testId: tid,
-          orderedAt: (a.elapsed_minutes ?? 0) as number,
-          resultAvailableAt: ((a.elapsed_minutes as number) ?? 0) + 1,
+          orderedAt,
+          resultAvailableAt: orderedAt + defaultTat,
         };
       }
     }
 
     let responseData: Record<string, unknown> = {};
     let actionTypeDb = actionType.replace(/_/g, "_");
+    const runtimeNotices: string[] = [];
 
     // ─── Route to agent ──────────────────────────────────────────
 
     if (actionType === "ask_patient") {
+      const studentQuestion = String(payload.content ?? "");
+      const bedsideTone = assessBedsideManner(studentQuestion);
+      if (bedsideTone === "empathetic") {
+        patientState.cooperation_level = "open and cooperative";
+        patientState.emotional_state =
+          "anxious but reassured by the team's communication";
+        triggeredActions.push("empathetic_communication");
+      } else if (bedsideTone === "abrasive") {
+        patientState.cooperation_level = "guarded and hesitant";
+        patientState.emotional_state = "frustrated and fearful";
+        flags.communication_concerns = true;
+        triggeredActions.push("abrasive_communication");
+        runtimeNotices.push(
+          "Family trust decreased due to poor bedside communication.",
+        );
+      }
+
       responseData = await callAgent("patient-agent", {
-        question: payload.content ?? "",
+        question: studentQuestion,
         patientState,
         unlockedDisclosures,
         disclosures,
         conversationHistory,
         elapsedMinutes,
+        interactionTone: bedsideTone,
       });
 
       // Save messages
@@ -657,6 +884,10 @@ serve(async (req: Request) => {
       actionTypeDb = "perform_exam";
     } else if (actionType === "order_test") {
       const testId = payload.testId ?? payload.content ?? "";
+      const orderedTestDef =
+        diagnosticTests.find((t) => String(t.id ?? "") === String(testId)) ??
+        null;
+      const clinicalValue = String(orderedTestDef?.clinical_value ?? "");
 
       // Track cultures ordered before antibiotics (generic — any culture test)
       if (testId.includes("culture") && !flags.antibiotics_ordered) {
@@ -688,15 +919,32 @@ serve(async (req: Request) => {
             resultAvailableAt: number;
           };
         }
+
+        if (
+          clinicalValue === "low_yield_distractor" ||
+          clinicalValue === "inappropriate"
+        ) {
+          triggeredActions.push("student_orders_low_value_test");
+          flags.resource_inefficiency = true;
+          // No automatic time penalty — resource score is penalized at evaluation instead.
+          // Stealth physiological cost only (mild), flagged for evaluator scoring.
+          const warning =
+            clinicalValue === "inappropriate"
+              ? "This order has limited clinical indication for the current presentation."
+              : "This test has low yield for the current clinical picture.";
+          runtimeNotices.push(warning);
+        }
       }
       actionTypeDb = "order_test";
     } else if (actionType === "get_results") {
       const testId = payload.testId ?? payload.content ?? "";
 
+      // Results are always returned immediately — TAT is display-only.
+      // Pass a large elapsedMinutes so the diagnostic agent never blocks on timing.
       responseData = await callAgent("diagnostic-agent", {
         action: "get_results",
         testId,
-        elapsedMinutes,
+        elapsedMinutes: 99999,
         diagnosticTests,
         testResults,
         orderedTests,
@@ -716,6 +964,16 @@ serve(async (req: Request) => {
       const caseInterventions = (caseContent.interventions ?? []) as Array<
         Record<string, unknown>
       >;
+      const interventionDef = findInterventionDefinition(
+        String(treatment),
+        caseInterventions,
+      );
+      const appropriateness = String(
+        interventionDef?.appropriateness ?? "unknown",
+      );
+      const adverseEffectRisk = String(
+        interventionDef?.adverse_effect_risk ?? "",
+      );
       const treatmentCategory = classifyTreatment(treatment, caseInterventions);
       patientState = applyTreatment(patientState, treatment, caseInterventions);
 
@@ -743,6 +1001,26 @@ serve(async (req: Request) => {
         managementPlan.push(treatment as string);
       }
 
+      if (appropriateness === "potentially_harmful") {
+        const harmed = applyUnsafeTreatmentEffect(
+          patientState,
+          treatmentCategory,
+          adverseEffectRisk,
+        );
+        patientState = harmed.patientState;
+        flags.patient_safety_compromised = true;
+        flags.iatrogenic_event = true;
+        triggeredActions.push("unsafe_treatment_selected");
+        runtimeNotices.push(`Adverse effect risk realized: ${harmed.eventNote}`);
+      } else if (appropriateness === "unnecessary") {
+        flags.resource_inefficiency = true;
+        triggeredActions.push("unnecessary_treatment_selected");
+        // No automatic time penalty — penalised via scoring at end of case.
+        runtimeNotices.push(
+          "This intervention is unlikely to benefit the patient given the current clinical picture.",
+        );
+      }
+
       // Build response message based on physiological effects
       const physiology = (patientState.physiology ?? {}) as Record<
         string,
@@ -750,6 +1028,11 @@ serve(async (req: Request) => {
       >;
       const vitals = (physiology.vitals ?? {}) as Record<string, unknown>;
       const statusUpdate: string[] = [];
+      if (appropriateness === "potentially_harmful") {
+        statusUpdate.push("Potential iatrogenic adverse effect noted");
+      } else if (appropriateness === "unnecessary") {
+        statusUpdate.push("Likely low-value intervention");
+      }
       if (vitals.bp_systolic)
         statusUpdate.push(
           `BP now ${vitals.bp_systolic}/${vitals.bp_diastolic}`,
@@ -771,6 +1054,7 @@ serve(async (req: Request) => {
         type: "treatment_administered",
         treatment,
         category: treatmentCategory,
+        appropriateness,
         message: `${treatment} has been administered.${statusUpdate.length ? " " + statusUpdate.join(". ") + "." : ""}`,
         patient_response: "Treatment administered. Monitor for response.",
       };
@@ -884,12 +1168,17 @@ serve(async (req: Request) => {
       };
       actionTypeDb = "diagnose";
     } else if (actionType === "advance_time") {
-      const minutes = payload.minutes ?? 5;
-      elapsedMinutes += minutes;
+      const minutes = Number(payload.minutes ?? 5);
+      // If the client sends its current real-time elapsed, use the max of
+      // (db + minutes) and client value — prevents double-counting.
+      const clientElapsed = typeof payload.clientElapsedMinutes === "number"
+        ? payload.clientElapsedMinutes
+        : 0;
+      elapsedMinutes = Math.max(elapsedMinutes + minutes, clientElapsed);
       responseData = {
         type: "time_advanced",
         elapsed_minutes: elapsedMinutes,
-        message: `Time advanced by ${minutes} minutes. Current time: ${elapsedMinutes} min.`,
+        message: `T+${elapsedMinutes} min`,
       };
       actionTypeDb = "note";
     } else if (actionType === "end_case") {
@@ -938,8 +1227,9 @@ serve(async (req: Request) => {
 
       if (dbScores && Object.keys(dbScores).length > 0) {
         const evalPayload = {
-          user_id: session.user_id, // ← renamed
+          user_id: session.user_id,
           case_id: session.case_id,
+          session_id: sessionId, // ← links this evaluation to the specific attempt
           ...dbScores,
           reflection_document: JSON.stringify(
             (evalResult as Record<string, unknown>).evaluation ?? {},
@@ -953,20 +1243,6 @@ serve(async (req: Request) => {
             score_keys: Object.keys(dbScores),
           }),
         );
-
-        // Delete any existing evaluation for this user+case, then insert fresh
-        const { error: delErr } = await db
-          .from("evaluations")
-          .delete()
-          .eq("user_id", session.user_id) // ← renamed
-          .eq("case_id", session.case_id);
-
-        if (delErr) {
-          console.error(
-            "[ORCHESTRATOR] Failed to delete old evaluation:",
-            delErr.message,
-          );
-        }
 
         const { data: evalData, error: evalErr } = await db
           .from("evaluations")
@@ -1379,6 +1655,101 @@ serve(async (req: Request) => {
       elapsed_minutes: elapsedMinutes,
     });
 
+    // Persist simulation feed updates so reloading a session keeps context.
+    // Feed messages are written as observable clinical events — no diagnosis spoilers.
+    const timelineMessages: string[] = [];
+
+    // Action-level feed entries (clinical observations, not internal state strings)
+    if (actionType === "order_test") {
+      const testId = String(payload.testId ?? payload.content ?? "");
+      const testDef = diagnosticTests.find((t) => String(t.id ?? "") === String(testId));
+      const tatMinutes = Number(testDef?.tat_minutes ?? testDef?.turnaround_time_minutes ?? 30);
+      const testName = testDef?.display_name ?? testId;
+      const clinicalValue = String(testDef?.clinical_value ?? "");
+      if ((responseData as Record<string, unknown>).success) {
+        timelineMessages.push(`📋 Ordered: ${testName}. Results expected in ~${tatMinutes} min.`);
+        if (clinicalValue === "inappropriate") {
+          timelineMessages.push(`⚠️ Resource note: This test has limited clinical indication for the current presentation.`);
+        } else if (clinicalValue === "low_yield_distractor") {
+          timelineMessages.push(`⚠️ Resource note: This test has low yield for the current clinical picture.`);
+        }
+      }
+    } else if (actionType === "administer_treatment") {
+      const treatment = String(payload.treatment ?? payload.content ?? "");
+      const appropriateness = String((responseData as Record<string, unknown>).appropriateness ?? "");
+      const physiology = (patientState.physiology ?? {}) as Record<string, unknown>;
+      const vitals = (physiology.vitals ?? {}) as Record<string, unknown>;
+      const bpStr = vitals.bp_systolic ? `BP ${vitals.bp_systolic}/${vitals.bp_diastolic} mmHg` : "";
+      const hrStr = vitals.hr_bpm ? `HR ${vitals.hr_bpm} bpm` : "";
+      const postVitals = [bpStr, hrStr].filter(Boolean).join(", ");
+      if (appropriateness === "potentially_harmful") {
+        timelineMessages.push(`⚠️ ${treatment} administered — monitoring for adverse effects. ${postVitals ? `Current: ${postVitals}.` : ""}`);
+      } else if (appropriateness === "unnecessary") {
+        timelineMessages.push(`💊 ${treatment} administered. Limited clinical benefit expected. ${postVitals ? `Current: ${postVitals}.` : ""}`);
+      } else {
+        timelineMessages.push(`💊 ${treatment} administered. ${postVitals ? `Monitoring vitals: ${postVitals}.` : ""}`);
+      }
+    } else if (actionType === "advance_time") {
+      const minutes = Number(payload.minutes ?? 5);
+      const now = elapsedMinutes;
+      timelineMessages.push(`🕐 ${minutes} minutes elapsed. Sim time: T+${now} min.`);
+    } else if (actionType === "perform_exam") {
+      timelineMessages.push(`🩺 Physical examination completed at T+${elapsedMinutes} min.`);
+    } else if (actionType === "get_results") {
+      const testId = String(payload.testId ?? payload.content ?? "");
+      const testDef = diagnosticTests.find((t) => String(t.id ?? "") === String(testId));
+      const testName = testDef?.display_name ?? testId;
+      if ((responseData as Record<string, unknown>).status === "complete") {
+        timelineMessages.push(`🔬 Results available: ${testName}.`);
+      } else if ((responseData as Record<string, unknown>).status === "pending") {
+        const order = orderedTests[testId];
+        const remaining = order ? Math.max(0, order.resultAvailableAt - elapsedMinutes) : null;
+        timelineMessages.push(`⏳ ${testName}: results still pending${remaining !== null ? ` (~${remaining} min remaining)` : ""}.`);
+      }
+    }
+
+    // Runtime notices → clinical observations (no internal jargon)
+    for (const n of runtimeNotices) {
+      // Strip internal prefixes and expose only the clinical-facing part
+      const cleaned = n.replace(/^\+\d+ min\)?\.?\s*/i, "").trim();
+      if (cleaned) timelineMessages.push(`📝 ${cleaned}`);
+    }
+
+    // Deterioration events → observable clinical findings, not diagnoses
+    for (const d of deteriorationMessages) {
+      // Sanitize: remove any text that directly names the diagnosis or cause
+      const sanitized = d
+        .replace(/lack of .+? allows/gi, "Progression noted —")
+        .replace(/without .+?[,;]/gi, "")
+        .replace(/antibiot\w+\s*(therapy|treatment)?\s*(not started|not given|absent|delayed)?[,;]?/gi, "")
+        .replace(/suspicion of \w+/gi, "")
+        .replace(/unmanaged \w+/gi, "Unaddressed condition")
+        .trim();
+      timelineMessages.push(`🚨 ${sanitized || d}`);
+    }
+
+    // Clinical engine trajectory note → rephrase as bedside observation
+    const clinicalNote = (responseData as Record<string, unknown>).clinical_note as string | undefined;
+    if (clinicalNote && actionType !== "ask_patient" && actionType !== "consult_tutor") {
+      // Strip diagnosis hints from the AI-generated clinical note
+      const sanitizedNote = clinicalNote
+        .replace(/\b(bacterial meningitis|meningitis|sepsis|encephalitis|meningococcal|pneumococcal)\b/gi, "the underlying condition")
+        .replace(/antibiot\w+/gi, "antimicrobial therapy")
+        .replace(/without .+?intervention/gi, "without intervention")
+        .trim();
+      if (sanitizedNote) timelineMessages.push(`📊 ${sanitizedNote}`);
+    }
+
+    if (timelineMessages.length > 0) {
+      await db.from("session_messages").insert(
+        timelineMessages.map((content) => ({
+          session_id: sessionId,
+          role: "system",
+          content,
+        })),
+      );
+    }
+
     // ─── Build response ──────────────────────────────────────────
     const result: Record<string, unknown> = {
       ...responseData,
@@ -1390,6 +1761,9 @@ serve(async (req: Request) => {
 
     if (deteriorationMessages.length > 0) {
       result.deterioration_events = deteriorationMessages;
+    }
+    if (runtimeNotices.length > 0) {
+      result.notices = runtimeNotices;
     }
 
     return json(result);

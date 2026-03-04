@@ -1,95 +1,58 @@
 /**
  * POST /api/tts
- * Text-to-Speech using ElevenLabs API.
- * Returns base64-encoded MP3 audio.
+ * Proxies TTS requests to Supabase Edge Function `tts`.
  *
  * Body: { text: string, voiceType: "patient" | "tutor" | "system", emotion?: string }
  */
 import { defineEventHandler, createError, readBody } from "h3";
 
-// Voice IDs matching DQAgentMain
-const VOICES: Record<string, string> = {
-  patient: "EXAVITQu4vr4xnSDxMaL",  // Sarah — warm, friendly female
-  tutor: "ErXwobaYiN019PkySvjV",     // Antoni — warm, confident male
-  system: "pNInz6obpgDQGcFmaJgB",    // Adam — clear, professional
-};
-
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { text, voiceType, emotion } = body;
+  const { text, voiceType, emotion } = body ?? {};
 
   if (!text || !text.trim()) {
     throw createError({ statusCode: 400, message: "text is required" });
   }
 
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  if (!apiKey) {
-    throw createError({ statusCode: 500, message: "ELEVENLABS_API_KEY not configured" });
-  }
+  const config = useRuntimeConfig(event);
+  const supabaseUrl =
+    process.env.SUPABASE_URL || config.public?.supabase?.url || "";
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    "";
 
-  // Clean text — remove bracket/paren tags so they're never spoken
-  const cleaned = text
-    .replace(/\[.*?\]/g, "")
-    .replace(/\(.*?\)/g, "")
-    .trim();
-
-  if (!cleaned) {
-    throw createError({ statusCode: 400, message: "No speakable text after cleaning" });
-  }
-
-  const voiceId = VOICES[voiceType ?? "patient"] ?? VOICES.patient;
-
-  // Emotion-based voice settings
-  const emotionNorm = (emotion ?? "").toLowerCase();
-  let stability = 0.5;
-  let similarityBoost = 0.75;
-  let style = 0.0;
-
-  if (voiceType === "tutor") {
-    stability = 0.78;
-    similarityBoost = 0.72;
-    style = 0.0;
-  } else {
-    if (["anxious", "worried", "concern", "distress", "scared"].some((k) => emotionNorm.includes(k))) {
-      stability = 0.4;
-      style = 0.25;
-    } else if (["relieved", "grateful", "warm"].some((k) => emotionNorm.includes(k))) {
-      stability = 0.55;
-      style = 0.15;
-    }
+  if (!supabaseUrl || !serviceKey) {
+    throw createError({
+      statusCode: 500,
+      message:
+        "Supabase configuration missing (SUPABASE_URL or SUPABASE_SERVICE_KEY)",
+    });
   }
 
   try {
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    const res = await fetch(`${supabaseUrl}/functions/v1/tts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "xi-api-key": apiKey,
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: serviceKey,
       },
       body: JSON.stringify({
-        text: cleaned,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: {
-          stability,
-          similarity_boost: similarityBoost,
-          style,
-          use_speaker_boost: true,
-        },
+        text,
+        voiceType,
+        emotion,
       }),
     });
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error("ElevenLabs error:", res.status, errText);
+      console.error("Supabase tts edge function error:", res.status, errText);
       throw createError({ statusCode: 502, message: "TTS generation failed" });
     }
 
-    const audioBuffer = await res.arrayBuffer();
-    const base64Audio = btoa(
-      String.fromCharCode(...new Uint8Array(audioBuffer))
-    );
-
-    return { audio: base64Audio };
+    const data = await res.json().catch(() => ({}));
+    return { audio: data?.audio ?? null };
   } catch (err: unknown) {
     if ((err as Record<string, unknown>).statusCode) throw err; // re-throw createError
     console.error("TTS error:", err);

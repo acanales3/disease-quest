@@ -1,4 +1,8 @@
-import { serverSupabaseUser, serverSupabaseClient } from "#supabase/server";
+import {
+  serverSupabaseUser,
+  serverSupabaseClient,
+  serverSupabaseServiceRole,
+} from "#supabase/server";
 import { randomBytes } from "node:crypto";
 import { Database } from "@/assets/types/supabase";
 import { logNotification } from "../../utils/notifications";
@@ -6,6 +10,7 @@ import { logNotification } from "../../utils/notifications";
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
   const client = await serverSupabaseClient<Database>(event);
+  const serviceClient = await serverSupabaseServiceRole(event);
 
   // @ts-ignore
   const userId = user?.id || user?.sub;
@@ -54,19 +59,38 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { data: targetInstructor, error: instructorLookupError } =
-      await client
-        .from("instructors")
+    const { data: targetInstructor } = await client
+      .from("instructors")
+      .select("user_id")
+      .eq("user_id", instructorId)
+      .maybeSingle();
+
+    if (!targetInstructor) {
+      // Check if the selected user is an admin and auto-provision as instructor
+      const { data: adminRow } = await serviceClient
+        .from("admins")
         .select("user_id")
         .eq("user_id", instructorId)
-        .single();
+        .maybeSingle();
 
-    if (instructorLookupError || !targetInstructor) {
-      throw createError({
-        statusCode: 400,
-        message: "Validation failed.",
-        data: { errors: { instructorId: "Selected instructor not found." } },
-      });
+      if (!adminRow) {
+        throw createError({
+          statusCode: 400,
+          message: "Validation failed.",
+          data: { errors: { instructorId: "Selected instructor not found." } },
+        });
+      }
+
+      const { error: provisionError } = await serviceClient
+        .from("instructors")
+        .insert({ user_id: instructorId, status: "active" } as any);
+
+      if (provisionError) {
+        throw createError({
+          statusCode: 500,
+          message: "Failed to provision admin as instructor: " + provisionError.message,
+        });
+      }
     }
 
     resolvedInstructorId = instructorId;
@@ -141,8 +165,13 @@ export default defineEventHandler(async (event) => {
     role === "ADMIN"
       ? `Admin created classroom ${classroom.name} (${classroom.code}-${classroom.section}) for instructor ${resolvedInstructorId}.`
       : `Instructor created classroom ${classroom.name} (${classroom.code}-${classroom.section}).`;
-  const notifErr = await logNotification(client, {
+  const notifErr = await logNotification(serviceClient, {
     recipientUserId: userId,
+    actorUserId: userId,
+    type:
+      role === "ADMIN"
+        ? "admin.classroom.created"
+        : "instructor.classroom.created",
     message: notifMessage,
   });
   if (notifErr) {

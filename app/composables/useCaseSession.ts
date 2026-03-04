@@ -38,6 +38,7 @@ export interface SessionState {
     mentalStatus: string;
     hasShock: boolean;
     hasSeizure: boolean;
+    hasRespiratoryFailure?: boolean;
   };
   startedAt?: string;
 }
@@ -155,18 +156,72 @@ export function useCaseSession() {
     }
   }
 
+  function sanitizeSystemMessage(content: string): string {
+    // Convert raw internal strings from old sessions to readable clinical observations
+    const c = content.trim();
+
+    // Already emoji-formatted (new format) — pass through
+    if (/^[📋💊🕐🩺🔬⏳📝🚨📊⚠️]/.test(c)) return c;
+
+    // Old "Time advanced by X minutes. Current time: Y min." → tidy
+    const timeMatch = c.match(/Time advanced by (\d+) minutes?\. Current time: (\d+) min/i);
+    if (timeMatch) return `🕐 ${timeMatch[1]} min elapsed. Sim time: T+${timeMatch[2]} min.`;
+
+    // Old "Results pending. Expected in X minute(s)." → tidy
+    const pendingMatch = c.match(/Results? pending\.? Expected in (\d+)/i);
+    if (pendingMatch) return `⏳ Results pending (~${pendingMatch[1]} min remaining).`;
+
+    // Old "X has been administered. BP now Y/Z." → tidy
+    const treatMatch = c.match(/^(.+?) has been administered\.\s*(.*)/i);
+    if (treatMatch) return `💊 ${treatMatch[1]} administered. ${treatMatch[2]}`.trim();
+
+    // Old "ALERT: ..." with diagnosis leaks
+    if (c.startsWith("ALERT:")) {
+      const body = c.replace(/^ALERT:\s*/i, "")
+        .replace(/lack of .+? (allows|causes|leads)/gi, "Progression —")
+        .replace(/without .+?[,;]/gi, "")
+        .replace(/antibiot\w+\s*(therapy|treatment)?/gi, "antimicrobial therapy")
+        .replace(/\b(meningitis|sepsis|encephalitis|meningococcal|pneumococcal)\b/gi, "the underlying condition")
+        .trim();
+      return `🚨 ${body}`;
+    }
+
+    // Old "Trajectory: ..." with leaks
+    if (c.startsWith("Trajectory:")) {
+      const body = c.replace(/^Trajectory:\s*/i, "")
+        .replace(/antibiot\w+\s*(therapy|treatment)?/gi, "antimicrobial therapy")
+        .replace(/\b(meningitis|sepsis|encephalitis|meningococcal|pneumococcal)\b/gi, "the underlying condition")
+        .replace(/without.+?intervention/gi, "without intervention")
+        .trim();
+      return `📊 ${body}`;
+    }
+
+    // Old "Clinical note: ..."
+    if (c.startsWith("Clinical note:")) {
+      return `📝 ${c.replace(/^Clinical note:\s*/i, "").trim()}`;
+    }
+
+    return c;
+  }
+
   async function loadMessages(sessionId: string) {
     try {
       const data = await $fetch<ChatMessage[]>(`/api/sessions/${sessionId}/messages`);
       allMessages.value = data;
+
+      // Apply sanitization to system messages so old raw DB strings look clean
+      const normalized = data.map((m): ChatMessage =>
+        m.role === "system" ? { ...m, content: sanitizeSystemMessage(m.content) } : m
+      );
+
       // Split into patient and tutor channels
-      patientMessages.value = data.filter(
+      patientMessages.value = normalized.filter(
         (m) =>
           m.role === "patient" ||
           m.role === "system" ||
           (m.role === "student" && !m.content.includes("[To Tutor]"))
       );
-      tutorMessages.value = data
+      tutorMessages.value = normalized
         .filter(
           (m) => m.role === "tutor" || (m.role === "student" && m.content.includes("[To Tutor]"))
         )
@@ -174,6 +229,61 @@ export function useCaseSession() {
     } catch {
       // Non-critical
     }
+  }
+
+  function appendSystemFeed(content: string) {
+    const text = sanitizeSystemMessage(content.trim());
+    if (!text) return;
+    const last = patientMessages.value[patientMessages.value.length - 1];
+    if (last?.role === "system" && last.content === text) return;
+
+    const msg: ChatMessage = { role: "system", content: text };
+    patientMessages.value.push(msg);
+    allMessages.value.push(msg);
+  }
+
+  function appendActionFeedback(
+    actionType: string,
+    result: Record<string, unknown>,
+  ) {
+    // ask_patient / consult_tutor messages go into their respective chat channels, not feed
+    if (actionType === "ask_patient" || actionType === "consult_tutor") return;
+
+    // The server now produces pre-formatted clinical feed entries.
+    // We display the server-composed notices only — never raw internal strings like
+    // "Time advanced by X minutes" or AI trajectory text that leaks the diagnosis.
+
+    // The orchestrator writes system messages directly to the DB now.
+    // On the client, we only surface the notices/deterioration for immediate display
+    // (before the next loadMessages call). These are already sanitised server-side.
+
+    const feed: string[] = [];
+
+    // Server-side notices are already formatted with emoji prefixes
+    if (Array.isArray(result.notices)) {
+      for (const n of result.notices) {
+        if (typeof n === "string" && n.trim()) feed.push(n);
+      }
+    }
+
+    // Deterioration events from server (already emoji-prefixed by orchestrator)
+    if (Array.isArray(result.deterioration_events)) {
+      for (const d of result.deterioration_events) {
+        if (typeof d === "string" && d.trim()) {
+          // Strip diagnosis-leaking language client-side as a safety net
+          const sanitized = (d as string)
+            .replace(/lack of .+? (allows|causes|leads)/gi, "Progression —")
+            .replace(/without .+?[,;]/gi, "")
+            .replace(/antibiot\w+\s*(therapy|treatment)?/gi, "antimicrobial therapy")
+            .replace(/\b(meningitis|sepsis|encephalitis|meningococcal|pneumococcal)\b/gi, "the underlying condition")
+            .trim();
+          feed.push(`🚨 ${sanitized || d}`);
+        }
+      }
+    }
+
+    const uniqueFeed = [...new Set(feed.map((f) => f.trim()).filter(Boolean))];
+    for (const item of uniqueFeed) appendSystemFeed(item);
   }
 
   // ── Core action sender (non-blocking, fire-and-forget style) ──
@@ -194,9 +304,13 @@ export function useCaseSession() {
         { method: "POST", body: { actionType, payload } }
       );
 
-      // Lightweight state update from response
+      // Lightweight state update from response — never let server rewind the clock
       if (result.current_time_minutes !== undefined && session.value) {
-        session.value.elapsedMinutes = result.current_time_minutes as number;
+        const serverMinutes = result.current_time_minutes as number;
+        // Only update if server is ahead of local (e.g. server applied a penalty or advance)
+        if (serverMinutes > session.value.elapsedMinutes) {
+          session.value.elapsedMinutes = serverMinutes;
+        }
       }
       if (result.phase && session.value) {
         session.value.phase = result.phase as string;
@@ -204,6 +318,8 @@ export function useCaseSession() {
       if (result.unlocked_disclosures && session.value) {
         session.value.unlockedDisclosures = result.unlocked_disclosures as string[];
       }
+
+      appendActionFeedback(actionType, result);
 
       return result;
     } catch (err: unknown) {
@@ -217,7 +333,13 @@ export function useCaseSession() {
     if (!session.value?.sessionId) return;
     try {
       const data = await $fetch<SessionState>(`/api/sessions/${session.value.sessionId}`);
+      // Preserve the locally-ticking elapsedMinutes — never let a server snapshot rewind the clock.
+      // Only advance it if the server is genuinely ahead.
+      const localElapsed = session.value.elapsedMinutes;
       session.value = data;
+      if (localElapsed > (data.elapsedMinutes ?? 0)) {
+        session.value.elapsedMinutes = localElapsed;
+      }
     } catch {
       // Silent
     }
@@ -299,7 +421,12 @@ export function useCaseSession() {
   async function getResults(testId: string) {
     actionLoading.value = true;
     try {
-      return await sendAction("get_results", { testId });
+      // Pass current client elapsed time so server uses the real sim clock,
+      // not just the last DB-synced value (which may lag by up to 60 seconds).
+      return await sendAction("get_results", {
+        testId,
+        clientElapsedMinutes: Math.floor(session.value?.elapsedMinutes ?? 0),
+      });
     } finally {
       actionLoading.value = false;
     }
@@ -339,7 +466,10 @@ export function useCaseSession() {
   async function advanceTime(minutes: number) {
     actionLoading.value = true;
     try {
-      const r = await sendAction("advance_time", { minutes });
+      const r = await sendAction("advance_time", {
+        minutes,
+        clientElapsedMinutes: Math.floor(session.value?.elapsedMinutes ?? 0),
+      });
       refreshSession();
       return r;
     } finally {

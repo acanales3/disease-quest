@@ -1,4 +1,8 @@
-import { serverSupabaseUser, serverSupabaseClient } from '#supabase/server';
+import {
+  serverSupabaseUser,
+  serverSupabaseClient,
+  serverSupabaseServiceRole,
+} from '#supabase/server';
 import type { Database } from '@/assets/types/supabase'
 import { logNotification } from '../../utils/notifications'
 
@@ -15,6 +19,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const supabase = await serverSupabaseClient<Database>(event);
+    const serviceClient = await serverSupabaseServiceRole(event);
     const userId = user.id || user.sub;
     if (!userId) {
         throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
@@ -83,8 +88,10 @@ export default defineEventHandler(async (event) => {
             });
         }
 
-        const notifErr = await logNotification(supabase, {
+        const notifErr = await logNotification(serviceClient, {
             recipientUserId: userId,
+            actorUserId: userId,
+            type: "student.classroom.joined",
             message: `Student joined classroom ${classroom.name} (${classroom.id}).`,
         });
         if (notifErr) {

@@ -1,5 +1,14 @@
 <template>
-  <div class="flex flex-col h-[calc(100vh-120px)] w-full bg-white">
+  <div class="flex flex-col h-[calc(100vh-120px)] w-full bg-white relative">
+
+    <!-- ═══ RED ALERT FLICKER OVERLAY ═══ -->
+    <Transition name="flicker">
+      <div
+        v-if="alertFlicker"
+        class="pointer-events-none absolute inset-0 z-50 bg-red-600/20"
+        aria-hidden="true"
+      />
+    </Transition>
 
     <!-- ═══ BEDSIDE MONITOR ═══ -->
     <div class="flex-shrink-0 monitor-body mt-4 mx-6 rounded-xl overflow-hidden">
@@ -14,7 +23,7 @@
             <p class="text-white text-sm font-semibold leading-tight truncate monitor-text">{{ session?.caseName ?? '—' }}</p>
             <p class="text-neutral-500 text-[10px] font-mono mt-1">
               <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-1 monitor-blink"></span>
-              {{ displayElapsed }} min
+              {{ simClock }}
             </p>
           </div>
 
@@ -96,6 +105,10 @@
               <span class="w-2 h-2 rounded-full bg-red-500 monitor-blink"></span>
               <span class="text-red-500 text-[10px] font-bold uppercase tracking-widest font-mono monitor-alert">Seizure</span>
             </div>
+            <div v-if="session?.patientStatus?.hasRespiratoryFailure" class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-red-500 monitor-blink"></span>
+              <span class="text-red-500 text-[10px] font-bold uppercase tracking-widest font-mono monitor-alert">Resp Failure</span>
+            </div>
           </div>
         </div>
       </div>
@@ -138,22 +151,56 @@
     </div>
 
     <!-- ═══ CONTENT ═══ -->
-    <div class="flex-1 min-h-0 flex flex-col">
+    <div class="flex-1 min-h-0 flex">
 
-      <!-- INTERVIEW -->
-      <div v-if="activeTab === 'interview'" class="flex-1 min-h-0 max-w-2xl mx-auto w-full px-6 py-4" style="max-height: 60vh;">
-        <CaseTextArea
-          agent-type="patient"
-          :messages="patientMessages"
-          :loading="patientLoading"
-          :error-msg="error ?? ''"
-          placeholder="Ask the patient's family a question..."
-          @send="handlePatientChat"
-        />
-      </div>
+      <!-- Left: Clinical Feed sidebar -->
+      <aside class="w-[270px] shrink-0 border-r border-neutral-200 bg-white flex flex-col">
+        <div class="px-4 py-2.5 border-b border-neutral-200 flex items-center justify-between shrink-0 bg-neutral-50">
+          <div class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-neutral-600">Ward Log</p>
+          </div>
+          <span class="text-[10px] text-neutral-400 tabular-nums">{{ systemFeedMessages.length }} events</span>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+          <div
+            v-for="(item, i) in [...systemFeedMessages].reverse()"
+            :key="`sys-${i}`"
+            class="px-3 py-2.5 text-[11px] leading-snug border-b border-neutral-100 last:border-0"
+            :class="{
+              'bg-red-50 text-red-800': item.content.startsWith('🚨'),
+              'bg-amber-50 text-amber-800': item.content.startsWith('⚠️'),
+              'bg-blue-50/60 text-blue-800': item.content.startsWith('🔬') || item.content.startsWith('⏳'),
+              'bg-green-50/50 text-green-800': item.content.startsWith('💊'),
+              'text-neutral-500': item.content.startsWith('🕐'),
+              'text-neutral-700': !item.content.startsWith('🚨') && !item.content.startsWith('⚠️') && !item.content.startsWith('🔬') && !item.content.startsWith('⏳') && !item.content.startsWith('💊') && !item.content.startsWith('🕐'),
+            }"
+          >
+            {{ item.content }}
+          </div>
+          <div v-if="!systemFeedMessages.length" class="px-4 py-6 text-center">
+            <p class="text-[11px] text-neutral-400 italic">Awaiting clinical events…</p>
+          </div>
+        </div>
+      </aside>
 
-      <!-- Other tabs (scrollable) -->
-      <div v-else class="flex-1 overflow-y-auto">
+      <!-- Right: main tab content -->
+      <div class="flex-1 min-h-0 flex flex-col items-center">
+
+        <!-- INTERVIEW -->
+        <div v-if="activeTab === 'interview'" class="flex-1 min-h-0 w-full max-w-2xl px-6 py-4" style="max-height: 60vh;">
+          <CaseTextArea
+            agent-type="patient"
+            :messages="interviewMessages"
+            :loading="patientLoading"
+            :error-msg="error ?? ''"
+            placeholder="Ask the patient's family a question..."
+            @send="handlePatientChat"
+          />
+        </div>
+
+        <!-- Other tabs (scrollable) -->
+        <div v-else class="flex-1 overflow-y-auto w-full">
       <div class="max-w-screen-lg mx-auto py-6 px-6">
 
         <!-- EXAM -->
@@ -240,7 +287,9 @@
                     Ordering...
                   </span>
                   <span v-else-if="orderedTestIds.has(test.id)" class="text-[10px] font-semibold uppercase text-green-600">Ordered</span>
-                  <span v-else class="text-[10px] text-neutral-400">{{ test.cost_points }} pts</span>
+                  <span v-else class="text-[10px] text-neutral-400">
+                    {{ test.cost_points }} pts
+                  </span>
                 </button>
               </div>
             </div>
@@ -396,9 +445,10 @@
             Submit Diagnosis
           </button>
         </div>
+        </div>
       </div>
-      </div>
-    </div>
+      </div><!-- end right panel -->
+    </div><!-- end content flex row -->
 
     <!-- ═══ MENTOR DRAWER ═══ -->
     <Teleport to="body">
@@ -425,7 +475,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CaseTextArea from '@/components/CaseTextArea/text-area.vue'
 import { useCaseSession } from '@/composables/useCaseSession'
@@ -468,6 +518,49 @@ const tabs = [
   { id: 'diagnosis' as const, label: 'Diagnosis' },
 ]
 
+const systemFeedMessages = computed(() =>
+  patientMessages.value.filter((m) => m.role === 'system')
+)
+const interviewMessages = computed(() =>
+  patientMessages.value.filter((m) => m.role !== 'system')
+)
+
+// Red alert flicker when a critical event arrives
+const alertFlicker = ref(false)
+let flickerTimer: ReturnType<typeof setTimeout> | null = null
+let lastAlertCount = 0
+
+watch(systemFeedMessages, (msgs) => {
+  const alerts = msgs.filter((m) => m.content.startsWith('🚨'))
+  if (alerts.length > lastAlertCount) {
+    lastAlertCount = alerts.length
+    // Triple flicker: on → off → on → off
+    alertFlicker.value = true
+    if (flickerTimer) clearTimeout(flickerTimer)
+    flickerTimer = setTimeout(() => {
+      alertFlicker.value = false
+      setTimeout(() => {
+        alertFlicker.value = true
+        setTimeout(() => {
+          alertFlicker.value = false
+          setTimeout(() => {
+            alertFlicker.value = true
+            setTimeout(() => { alertFlicker.value = false }, 200)
+          }, 150)
+        }, 200)
+      }, 150)
+    }, 300)
+  }
+}, { deep: true })
+
+// Sim clock display: MM:SS derived from fractional elapsedMinutes
+const simClock = computed(() => {
+  const total = session.value?.elapsedMinutes ?? 0
+  const mins = Math.floor(total)
+  const secs = Math.floor((total - mins) * 60)
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+})
+
 // Alert helpers
 const hrAlert = computed(() => (session.value?.vitals?.hr_bpm ?? 0) > 160)
 const bpAlert = computed(() => (session.value?.vitals?.bp_systolic ?? 999) < 60)
@@ -476,15 +569,51 @@ const tempAlert = computed(() => (session.value?.vitals?.temp_f ?? 0) >= 103)
 const crAlert = computed(() => (session.value?.vitals?.cap_refill_sec ?? 0) > 4)
 
 const { data: caseData } = useFetch(`/api/cases/${caseId}`)
-const availableTests = computed(() => (caseData.value as Record<string, unknown>)?.available_tests as Array<{ id: string; name: string; cost_points: number }> ?? [])
+const availableTests = computed(() => (caseData.value as Record<string, unknown>)?.available_tests as Array<{ id: string; name: string; cost_points: number; tat_minutes?: number }> ?? [])
 const availableInterventions = computed(() => (caseData.value as Record<string, unknown>)?.available_interventions as Array<{ id: string; name: string }> ?? [])
+
+// ── Real-time sim clock ──────────────────────────────────────────
+// 1 real second = 1 sim second → 1 real minute = 1 sim minute.
+// The local ticker increments the display every second.
+// Every 60 seconds we sync to the server (advance_time 1) so the DB
+// stays current, deterioration rules fire, and test results unlock.
+let clockTick: ReturnType<typeof setInterval> | null = null
+let secondsSinceSync = 0
+
+function startSimClock() {
+  if (clockTick) return // already running
+  clockTick = setInterval(async () => {
+    if (!session.value || session.value.status === 'completed') return
+
+    // Tick local display every second
+    session.value.elapsedMinutes = (session.value.elapsedMinutes ?? 0) + (1 / 60)
+
+    secondsSinceSync++
+    if (secondsSinceSync >= 60) {
+      secondsSinceSync = 0
+      // Server sync: advance 1 sim-minute, fire deterioration + result checks
+      try {
+        await advanceTime(1)
+      } catch { /* non-critical */ }
+    }
+  }, 1000)
+}
+
+function stopSimClock() {
+  if (clockTick) { clearInterval(clockTick); clockTick = null }
+}
 
 onMounted(async () => {
   await resumeSession(parseInt(caseId))
   if (session.value?.sessionId) {
     await restoreHistory(session.value.sessionId)
   }
+  if (session.value?.status === 'in_progress' || session.value?.status === 'created') {
+    startSimClock()
+  }
 })
+
+onUnmounted(() => stopSimClock())
 
 async function restoreHistory(sessionId: string) {
   try {
@@ -499,10 +628,28 @@ async function restoreHistory(sessionId: string) {
     for (const t of h.orderedTests) orderedTestIds.value.add(t)
 
     // Restore test results
+    const completedTestIds = new Set<string>()
     for (const r of h.testResults) {
       if (!testResultsList.value.find(x => x.testId === r.testId)) {
         testResultsList.value.push(r)
         expandedResults.value.add(r.testId)
+      }
+      completedTestIds.add(r.testId)
+    }
+
+    // Start pollers for tests that were ordered but results not yet in.
+    // caseData may not be loaded yet, so fetch it inline if needed.
+    let testDefs = availableTests.value
+    if (!testDefs.length) {
+      try {
+        const cd = await $fetch<Record<string, unknown>>(`/api/cases/${caseId}`)
+        testDefs = (cd?.available_tests as typeof testDefs) ?? []
+      } catch { /* use empty — names will fallback to testId */ }
+    }
+    for (const testId of h.orderedTests) {
+      if (!completedTestIds.has(testId)) {
+        const testDef = testDefs.find(t => t.id === testId)
+        fetchResultsAfterDelay(testId, testDef?.name ?? testId, testDef?.tat_minutes ?? 30)
       }
     }
 
@@ -551,34 +698,33 @@ async function handleOrderTest(testId: string) {
   }
 }
 
-async function fetchResultsAfterDelay(testId: string, testName: string, tatMinutes: number) {
+// Results come in 10 real seconds after ordering, regardless of TAT.
+async function fetchResultsAfterDelay(testId: string, testName: string, _tatMinutes: number) {
+  if (pendingResultTests.value.has(testId)) return // already polling
   pendingResultTests.value.add(testId)
 
-  // Wait 10 real seconds, then advance simulation time to cover the TAT
   await new Promise(resolve => setTimeout(resolve, 10_000))
-  await advanceTime(tatMinutes)
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const res = await getResults(testId)
-    if (res?.status === 'complete' && res?.results) {
-      const raw = { ...res.results as Record<string, unknown> }
-      const interpretation = raw.interpretation as string | undefined
-      delete raw.interpretation
-      delete raw.wbc_value
-      const d = Object.keys(raw).length > 0
-        ? raw
-        : interpretation
-          ? { summary: interpretation }
-          : { result: 'No detailed values available' }
-      if (!testResultsList.value.find(r => r.testId === testId)) {
-        testResultsList.value.push({ testId, testName, data: d })
-        expandedResults.value.add(testId)
-      }
-      pendingResultTests.value.delete(testId)
-      return
+  if (testResultsList.value.find(r => r.testId === testId)) {
+    pendingResultTests.value.delete(testId)
+    return
+  }
+
+  const res = await getResults(testId)
+  if (res?.status === 'complete' && res?.results) {
+    const raw = { ...res.results as Record<string, unknown> }
+    const interpretation = raw.interpretation as string | undefined
+    delete raw.interpretation
+    delete raw.wbc_value
+    const d = Object.keys(raw).length > 0
+      ? raw
+      : interpretation
+        ? { summary: interpretation }
+        : { result: 'No detailed values available' }
+    if (!testResultsList.value.find(r => r.testId === testId)) {
+      testResultsList.value.push({ testId, testName, data: d })
+      expandedResults.value.add(testId)
     }
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    await advanceTime(tatMinutes)
   }
   pendingResultTests.value.delete(testId)
 }
@@ -587,7 +733,7 @@ async function manualRefreshResults() {
   for (const testId of orderedTestIds.value) {
     if (testResultsList.value.find(r => r.testId === testId)) continue
     const testDef = availableTests.value.find(t => t.id === testId)
-    fetchResultsAfterDelay(testId, testDef?.name ?? testId, 60)
+    fetchResultsAfterDelay(testId, testDef?.name ?? testId, testDef?.tat_minutes ?? 30)
   }
 }
 
@@ -619,7 +765,7 @@ async function handleSubmitDifferential() {
 async function handleSubmitDiagnosis() { await submitDiagnosis(diagnosisText.value, diagnosisReasoning.value) }
 
 async function handleEndCase() {
-  // Navigate immediately — evaluation page handles the API call with loading UI
+  stopSimClock()
   useState('evaluationSessionId', () => session.value?.sessionId ?? '').value = session.value?.sessionId ?? ''
   router.push(`/case/${caseId}/evaluation`)
 }
@@ -648,6 +794,11 @@ function formatResultVal(val: unknown): string {
 .slide-enter-from, .slide-leave-to { transform: translateX(100%); }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.15s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* Red alert flicker */
+.flicker-enter-active { transition: opacity 0.08s ease-in; }
+.flicker-leave-active { transition: opacity 0.18s ease-out; }
+.flicker-enter-from, .flicker-leave-to { opacity: 0; }
 
 /* ── Monitor styles ── */
 .monitor-body {

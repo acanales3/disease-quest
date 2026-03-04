@@ -54,24 +54,26 @@ const index = computed(() => props.index as KeyOfT)
 const isMounted = useMounted()
 const activeSegmentKey = ref<string>()
 
-  // Define fixed color mapping for Registered and Unregistered
-const categoryColors: Record<string, string> = {
+// Default colors when explicit colors are not provided
+const fallbackCategoryColors: Record<string, string> = {
   Registered: "hsl(267, 93%, 88%)",
   Unregistered: "hsl(60, 90%, 70%)",
 }
 
+const resolvedColors = computed(() => {
+  if (props.colors?.length) {
+    return props.data.map((_, i) => props.colors?.[i] || props.colors?.[props.colors.length - 1] || "#ccc")
+  }
+  return props.data.map(item => fallbackCategoryColors[item[props.index]] || "#ccc")
+})
+
 // Legend items with consistent colors
 const legendItems = computed(() => 
-  props.data.map(item => ({
+  props.data.map((item, i) => ({
     name: item[props.index],
-    color: categoryColors[item[props.index]] || "#ccc",
+    color: resolvedColors.value[i] || "#ccc",
     inactive: false,
   }))
-)
-
-// Donut color function (so segments always match)
-const colors = computed(() => 
-  props.data.map(item => categoryColors[item[props.index]] || "#ccc")
 )
 
 const totalValue = computed(() => {
@@ -85,7 +87,7 @@ const totalValue = computed(() => {
 </script>
 
 <template>
-  <div :class="cn('w-full h-48 flex flex-col items-end', $attrs.class ?? '')">
+  <div :class="cn('dq-donut-chart w-full h-48 flex flex-col items-end', $attrs.class ?? '')">
     <VisSingleContainer :style="{ height: isMounted ? '100%' : 'auto' }" :margin="{ left: 20, right: 20 }" :data="data">
       <ChartSingleTooltip
         :selector="Donut.selectors.segment"
@@ -99,7 +101,7 @@ const totalValue = computed(() => {
         :value="(d: Data) => d[props.category]"
         :data="props.data"
         :sort-function="sortFunction"
-        :color="colors"
+        :color="resolvedColors"
         :arc-width="type === 'donut' ? 20 : 0"
         :show-background="false"
         :central-label="type === 'donut' && props.renderLabels && props.data.length ? valueFormatter(props.centralLabel) : ''"
@@ -125,3 +127,13 @@ const totalValue = computed(() => {
     </VisSingleContainer>
   </div>
 </template>
+
+<style scoped>
+.dq-donut-chart {
+  --vis-text-color: #111827;
+}
+
+.dq-donut-chart :deep(svg text) {
+  fill: #111827 !important;
+}
+</style>

@@ -69,7 +69,12 @@ export default defineEventHandler(async (event) => {
     chief_complaint: patientState.chief_complaint ?? null,
     // Interventions & tests list (names only, for UI)
     available_tests: ((content?.diagnostic_tests ?? []) as Array<Record<string, unknown>>).map(
-      (t) => ({ id: t.id, name: t.display_name, cost_points: t.cost_points })
+      (t) => ({
+        id: t.id,
+        name: t.display_name,
+        cost_points: t.cost_points,
+        tat_minutes: t.tat_minutes ?? null,
+      })
     ),
     available_interventions: ((content?.interventions ?? []) as Array<Record<string, unknown>>).map(
       (i) => ({ id: i.id, name: i.display_name, options: i.options ?? [] })
