@@ -28,23 +28,23 @@ const emit = defineEmits<{
   (e: "refresh"): void;
 }>();
 
-const isReplaying = ref(false);
-
-function onEdit() {
+const onEdit = () => {
   emit("edit", props.caseData);
-}
+};
 
-function onDelete() {
+const onDelete = () => {
   emit("delete", props.caseData);
-}
+};
 
-function onRemoveFromClassroom() {
-  emit("removeFromClassroom", props.caseData.id as number);
-}
+const onRemoveFromClassroom = () => {
+  emit("removeFromClassroom", props.caseData.id);
+};
 
-function onRemoveFromClassrooms() {
+const onRemoveFromClassrooms = () => {
   emit("removeFromClassrooms", props.caseData);
-}
+};
+
+const isReplaying = ref(false);
 
 const getButtonText = () => {
   switch (props.caseData.status) {
@@ -71,23 +71,30 @@ const handleReplay = async () => {
   isReplaying.value = true;
 
   try {
+    // Look up the most recent completed session for this case
     const activeRes = await $fetch<{ sessionId: string | null }>(
       `/api/sessions/active?caseId=${props.caseData.id}&includeCompleted=true`,
     );
 
     if (!activeRes.sessionId) {
+      // No session found — nothing to reset, just emit refresh so the
+      // parent re-fetches and the row shows the correct state
       emit("refresh");
       return;
     }
 
+    // Reset the completed session in the database
     await $fetch("/api/sessions/replay", {
       method: "POST",
       body: { sessionId: activeRes.sessionId },
     });
 
+    // Tell the parent table to re-fetch cases so this row updates
+    // from "completed / Replay" → "not started / Begin" without any navigation
     emit("refresh");
   } catch (err) {
     console.error("Replay failed:", err);
+    // Still emit refresh so the UI isn't left in a stale state
     emit("refresh");
   } finally {
     isReplaying.value = false;
@@ -116,11 +123,7 @@ const handleReplay = async () => {
         <span v-else>{{ getButtonText() }}</span>
       </DropdownMenuItem>
 
-      <DropdownMenuItem
-        v-if="props.role === 'admin'"
-        class="cursor-pointer"
-        @click="onEdit"
-      >
+      <DropdownMenuItem v-if="props.role === 'admin'" class="cursor-pointer" @click="onEdit">
         Edit
       </DropdownMenuItem>
       <DropdownMenuItem
@@ -154,3 +157,4 @@ const handleReplay = async () => {
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
+

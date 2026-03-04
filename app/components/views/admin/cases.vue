@@ -5,9 +5,7 @@
         <div>
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Content</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Cases</h1>
-          <p class="text-gray-500 text-[15px] mt-2">
-            Create, edit, play, and assign cases to classrooms.
-          </p>
+          <p class="text-gray-500 text-[15px] mt-2">Create, edit, play, and assign cases to classrooms.</p>
           <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
             <Icon name="si:book-line" size="15" class="text-white" />
             <span class="text-[13px] font-medium text-white">{{ data.length }} cases</span>
@@ -33,13 +31,8 @@
       </div>
     </div>
 
-    <div v-if="isLoading" class="rounded-lg border border-gray-200 bg-white px-4 py-6 text-sm text-gray-500">
-      Loading cases...
-    </div>
-    <div v-else-if="errorMessage" class="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
-      {{ errorMessage }}
-    </div>
-    <div v-else class="w-full py-2">
+    <div class="w-full py-2">
+      <!-- Cases Table -->
       <DataTable :columns="visibleColumns" :data="data" @refresh="refreshCases()" />
     </div>
 
@@ -58,6 +51,7 @@
       @reset="resetDeleteState"
     />
 
+    <!-- Remove from Classroom(s) Modal -->
     <Dialog v-model:open="showRemoveDialog">
       <DialogContent class="max-w-md">
         <DialogHeader>
@@ -75,9 +69,9 @@
             class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 cursor-pointer"
           >
             <input
-              v-model="selectedClassroomIds"
               type="checkbox"
               :value="cr.id"
+              v-model="selectedClassroomIds"
               class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
             />
             <span class="text-sm text-gray-700">{{ cr.name }}</span>
@@ -108,7 +102,7 @@ import { computed, watchEffect, ref } from "vue";
 import { getColumns } from "@/components/CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import CreateCaseDialog from "../../../components/CreateCaseDialog/CreateCaseDialog.vue";
-import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue";
+import TotalCount from "../../../components/ui/TotalCount.vue";
 import EditCaseDialog from "@/components/EditCaseDialog/EditCaseDialog.vue";
 import DeleteCaseModal from "@/components/DeleteCaseModal/DeleteCaseModal.vue";
 import { Button } from "@/components/ui/button";
@@ -120,6 +114,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import AssignCaseDialog from "~/components/AssignCaseDialog/AssignCaseDialog.vue";
 import { Icon } from "#components";
 
 type DeleteState =
@@ -127,8 +122,6 @@ type DeleteState =
   | { status: "loading"; message?: string }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
-
-type PageMessage = { type: "success" | "error"; text: string };
 
 const {
   data: apiData,
@@ -145,18 +138,6 @@ const {
 
 const data = ref<Case[]>([]);
 const classroomsData = ref<Classroom[]>([]);
-const pageMessage = ref<PageMessage | null>(null);
-
-const isEditModalOpen = ref(false);
-const caseToEdit = ref<Case | null>(null);
-const isDeleteModalOpen = ref(false);
-const caseToDelete = ref<Case | null>(null);
-const deleteState = ref<DeleteState>({ status: "idle" });
-
-const showRemoveDialog = ref(false);
-const pendingCase = ref<Case | null>(null);
-const selectedClassroomIds = ref<number[]>([]);
-const isRemoving = ref(false);
 
 watchEffect(() => {
   data.value = apiData.value ?? [];
@@ -182,6 +163,30 @@ const visibleColumns = computed(() => {
 });
 
 const isLoading = computed(() => casesPending.value || classroomsPending.value);
+
+const errorMessage = computed(() => {
+  const e: any = casesError.value || classroomsError.value;
+  if (!e) return "";
+  if (e.statusCode === 401) return "You are not logged in.";
+  if (e.statusCode === 403) return "You do not have permission to view cases.";
+  if (e.statusCode === 400) return e.statusMessage || "Bad request.";
+  return e.statusMessage || e.message || "Unknown error.";
+});
+
+
+type PageMessage = { type: "success" | "error"; text: string };
+const pageMessage = ref<PageMessage | null>(null);
+const isEditModalOpen = ref(false);
+const caseToEdit = ref<Case | null>(null);
+const isDeleteModalOpen = ref(false);
+const caseToDelete = ref<Case | null>(null);
+const deleteState = ref<DeleteState>({ status: "idle" });
+
+/* ---------- REMOVE FROM CLASSROOM(S) ---------- */
+const showRemoveDialog = ref(false);
+const pendingCase = ref<Case | null>(null);
+const selectedClassroomIds = ref<number[]>([]);
+const isRemoving = ref(false);
 
 function handleEditClick(caseData: Case) {
   pageMessage.value = null;
@@ -248,9 +253,7 @@ async function handleDeleteConfirm(caseData: Case) {
       status: "success",
       message: "Case deleted successfully.",
     };
-
     await refreshCases();
-
     pageMessage.value = {
       type: "success",
       text: `Case "${caseData.name}" has been deleted.`,
@@ -272,37 +275,29 @@ function openRemoveDialog(caseData: Case) {
 
 async function confirmRemoveFromClassrooms() {
   if (!pendingCase.value || selectedClassroomIds.value.length === 0) return;
-
   isRemoving.value = true;
   pageMessage.value = null;
   const count = selectedClassroomIds.value.length;
-
   try {
     await Promise.all(
       selectedClassroomIds.value.map((classroomId) =>
         $fetch(`/api/classrooms/${classroomId}/cases/${pendingCase.value!.id}`, {
           method: "DELETE",
-        }),
-      ),
+        })
+      )
     );
-
     showRemoveDialog.value = false;
     await refreshCases();
     pageMessage.value = {
       type: "success",
       text: `Case removed from ${count} classroom${count > 1 ? "s" : ""} successfully.`,
     };
-    setTimeout(() => {
-      pageMessage.value = null;
-    }, 5000);
+    setTimeout(() => { pageMessage.value = null; }, 5000);
   } catch (error: any) {
     console.error("Failed to remove case from classrooms:", error);
     pageMessage.value = {
       type: "error",
-      text:
-        error?.data?.statusMessage ||
-        error?.message ||
-        "Failed to remove case from classroom(s).",
+      text: error?.data?.statusMessage || error?.message || "Failed to remove case from classroom(s).",
     };
   } finally {
     isRemoving.value = false;
@@ -310,13 +305,5 @@ async function confirmRemoveFromClassrooms() {
     selectedClassroomIds.value = [];
   }
 }
-
-const errorMessage = computed(() => {
-  const e: any = casesError.value || classroomsError.value;
-  if (!e) return "";
-  if (e.statusCode === 401) return "You are not logged in.";
-  if (e.statusCode === 403) return "You do not have permission to view cases.";
-  if (e.statusCode === 400) return e.statusMessage || "Bad request.";
-  return e.statusMessage || e.message || "Unknown error.";
-});
 </script>
+

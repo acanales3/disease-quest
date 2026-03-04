@@ -26,22 +26,7 @@ interface ColumnOptions {
   onRefresh?: () => void;
 }
 
-function normalizeOptions(
-  options?: ColumnOptions | (() => void),
-): ColumnOptions | undefined {
-  if (!options) return undefined;
-  if (typeof options === "function") {
-    return { onRefresh: options };
-  }
-  return options;
-}
-
-export function getColumns(
-  role: string,
-  options?: ColumnOptions | (() => void),
-): ColumnDef<Case>[] {
-  const resolvedOptions = normalizeOptions(options);
-
+export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Case>[] {
   return [
     {
       accessorKey: "id",
@@ -49,11 +34,7 @@ export function getColumns(
       cell: ({ row }) => {
         const original = row.original as Case;
         const dbId = original.case_id ?? original.id;
-        return h(
-          "div",
-          { class: "text-[13px] text-gray-400 tabular-nums" },
-          String(dbId),
-        );
+        return h("div", { class: "text-[13px] text-gray-400 tabular-nums" }, String(dbId));
       },
     },
     {
@@ -145,7 +126,7 @@ export function getColumns(
         const statusClasses = {
           "not started": "bg-red-50 text-red-600 border border-red-200",
           "in progress": "bg-blue-50 text-blue-600 border border-blue-200",
-          completed: "bg-green-50 text-green-700 border border-green-200",
+          "completed": "bg-green-50 text-green-700 border border-green-200"
         };
 
         const statusText = {
@@ -175,15 +156,16 @@ export function getColumns(
           h(DropdownAction, {
             caseData,
             role,
-            classroomId: resolvedOptions?.classroomId,
-            onEdit: resolvedOptions?.onEdit,
-            onDelete: resolvedOptions?.onDelete,
-            onRemoveFromClassroom: resolvedOptions?.onRemoveFromClassroom,
-            onRemoveFromClassrooms: resolvedOptions?.onRemoveFromClassrooms,
-            onRefresh: resolvedOptions?.onRefresh,
+            classroomId: options?.classroomId,
+            onEdit: options?.onEdit,
+            onDelete: options?.onDelete,
+            onRemoveFromClassroom: options?.onRemoveFromClassroom,
+            onRemoveFromClassrooms: options?.onRemoveFromClassrooms,
+            onRefresh: options?.onRefresh,
           }),
         );
       },
     },
   ];
 }
+
