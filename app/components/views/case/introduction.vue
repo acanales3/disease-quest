@@ -113,7 +113,8 @@ async function startCase() {
   starting.value = true
   startError.value = null
   try {
-    const sessionId = await createSession(parseInt(caseId))
+    const classroomId = route.query.classroomId ? parseInt(route.query.classroomId as string) : undefined
+    const sessionId = await createSession(parseInt(caseId), classroomId)
     if (sessionId) {
       useState('currentSessionId', () => sessionId).value = sessionId
       router.push(`/case/${caseId}/mentor`)

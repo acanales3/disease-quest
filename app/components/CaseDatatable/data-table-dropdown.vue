@@ -53,7 +53,13 @@ const handlePrimaryAction = async () => {
   if (props.caseData.status === "completed") {
     await handleReplay();
   } else {
-    router.push(`/case/${props.caseData.id}/introduction`);
+    // If classroomId is provided as a prop (from dashboard) or part of the caseData, pass it in URL
+    const id = props.classroomId || (props.caseData as any).classroomId;
+    if (id) {
+      router.push(`/case/${props.caseData.id}/introduction?classroomId=${id}`);
+    } else {
+      router.push(`/case/${props.caseData.id}/introduction`);
+    }
   }
 };
 
