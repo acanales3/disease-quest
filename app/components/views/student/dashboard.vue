@@ -240,9 +240,13 @@ onUnmounted(() => {
 })
 
 const statusClass = (status: StudentCase["status"]) => {
-  if (status === "completed") return "bg-green-50 text-green-700 border-green-200"
-  if (status === "in progress") return "bg-blue-50 text-blue-600 border-blue-200"
-  return "bg-black text-white border-black"
+  if (status === "completed") {
+    return "bg-gradient-to-r from-emerald-600 to-teal-700 text-white border-transparent shadow-sm"
+  }
+  if (status === "in progress") {
+    return "bg-gradient-to-r from-blue-600 to-indigo-700 text-white border-transparent shadow-sm"
+  }
+  return "bg-gradient-to-r from-rose-600 to-red-700 text-white border-transparent shadow-sm"
 }
 
 const statusLabel = (status: StudentCase["status"]) => {
