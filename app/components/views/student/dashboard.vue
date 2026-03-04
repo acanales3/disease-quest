@@ -122,7 +122,7 @@
           <div class="divide-y divide-gray-100">
             <NuxtLink to="/student/classrooms" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-black flex items-center justify-center">
-                <Icon name="simple-icons:googleclassroom" size="15" />
+                <ClassroomIcon :size="20" icon-class="text-black" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">My Classrooms</p>
@@ -165,6 +165,7 @@
 
 <script setup lang="ts">
 import TotalCount from '@/components/ui/TotalCount.vue'
+import ClassroomIcon from '@/components/icons/ClassroomIcon.vue'
 import { computed, ref, watch, onUnmounted } from 'vue'
 import TrophyCard from '~/components/TrophyCard/TrophyCard.vue'
 import { Icon } from '#components'

@@ -25,21 +25,21 @@
       <!-- left person -->
       <circle cx="7.5" cy="9" r="1.35" fill="currentColor" />
       <path
-        d="M5.2 14.8 C5.2 12.8 6.2 11.8 7.5 11.8 C8.8 11.8 9.8 12.8 9.8 14.8Z"
+        d="M4.8 14.8 C4.8 13.1 5.9 12.2 7.5 12.2 C9.1 12.2 10.2 13.1 10.2 14.8Z"
         fill="currentColor"
       />
 
       <!-- right person -->
       <circle cx="16.5" cy="9" r="1.35" fill="currentColor" />
       <path
-        d="M14.2 14.8 C14.2 12.8 15.2 11.8 16.5 11.8 C17.8 11.8 18.8 12.8 18.8 14.8Z"
+        d="M13.8 14.8 C13.8 13.1 14.9 12.2 16.5 12.2 C18.1 12.2 19.2 13.1 19.2 14.8Z"
         fill="currentColor"
       />
 
       <!-- centre person (on top, slightly larger) -->
       <circle cx="12" cy="7.6" r="1.7" fill="currentColor" />
       <path
-        d="M9.2 14.8 C9.2 12.2 10.4 11.0 12 11.0 C13.6 11.0 14.8 12.2 14.8 14.8Z"
+        d="M8.7 14.8 C8.7 12.8 10.0 11.7 12 11.7 C14.0 11.7 15.3 12.8 15.3 14.8Z"
         fill="currentColor"
       />
     </g>

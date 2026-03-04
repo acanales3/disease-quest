@@ -12,7 +12,7 @@
           </p>
           <div class="mt-4 flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 bg-white text-[#4d1979] text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">
-              <Icon name="simple-icons:googleclassroom" size="15" />
+              <ClassroomIcon :size="20" icon-class="text-[#4d1979]" />
               {{ dashboardData?.totalClassrooms ?? 0 }} classrooms
             </span>
           </div>
@@ -36,7 +36,7 @@
             label="Students"
           />
           <TotalCount
-            icon="simple-icons:googleclassroom"
+            icon-type="classroom"
             :count="dashboardData?.totalClassrooms ?? 0"
             label="Classrooms"
           />
@@ -124,7 +124,7 @@
             </NuxtLink>
             <NuxtLink to="/instructor/classrooms" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
-                <Icon name="simple-icons:googleclassroom" size="15" />
+                <ClassroomIcon :size="20" icon-class="text-[#4d1979]" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Classrooms</p>
@@ -159,6 +159,7 @@
 <script setup lang="ts">
 import { DonutChart } from "@/components/ui/chart-donut"
 import TotalCount from "@/components/ui/TotalCount.vue"
+import ClassroomIcon from "@/components/icons/ClassroomIcon.vue"
 import { onMounted, ref, computed } from "vue"
 
 export interface InstructorDashboard {

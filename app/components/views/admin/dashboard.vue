@@ -28,7 +28,7 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <TotalCount :count="counts.students" label="Students" icon="hugeicons:students" :meta="latestMeta.students" />
       <TotalCount :count="counts.instructors" label="Instructors" icon="hugeicons:teacher" :meta="latestMeta.instructors" />
-      <TotalCount :count="counts.classrooms" label="Classrooms" icon="simple-icons:googleclassroom" :meta="latestMeta.classrooms" />
+      <TotalCount :count="counts.classrooms" label="Classrooms" icon-type="classroom" :meta="latestMeta.classrooms" />
       <TotalCount :count="counts.cases" label="Cases" icon="si:book-line" :meta="latestMeta.cases" />
     </div>
     </div>
@@ -60,7 +60,7 @@
 
         <NuxtLink to="/admin/classrooms" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <Icon name="simple-icons:googleclassroom" size="16" class="text-white" />
+            <ClassroomIcon :size="22" icon-class="text-white" />
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Classrooms</p>
@@ -105,6 +105,7 @@
 </template>
 
 <script setup>
+import ClassroomIcon from "@/components/icons/ClassroomIcon.vue";
 import TotalCount from "@/components/ui/TotalCount.vue";
 
 const { data: stats } = await useFetch('/api/admins/stats')
