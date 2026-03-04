@@ -70,13 +70,10 @@ const assignCases = async () => {
   <Dialog :open="isOpen" @update:open="onOpenChange">
     <DialogTrigger as-child>
       <Button
-        variant="outline"
-        class="h-28 w-48 flex flex-col items-center justify-center gap-2 p-4"
+        class="h-9 px-4 rounded-lg bg-[#4d1979] hover:bg-[#3f1564] text-white flex items-center gap-2"
       >
-        <div class="flex flex-col items-center justify-center gap-2">
-          <Icon name="lucide:arrow-right-circle" size="24" class="text-black" />
-          <span class="text-sm">Assign Case to Classroom</span>
-        </div>
+        <Icon name="lucide:send" size="14" />
+        <span class="text-sm">Assign Case</span>
       </Button>
     </DialogTrigger>
 
@@ -147,7 +144,7 @@ const assignCases = async () => {
             <!-- Selected classroom chip -->
             <div v-if="selectedClassroom" class="flex items-center gap-1.5">
               <span class="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1">
-                <Icon name="lucide:school" size="12" />
+                <Icon name="lucide:layout-grid" size="12" />
                 {{ selectedClassroom.name }}
                 <button
                   type="button"

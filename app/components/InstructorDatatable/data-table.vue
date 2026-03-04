@@ -140,34 +140,31 @@ const handleApplyFilters = (filters: any) => {
 </script>
 
 <template>
-  <div class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden">
+  <div class="bg-white rounded-xl border border-gray-200 w-full max-w-full min-w-0 overflow-hidden">
     <!-- Top bar -->
-    <div class="flex items-center justify-between py-4">
-      <div class="text-md font-light text-black">
-        All {{ props.role === "instructor" ? "Instructors" : "Students" }} List
-      </div>
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <p class="text-sm font-medium text-gray-900">Records</p>
 
-      <div class="flex items-center space-x-4">
-        <!-- Filters -->
+      <div class="flex items-center gap-2">
         <FilterDialog :classrooms="props.classrooms || []" :role="props.role || 'student'" :show-msyear="false" @apply-filters="handleApplyFilters" />
 
-        <!-- Email search -->
-        <Input
-          class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
-          placeholder="Search by Email"
-          :model-value="table.getColumn('email')?.getFilterValue() as string"
-          @update:model-value="table.getColumn('email')?.setFilterValue($event)"
-        />
+        <div class="relative">
+          <Icon name="lucide:search" size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Input
+            class="h-8 pl-8 pr-3 text-sm w-56 border-gray-200 bg-white rounded-lg placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-[#4d1979]/30 focus-visible:border-[#4d1979]"
+            placeholder="Search by email..."
+            :model-value="table.getColumn('email')?.getFilterValue() as string"
+            @update:model-value="table.getColumn('email')?.setFilterValue($event)"
+          />
+        </div>
 
-        <!-- Column toggle -->
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button class="bg-gray-100 text-gray-500 hover:bg-gray-200">
+            <button class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
               Columns
-              <ChevronDown class="w-4 h-4 ml-2" />
-            </Button>
+              <ChevronDown class="w-3.5 h-3.5 text-gray-400" />
+            </button>
           </DropdownMenuTrigger>
-
           <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
               v-for="column in hideableColumns"
@@ -184,11 +181,15 @@ const handleApplyFilters = (filters: any) => {
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md overflow-x-auto">
-      <Table class="w-full text-center font-normal text-gray-500">
-        <TableHeader class="bg-blue-50">
-          <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <TableHead v-for="header in headerGroup.headers" :key="header.id" class="text-center font-semibold py-2 px-4">
+    <div class="overflow-x-auto">
+      <Table class="w-full text-sm">
+        <TableHeader>
+          <TableRow class="border-b border-gray-100 hover:bg-transparent">
+            <TableHead
+              v-for="header in table.getHeaderGroups()[0]?.headers"
+              :key="header.id"
+              class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400 px-5 py-3 bg-gray-50/60"
+            >
               <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
             </TableHead>
           </TableRow>
@@ -196,8 +197,16 @@ const handleApplyFilters = (filters: any) => {
 
         <TableBody>
           <template v-if="table.getRowModel().rows?.length">
-            <TableRow v-for="(row, idx) in table.getRowModel().rows" :key="row.id" :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'">
-              <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
+            <TableRow
+              v-for="row in table.getRowModel().rows"
+              :key="row.id"
+              class="border-b border-gray-100 last:border-0 hover:bg-gray-50/60 transition-colors"
+            >
+              <TableCell
+                v-for="cell in row.getVisibleCells()"
+                :key="cell.id"
+                class="px-5 py-3.5 text-left text-gray-700"
+              >
                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
               </TableCell>
             </TableRow>
@@ -205,8 +214,8 @@ const handleApplyFilters = (filters: any) => {
 
           <template v-else>
             <TableRow>
-              <TableCell :colspan="props.columns.length" class="h-24 text-center">
-                No results.
+              <TableCell :colspan="props.columns.length" class="h-32 text-center text-sm text-gray-400">
+                No records found.
               </TableCell>
             </TableRow>
           </template>
@@ -215,9 +224,28 @@ const handleApplyFilters = (filters: any) => {
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-end py-4 space-x-2">
-      <Button variant="outline" size="sm" :disabled="!table.getCanPreviousPage()" @click="table.previousPage()">Previous</Button>
-      <Button variant="outline" size="sm" :disabled="!table.getCanNextPage()" @click="table.nextPage()">Next</Button>
+    <div class="flex items-center justify-between px-5 py-3.5 border-t border-gray-100">
+      <p class="text-xs text-gray-400">
+        Showing {{ table.getRowModel().rows.length }} of {{ table.getFilteredRowModel().rows.length }} records
+      </p>
+      <div class="flex items-center gap-2">
+        <button
+          class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          :disabled="!table.getCanPreviousPage()"
+          @click="table.previousPage()"
+        >
+          <Icon name="lucide:chevron-left" size="14" />
+          Previous
+        </button>
+        <button
+          class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          :disabled="!table.getCanNextPage()"
+          @click="table.nextPage()"
+        >
+          Next
+          <Icon name="lucide:chevron-right" size="14" />
+        </button>
+      </div>
     </div>
   </div>
 </template>

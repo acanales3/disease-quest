@@ -7,14 +7,11 @@ import type { Classroom } from "../ClassroomDatatable/columns";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 
 export interface Student {
   id: number;
-
-  // UUID from Supabase: students.user_id (FK - users.id).
-  // Using numeric id for datatable display; userId" for API operations.
   userId?: string;
   name: string;
   nickname?: string;
@@ -24,104 +21,74 @@ export interface Student {
   classroom: number;
   classrooms?: number[];
   status: "registered" | "unregistered";
-  // action column still needed
 }
 
 export interface ColumnOptions {
   onDelete?: (student: Student) => void;
   onRemoveFromClassroom?: (student: Student) => void;
   classrooms?: Classroom[];
+  hideClassroomColumn?: boolean;
 }
 
-export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Student>[] {
-  const classroomsMap = new Map((options?.classrooms || []).map(c => [c.id, c.name]));
+export function getColumns(
+  role: string,
+  options?: ColumnOptions,
+): ColumnDef<Student>[] {
+  const classroomsMap = new Map(
+    (options?.classrooms || []).map((c) => [c.id, c.name]),
+  );
 
-  return [
+  const allColumns: ColumnDef<Student>[] = [
     {
       accessorKey: "id",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "No"),
-      cell: ({ row }) => {
-        return h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          (row.index + 1).toString()
-        );
-      },
+      header: () => h("div", {}, "NO"),
+      cell: ({ row }) =>
+        h("div", { class: "text-gray-500" }, (row.index + 1).toString()),
     },
     {
       accessorKey: "name",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Name"),
-      cell: ({ row }) => {
-        const name = row.getValue("name") as string;
-        return h("div", { class: "text-center font-normal text-gray-600" }, name);
-      },
-    },
-    {
-      accessorKey: "email",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Email"),
+      header: () => h("div", {}, "NAME"),
       cell: ({ row }) =>
         h(
           "div",
-          { class: "lowercase text-center font-normal text-gray-600" },
-          row.getValue("email")
+          { class: "font-medium text-gray-900" },
+          row.getValue("name") as string,
         ),
     },
     {
+      accessorKey: "email",
+      header: () => h("div", {}, "EMAIL"),
+      cell: ({ row }) =>
+        h("div", { class: "lowercase text-gray-600" }, row.getValue("email")),
+    },
+    {
       accessorKey: "school",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "School"),
-      cell: ({ row }) => {
-        const school = row.getValue("school") as string;
-        return h(
-          "div",
-          { class: "text-center font-normal text-gray-600" },
-          school
-        );
-      },
+      header: () => h("div", {}, "SCHOOL"),
+      cell: ({ row }) =>
+        h("div", { class: "text-gray-600" }, row.getValue("school") as string),
     },
     {
       accessorKey: "classroom",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Classroom"),
+      header: () => h("div", {}, "CLASSROOM"),
       cell: ({ row }) => {
         const student = row.original;
-
-        // Get all classroom IDs for this student
-        const classroomIds = student.classrooms && student.classrooms.length > 0
-          ? student.classrooms
-          : student.classroom && student.classroom !== 0
-            ? [student.classroom]
-            : []
-
-        // Map to names
-        const roomNames = (student.classrooms || []).map(c => c.name || String(c.id));
+        const roomNames = (student.classrooms || []).map(
+          (c: any) => c.name || String(c.id),
+        );
 
         if (!roomNames || roomNames.length === 0) {
-          return h(
-            "div",
-            { class: "text-center font-normal text-gray-600" },
-            "-"
-          );
+          return h("div", { class: "text-gray-400" }, "-");
         }
 
         const first = roomNames[0] || "";
-        // Truncate if long or if there are multiple
-        const text = roomNames.length > 1 || first.length > 20
-          ? (first.length > 20 ? first.slice(0, 20) + '...' : first) + (roomNames.length > 1 ? '...' : '')
-          : first;
-
+        const text =
+          roomNames.length > 1 || first.length > 20
+            ? (first.length > 20 ? first.slice(0, 20) + "..." : first) +
+              (roomNames.length > 1 ? "..." : "")
+            : first;
         const needsTooltip = roomNames.length > 1 || first.length > 20;
 
-        if (!needsTooltip) {
-          return h(
-            "div",
-            { class: "text-center font-normal text-gray-600" },
-            text
-          );
-        }
+        if (!needsTooltip) return h("div", { class: "text-gray-600" }, text);
 
         return h(
           Tooltip,
@@ -136,55 +103,56 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Stu
                     h(
                       "div",
                       {
-                        class: "text-center cursor-pointer text-gray-600 hover:text-gray-900 transition",
+                        class:
+                          "cursor-pointer text-gray-600 hover:text-gray-900 transition",
                       },
-                      text
+                      text,
                     ),
-                }
+                },
               ),
-
               h(
                 TooltipContent,
                 { side: "bottom", class: "bg-white shadow-md max-w-xs" },
                 {
-                  default: () => roomNames.map(name =>
-                    h("div", { class: "text-sm text-gray-600 py-0.5" }, name)
-                  )
-                }
+                  default: () =>
+                    roomNames.map((name: string) =>
+                      h("div", { class: "text-sm text-gray-600 py-0.5" }, name),
+                    ),
+                },
               ),
             ],
-          }
+          },
         );
       },
     },
     {
       accessorKey: "msyear",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "MS-Year"),
+      header: () => h("div", {}, "MS-YEAR"),
       cell: ({ row }) => {
         const msyear = row.getValue("msyear") as number | null;
         return h(
           "div",
-          { class: "text-center font-normal text-gray-600" },
-          msyear ? msyear.toString() : ""
+          { class: "text-gray-600" },
+          msyear ? msyear.toString() : "-",
         );
       },
     },
     {
       accessorKey: "status",
-      header: () =>
-        h("div", { class: "text-center font-normal text-black" }, "Status"),
+      header: () => h("div", {}, "STATUS"),
       cell: ({ row }) => {
         const status = row.getValue("status") as Student["status"];
         const isActive = status === "registered";
-
         return h(
           "span",
           {
-            class: `mx-auto px-2 py-1 rounded text-xs font-medium ${isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-              }`,
+            class: `inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+              isActive
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-red-50 text-red-600 border border-red-200"
+            }`,
           },
-          isActive ? "Registered" : "Unregistered"
+          isActive ? "Registered" : "Unregistered",
         );
       },
     },
@@ -193,18 +161,21 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Stu
       enableHiding: false,
       cell: ({ row }) => {
         const student = row.original;
-
         return h(
           "div",
-          { class: "relative flex justify-center" },
+          { class: "relative flex" },
           h(DropdownAction, {
             student,
             role,
             onDelete: options?.onDelete,
             onRemoveFromClassroom: options?.onRemoveFromClassroom,
-          })
+          }),
         );
       },
     },
   ];
+
+  return options?.hideClassroomColumn
+    ? allColumns.filter((col: any) => col.accessorKey !== "classroom")
+    : allColumns;
 }

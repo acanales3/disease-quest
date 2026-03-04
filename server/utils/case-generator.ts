@@ -1,12 +1,10 @@
 /**
  * AI Case Content Generator
  *
- * Uses OpenAI o4-mini (reasoning model) to generate a complete clinical
- * simulation case JSON from extracted PDF text. Includes retry-aware
- * error feedback so the model can self-correct.
+ * Proxies to the Supabase Edge Function `case-generator` which holds the
+ * OPENAI_API_KEY securely. Includes retry-aware error feedback so the
+ * model can self-correct.
  */
-
-import OpenAI from "openai";
 
 // ---------------------------------------------------------------------------
 // System prompt — defines the exact JSON schema the AI must produce
@@ -153,9 +151,16 @@ Your output must contain ALL of the following top-level fields:
       "display_name": "<human-readable name>",
       "cost_points": <number 1-5>,
       "tat_minutes": 1,
-      "result_schema": [<array of result field names>]
+      "result_schema": [<array of result field names>],
+      "clinical_value": "<one of: high_yield, moderate_yield, low_yield_distractor, inappropriate>",
+      "why_it_might_be_ordered": "<brief rationale from a learner perspective>",
+      "teaching_note": "<why this test is high value OR why it is low-value/inappropriate>"
     }
-    // include all relevant tests for this case
+    // include all relevant tests for this case.
+    // ALSO include realistic distractors to mimic real-life decision pressure:
+    // - at least 2-4 low-yield or unnecessary tests/labs that a novice might order
+    // - at least 1 test/lab that is clearly inappropriate for the presentation
+    // These distractors should be plausible enough to tempt the learner.
   ],
 
   "test_results": {
@@ -181,12 +186,17 @@ Your output must contain ALL of the following top-level fields:
       "id": "<intervention_id>",
       "display_name": "<human-readable name>",
       "category": "<one of: antibiotics, fluids, vasopressors, airway, anticonvulsant, anti_inflammatory, analgesic, general>",
-      "options": [<array of specific drug/treatment names if applicable>]
+      "options": [<array of specific drug/treatment names if applicable>],
+      "appropriateness": "<one of: first_line, second_line, unnecessary, potentially_harmful>",
+      "adverse_effect_risk": "<brief risk if given inappropriately, or null for safe options>"
     }
     // all relevant interventions for this case.
     // The "category" field is REQUIRED and maps to universal treatment categories
     // used by the orchestrator for dynamic treatment effect handling.
     // The "options" array should list specific drug names (e.g., ["ceftriaxone", "vancomycin"]).
+    // Include deliberate management distractors:
+    // - at least 2 unnecessary/low-value interventions
+    // - at least 1 potentially harmful intervention that can cause adverse effects if chosen
   ],
 
   "scoring_categories": {
@@ -337,7 +347,10 @@ Your output must contain ALL of the following top-level fields:
         }
       }
     }
-    // 2-4 deterioration rules. The "effects" object is optional but recommended
+    // 2-4 deterioration rules. Include at least one rule representing iatrogenic harm
+    // (adverse effect) if an unsafe intervention is chosen, and at least one progression
+    // rule for delayed/missed critical care.
+    // The "effects" object is optional but recommended
     // for critical events. If omitted, the orchestrator applies generic severity escalation.
   ]
 }
@@ -363,6 +376,24 @@ Example deterioration rules:
   {"if": "correct_diagnosis_suspected == false AND time >= 5", "then": {"event": "clinical_worsening", ...}}
   {"if": "antibiotics_started == false AND time >= 8", "then": {"event": "sepsis_progression", ...}}
 
+## REALISM & INTERACTIVITY REQUIREMENTS
+
+Design the case to feel like a live encounter, not a static worksheet:
+
+- Include ambiguous but clinically believable signal vs noise:
+  - key clues that point to the true diagnosis
+  - distractor findings/tests/treatments that can mislead novice learners
+- Make the patient/family communication dynamic across disclosures (new concerns,
+  clarifications, emotional shifts, and context updates over time).
+- Ensure actions have consequences:
+  - high-value early actions should stabilize the patient faster
+  - unnecessary actions should waste resources/time and hurt score
+  - unsafe interventions should risk realistic adverse events
+- Build explicit learning loops:
+  - scoring penalties for low-yield testing and unsafe treatment
+  - recovery opportunities after mistakes when corrected promptly
+  - clear tradeoffs between speed, safety, and diagnostic certainty
+
 ## IMPORTANT RULES
 
 1. Every field listed above is REQUIRED. Do not omit any.
@@ -373,21 +404,24 @@ Example deterioration rules:
 6. Generate medically accurate, evidence-based content.
 7. Make introduction paragraphs vivid and narrative-style (like a clinical vignette).
 8. Return ONLY the JSON object — no markdown code fences, no preamble, no trailing text.
+9. Make cases intentionally challenging with realistic distractors (tests and treatments) while remaining clinically coherent.
+10. Include explicit patient-safety penalties for inappropriate tests/treatments and adverse-effect pathways for unsafe interventions.
+11. Make the case interactive with meaningful time-based progression and action-triggered changes in disclosures and patient state.
 
 ## EVALUATION RUBRIC RULES (CRITICAL)
 
 The evaluation_rubrics array must follow these rules precisely:
 
-9. All 7 rubric domains are REQUIRED: history_taking_synthesis, physical_exam_interpretation, differential_diagnosis_formulation, diagnostic_tests, management_reasoning, communication_empathy, reflection_metacognition.
-10. Each rubric MUST use the EXACT id and db_column values listed above — these map to database columns.
-11. Point allocations are DYNAMIC per case. Adjust max_points based on the clinical emphasis of the case. Suggested defaults: Hx=15, PE=10, DDx=15, Dx Tests=10, Mgmt=15, Comm=15, Reflection=10 (total 90). You may redistribute points based on case complexity (e.g., a case emphasizing management may weight Mgmt higher).
-12. All range values must be CONCRETE INTEGERS — no placeholders. Ranges must cover 0 through max_points with no gaps or overlaps. Use this pattern:
+12. All 7 rubric domains are REQUIRED: history_taking_synthesis, physical_exam_interpretation, differential_diagnosis_formulation, diagnostic_tests, management_reasoning, communication_empathy, reflection_metacognition.
+13. Each rubric MUST use the EXACT id and db_column values listed above — these map to database columns.
+14. Point allocations are DYNAMIC per case. Adjust max_points based on the clinical emphasis of the case. Suggested defaults: Hx=15, PE=10, DDx=15, Dx Tests=10, Mgmt=15, Comm=15, Reflection=10 (total 90). You may redistribute points based on case complexity (e.g., a case emphasizing management may weight Mgmt higher).
+15. All range values must be CONCRETE INTEGERS — no placeholders. Ranges must cover 0 through max_points with no gaps or overlaps. Use this pattern:
     - For 15-point domains: emerging [0,5], developing [6,9], proficient [10,13], exemplary [14,15]
     - For 10-point domains: emerging [0,3], developing [4,6], proficient [7,8], exemplary [9,10]
     - Scale proportionally for other point values.
-13. Performance level descriptions must be CASE-SPECIFIC — reference actual clinical findings, expected diagnoses, and key decision points from the case being generated. Do NOT use generic boilerplate.
-14. The rubric is aligned with AAMC Core Entrustable Professional Activities: EPA 1 (history & physical), EPA 2 (differential diagnosis), EPA 3 (diagnostic tests), EPA 4 (orders/management), EPA 9 (teamwork/collaboration). Ensure the rubric descriptions reflect these competency expectations.
-15. The rubric emphasizes Rigor, Reproducibility, and Transparency (R2T) in clinical reasoning — descriptions should reward systematic approaches and evidence-based justification.`;
+16. Performance level descriptions must be CASE-SPECIFIC — reference actual clinical findings, expected diagnoses, and key decision points from the case being generated. Do NOT use generic boilerplate.
+17. The rubric is aligned with AAMC Core Entrustable Professional Activities: EPA 1 (history & physical), EPA 2 (differential diagnosis), EPA 3 (diagnostic tests), EPA 4 (orders/management), EPA 9 (teamwork/collaboration). Ensure the rubric descriptions reflect these competency expectations.
+18. The rubric emphasizes Rigor, Reproducibility, and Transparency (R2T) in clinical reasoning — descriptions should reward systematic approaches and evidence-based justification.`;
 
 // ---------------------------------------------------------------------------
 // Generator function
@@ -413,23 +447,17 @@ export async function generateCaseContent(
   description: string,
   previousError: string | null = null
 ): Promise<GenerationResult> {
-  console.log("[CASE-GEN] Starting case content generation...");
+  console.log("[CASE-GEN] Starting case content generation via edge function...");
   console.log(`[CASE-GEN] PDF text length: ${pdfText.length} chars`);
   console.log(`[CASE-GEN] Case name: "${caseName}"`);
   console.log(`[CASE-GEN] Is retry: ${!!previousError}`);
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    console.log("[CASE-GEN] ERROR: OPENAI_API_KEY not set!");
-    return {
-      content: null,
-      rawResponse: "",
-      error: "OPENAI_API_KEY is not configured on the server.",
-    };
-  }
-  console.log("[CASE-GEN] OpenAI API key found");
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY || "";
 
-  const openai = new OpenAI({ apiKey });
+  if (!supabaseUrl) {
+    return { content: null, rawResponse: "", error: "SUPABASE_URL is not configured." };
+  }
 
   // Build user prompt
   let userPrompt = `Generate a complete DiseaseQuest clinical simulation case from the following information.
@@ -443,10 +471,10 @@ ${pdfText.substring(0, 60000)}
 ---
 
 Analyze the clinical case content thoroughly. Create all disclosures, test results, interventions, scoring, and evaluation rubrics. Make sure the case is medically accurate and detailed.
+Include realistic distractor tests/treatments, at least one potentially harmful intervention with adverse-effect consequences, and interactive progression (time- and action-driven changes) to mimic a live case.
 
 Return ONLY the JSON object.`;
 
-  // If retrying, prepend the error for self-correction
   if (previousError) {
     userPrompt = `IMPORTANT: Your previous attempt to generate this case JSON had errors. Please fix them and regenerate.
 
@@ -459,71 +487,65 @@ ${userPrompt}`;
   }
 
   try {
-    console.log("[CASE-GEN] Sending request to OpenAI o4-mini...");
-    console.log(`[CASE-GEN] Prompt length: ${userPrompt.length} chars`);
+    console.log("[CASE-GEN] Calling case-generator edge function...");
     const callStart = Date.now();
 
-    const response = await openai.chat.completions.create({
-      model: "o4-mini",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userPrompt },
-      ],
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    // Try service key first, fall back to anon key (edge function deployed with --no-verify-jwt)
+    if (serviceKey && serviceKey.split(".").length === 3) {
+      headers["Authorization"] = `Bearer ${serviceKey}`;
+      headers["apikey"] = serviceKey;
+    }
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/case-generator`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ systemPrompt: SYSTEM_PROMPT, userPrompt }),
     });
 
     const elapsed = Date.now() - callStart;
-    console.log(`[CASE-GEN] OpenAI responded in ${elapsed}ms (${(elapsed / 1000).toFixed(1)}s)`);
-    console.log(`[CASE-GEN] Usage: ${JSON.stringify(response.usage ?? {})}`);
+    console.log(`[CASE-GEN] Edge function responded in ${elapsed}ms (${(elapsed / 1000).toFixed(1)}s)`);
 
-    const rawResponse = response.choices?.[0]?.message?.content ?? "";
-    console.log(`[CASE-GEN] Response length: ${rawResponse.length} chars`);
-
-    if (!rawResponse.trim()) {
-      console.log("[CASE-GEN] ERROR: Empty response from OpenAI");
-      return {
-        content: null,
-        rawResponse,
-        error: "OpenAI returned an empty response.",
-      };
+    if (!res.ok) {
+      const errText = await res.text();
+      console.log(`[CASE-GEN] Edge function error (${res.status}): ${errText}`);
+      return { content: null, rawResponse: "", error: `Edge function error (${res.status}): ${errText}` };
     }
 
-    // Try to parse as JSON — strip markdown fences if present
+    const data = await res.json() as { content?: string; error?: string; usage?: Record<string, number> };
+
+    if (data.error) {
+      console.log(`[CASE-GEN] Edge function returned error: ${data.error}`);
+      return { content: null, rawResponse: "", error: data.error };
+    }
+
+    const rawResponse = data.content ?? "";
+    console.log(`[CASE-GEN] Response length: ${rawResponse.length} chars`);
+    if (data.usage) console.log(`[CASE-GEN] Usage: ${JSON.stringify(data.usage)}`);
+
+    if (!rawResponse.trim()) {
+      return { content: null, rawResponse, error: "OpenAI returned an empty response." };
+    }
+
+    // Strip markdown fences if present
     let jsonStr = rawResponse.trim();
     if (jsonStr.startsWith("```")) {
-      console.log("[CASE-GEN] Stripping markdown code fences from response");
-      jsonStr = jsonStr
-        .replace(/^```(?:json)?\s*\n?/, "")
-        .replace(/\n?```\s*$/, "");
+      jsonStr = jsonStr.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
     }
 
     try {
       const parsed = JSON.parse(jsonStr);
       const keys = Object.keys(parsed);
-      console.log(`[CASE-GEN] JSON parsed successfully — ${keys.length} top-level keys`);
-      console.log(`[CASE-GEN] Keys: ${keys.join(", ")}`);
-      return {
-        content: parsed,
-        rawResponse,
-        error: null,
-      };
+      console.log(`[CASE-GEN] JSON parsed successfully — ${keys.length} top-level keys: ${keys.join(", ")}`);
+      return { content: parsed, rawResponse, error: null };
     } catch (parseErr: unknown) {
-      const msg =
-        parseErr instanceof Error ? parseErr.message : String(parseErr);
+      const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
       console.log(`[CASE-GEN] JSON PARSE FAILED: ${msg}`);
-      console.log(`[CASE-GEN] First 300 chars of response: ${rawResponse.substring(0, 300)}`);
-      return {
-        content: null,
-        rawResponse: rawResponse.substring(0, 500),
-        error: `Failed to parse AI response as JSON: ${msg}`,
-      };
+      return { content: null, rawResponse: rawResponse.substring(0, 500), error: `Failed to parse AI response as JSON: ${msg}` };
     }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.log(`[CASE-GEN] OpenAI API CALL FAILED: ${msg}`);
-    return {
-      content: null,
-      rawResponse: "",
-      error: `OpenAI API call failed: ${msg}`,
-    };
+    console.log(`[CASE-GEN] CALL FAILED: ${msg}`);
+    return { content: null, rawResponse: "", error: `Case generation call failed: ${msg}` };
   }
 }

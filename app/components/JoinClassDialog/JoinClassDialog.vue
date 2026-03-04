@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Icon } from "#components";
 import {
   Dialog,
   DialogContent,
@@ -25,14 +24,12 @@ const inviteCode = ref("");
 const isLoading = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
-const touched = ref(false);
 
 
 function reset() {
     inviteCode.value = "";
     errorMessage.value = "";
     successMessage.value = "";
-    touched.value = false;
     isLoading.value = false;
 }
 
@@ -84,10 +81,6 @@ async function joinClassroom() {
         emit('update:open', value);
         if (!value) reset();
     }">
-    <div class="flex flex-col items-center justify-center gap-2">
-        <Icon name="ic:baseline-person-add" size="24" />
-        <span class="text-sm">Join Classroom</span>
-    </div>
     <DialogContent class="max-w-3xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Join Classroom</DialogTitle>

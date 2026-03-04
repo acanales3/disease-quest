@@ -41,19 +41,20 @@ import {
 } from "~/components/ui/table";
 
 import FilterDialog from "@/components/FilterDialog/FilterDialog.vue";
-import type { Classroom } from "../ClassroomDatatable/columns"; // Import Classroom type
+import type { Classroom } from "../ClassroomDatatable/columns";
 
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  classrooms?: Classroom[]; // Add classrooms prop
+  classrooms?: Classroom[];
+  hideClassroomFilter?: boolean;
+  hideClassroomColumn?: boolean;
 }>();
 
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
 
-// Custom filter function for array-based filters
 const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
   if (
     !filterValue ||
@@ -62,30 +63,27 @@ const arrayFilterFn = (row: any, columnId: string, filterValue: any) => {
     return true;
   }
 
-      const cellValue = row.getValue(columnId);
-      
-      // Special handling for classroom filter which checks against the classrooms array
-      if (columnId === 'classroom' && (row.original as any).classrooms) {
-        if (Array.isArray(filterValue)) {
-            // Check if any of the student's classroom IDs match any of the filter values
-            return (row.original as any).classrooms.some((id: number) => filterValue.includes(String(id)));
-        }
-      }
+  const cellValue = row.getValue(columnId);
 
-      // For array filters, check if cellValue is in the array
-      if (Array.isArray(filterValue)) {
-        // Convert cellValue to string for comparison
-        return filterValue.includes(String(cellValue));
-      }
+  if (columnId === "classroom" && (row.original as any).classrooms) {
+    if (Array.isArray(filterValue)) {
+      const classrooms = (row.original as any).classrooms;
+      return classrooms.some((c: any) => {
+        const classroomId = c && typeof c === "object" && "id" in c ? c.id : c;
+        return filterValue.includes(String(classroomId));
+      });
+    }
+  }
 
-      // Fallback for non-array filters (shouldn't happen with this function)
-      return true;
-    };
+  if (Array.isArray(filterValue)) {
+    return filterValue.includes(String(cellValue));
+  }
 
-// Modify columns to add filterFn for status, msyear, and classroom
+  return true;
+};
+
 const modifiedColumns = computed(() => {
   return props.columns.map((col: any) => {
-    // Add array filter function to status, msyear, and classroom columns
     if (
       col.accessorKey === "status" ||
       col.accessorKey === "msyear" ||
@@ -133,14 +131,11 @@ const hideableColumns = computed(() =>
   table.getAllColumns().filter((column) => column.getCanHide()),
 );
 
-// Handle filter application
 const handleApplyFilters = (filters: any) => {
-  // Apply string filters
   table.getColumn("name")?.setFilterValue(filters.name || undefined);
   table.getColumn("email")?.setFilterValue(filters.email || undefined);
   table.getColumn("school")?.setFilterValue(filters.school || undefined);
 
-  // Apply array filters
   table
     .getColumn("msyear")
     ?.setFilterValue(
@@ -162,7 +157,6 @@ const handleApplyFilters = (filters: any) => {
     );
 };
 
-// Handle classroom dropdown selection
 const selectedClassroom = ref<Classroom | null>(null);
 
 const handleClassroomSelect = (classroom: Classroom | null) => {
@@ -174,49 +168,61 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
   }
 };
 </script>
+
 <template>
   <div
-    class="bg-white p-6 rounded-md shadow-md w-full max-w-full min-w-0 overflow-hidden"
+    class="bg-white rounded-xl border border-gray-200 w-full max-w-full min-w-0 overflow-hidden"
   >
-    <!-- Top bar: label left, search & column menu right -->
-    <div class="flex items-center justify-between py-4">
-      <!-- Left: label -->
-      <div class="text-md font-light text-black">All Students List</div>
+    <!-- Top bar -->
+    <div
+      class="flex items-center justify-between px-5 py-4 border-b border-gray-100"
+    >
+      <p class="text-sm font-medium text-gray-900">Records</p>
 
-      <!-- Right: search input + dropdowns -->
-      <div class="flex items-center space-x-4">
-        <!-- Filter Dialog component -->
-        <FilterDialog :classrooms="props.classrooms || []" @apply-filters="handleApplyFilters" />
-
-        <Input
-          class="max-w-sm bg-gray-100 text-gray-500 placeholder-gray-500 border-none rounded-full px-4 py-2 w-80"
-          placeholder="Search by Email"
-          :model-value="table.getColumn('email')?.getFilterValue() as string"
-          @update:model-value="table.getColumn('email')?.setFilterValue($event)"
+      <div class="flex items-center gap-2">
+        <FilterDialog
+          :classrooms="props.classrooms || []"
+          :hide-classroom-filter="props.hideClassroomColumn"
+          @apply-filters="handleApplyFilters"
         />
 
-        <DropdownMenu>
+        <div class="relative">
+          <Icon
+            name="lucide:search"
+            size="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          />
+          <Input
+            class="h-8 pl-8 pr-3 text-sm w-56 border-gray-200 bg-white rounded-lg placeholder:text-gray-400 focus-visible:ring-1 focus-visible:ring-[#4d1979]/30 focus-visible:border-[#4d1979]"
+            placeholder="Search by email..."
+            :model-value="table.getColumn('email')?.getFilterValue() as string"
+            @update:model-value="
+              table.getColumn('email')?.setFilterValue($event)
+            "
+          />
+        </div>
+
+        <DropdownMenu v-if="!hideClassroomFilter && !hideClassroomColumn">
           <DropdownMenuTrigger as-child>
-            <Button
-              class="bg-gray-100 text-gray-500 hover:bg-gray-200 flex justify-between items-center px-4 py-2 rounded-md"
+            <button
+              class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
             >
               {{ selectedClassroom ? selectedClassroom.name : "All Classes" }}
-              <ChevronDown class="w-4 h-4 ml-2" />
-            </Button>
+              <ChevronDown class="w-3.5 h-3.5 text-gray-400" />
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            class="bg-white rounded-md shadow-md flex flex-col max-h-60 overflow-y-auto"
+            class="bg-white flex flex-col max-h-60 overflow-y-auto"
           >
             <DropdownMenuItem
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block cursor-pointer"
+              class="cursor-pointer"
               @click="handleClassroomSelect(null)"
+              >All Classes</DropdownMenuItem
             >
-              All Classes
-            </DropdownMenuItem>
             <DropdownMenuItem
               v-for="classroom in props.classrooms"
               :key="classroom.id"
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md block cursor-pointer"
+              class="cursor-pointer"
               @click="handleClassroomSelect(classroom)"
             >
               {{ classroom.name }}
@@ -226,10 +232,12 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
 
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button class="bg-gray-100 text-gray-500 hover:bg-gray-200">
+            <button
+              class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            >
               Columns
-              <ChevronDown class="w-4 h-4 ml-2" />
-            </Button>
+              <ChevronDown class="w-3.5 h-3.5 text-gray-400" />
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
@@ -249,17 +257,14 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
     </div>
 
     <!-- Table -->
-    <div class="border rounded-md overflow-x-auto">
-      <Table class="w-full text-center font-normal text-gray-500">
-        <TableHeader class="bg-blue-50">
-          <TableRow
-            v-for="headerGroup in table.getHeaderGroups()"
-            :key="headerGroup.id"
-          >
+    <div class="overflow-x-auto">
+      <Table class="w-full text-sm">
+        <TableHeader>
+          <TableRow class="border-b border-gray-100 hover:bg-transparent">
             <TableHead
-              v-for="header in headerGroup.headers"
+              v-for="header in table.getHeaderGroups()[0]?.headers"
               :key="header.id"
-              class="text-center font-semibold py-2 px-4"
+              class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400 px-5 py-3 bg-gray-50/60"
             >
               <FlexRender
                 v-if="!header.isPlaceholder"
@@ -273,15 +278,14 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
         <TableBody>
           <template v-if="table.getRowModel().rows?.length">
             <TableRow
-              v-for="(row, idx) in table.getRowModel().rows"
+              v-for="row in table.getRowModel().rows"
               :key="row.id"
-              :data-state="row.getIsSelected() ? 'selected' : undefined"
-              :class="idx % 2 === 0 ? 'bg-gray-50' : 'bg-gray-100'"
+              class="border-b border-gray-100 last:border-0 hover:bg-gray-50/60 transition-colors"
             >
               <TableCell
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
-                class="text-center"
+                class="px-5 py-3.5 text-left text-gray-700"
               >
                 <FlexRender
                   :render="cell.column.columnDef.cell"
@@ -293,8 +297,11 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
 
           <template v-else>
             <TableRow>
-              <TableCell :colspan="columns.length" class="h-24 text-center">
-                No results.
+              <TableCell
+                :colspan="columns.length"
+                class="h-32 text-center text-sm text-gray-400"
+              >
+                No records found.
               </TableCell>
             </TableRow>
           </template>
@@ -303,23 +310,31 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
     </div>
 
     <!-- Pagination -->
-    <div class="flex items-center justify-end py-4 space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="!table.getCanPreviousPage()"
-        @click="table.previousPage()"
-      >
-        Previous
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        :disabled="!table.getCanNextPage()"
-        @click="table.nextPage()"
-      >
-        Next
-      </Button>
+    <div
+      class="flex items-center justify-between px-5 py-3.5 border-t border-gray-100"
+    >
+      <p class="text-xs text-gray-400">
+        Showing {{ table.getRowModel().rows.length }} of
+        {{ table.getFilteredRowModel().rows.length }} records
+      </p>
+      <div class="flex items-center gap-2">
+        <button
+          class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          :disabled="!table.getCanPreviousPage()"
+          @click="table.previousPage()"
+        >
+          <Icon name="lucide:chevron-left" size="14" />
+          Previous
+        </button>
+        <button
+          class="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          :disabled="!table.getCanNextPage()"
+          @click="table.nextPage()"
+        >
+          Next
+          <Icon name="lucide:chevron-right" size="14" />
+        </button>
+      </div>
     </div>
   </div>
 </template>

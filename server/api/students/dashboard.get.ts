@@ -3,8 +3,16 @@ import {
   serverSupabaseServiceRole,
 } from "#supabase/server";
 import type { Database } from "@/assets/types/supabase";
-import type { Case } from "@/components/CaseDatatable/columns";
 import { generateUniqueNickname } from "../../utils/nickname-generator";
+
+type DashboardCase = {
+  id: number;
+  name: string;
+  description: string;
+  classroom: string;
+  completionDate: string;
+  status: "not started" | "in progress" | "completed";
+};
 
 export default defineEventHandler(async (event) => {
   const supabase = await serverSupabaseClient<Database>(event);
@@ -29,12 +37,16 @@ export default defineEventHandler(async (event) => {
     .eq("user_id", studentId)
     .single();
 
+  let nickname = studentStats?.nickname ?? null;
+
   if (studentStats && !studentStats.nickname) {
     const serviceClient = await serverSupabaseServiceRole<Database>(event);
+    const generatedNickname = await generateUniqueNickname(serviceClient);
     await serviceClient
       .from("students")
-      .update({ nickname: await generateUniqueNickname(serviceClient) })
+      .update({ nickname: generatedNickname })
       .eq("user_id", studentId);
+    nickname = generatedNickname;
   }
 
   let streak = studentStats?.login_streak ?? 0;
@@ -96,6 +108,7 @@ export default defineEventHandler(async (event) => {
       user: {
         first_name: userRow?.first_name ?? null,
         last_name: userRow?.last_name ?? null,
+        nickname,
       },
       stats: {
         login_streak: streak,
@@ -145,12 +158,12 @@ export default defineEventHandler(async (event) => {
     (studentCases ?? []).map((sc) => [sc.case_id, sc]),
   );
 
-  const cases: Case[] = classroomCases
+  const cases: DashboardCase[] = classroomCases
     .filter((row) => row.cases)
     .map((row) => {
       const c = row.cases!;
       const progress = progressMap.get(c.id);
-      let status: Case["status"] = "not started";
+      let status: DashboardCase["status"] = "not started";
       let completionDate: string | null = null;
 
       if (progress) {
@@ -181,6 +194,7 @@ export default defineEventHandler(async (event) => {
     user: {
       first_name: userRow?.first_name ?? null,
       last_name: userRow?.last_name ?? null,
+      nickname,
     },
     stats: {
       total,
