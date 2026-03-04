@@ -53,7 +53,6 @@ function onRemoveFromClassroom() {
       >
       <DropdownMenuItem
         v-if="props.role === 'admin' || props.role === 'instructor'"
-        class="text-red-600 focus:text-red-600 focus:bg-red-50"
         @click="onRemoveFromClassroom"
       >
         Remove from Classroom
@@ -63,7 +62,7 @@ function onRemoveFromClassroom() {
         class="text-red-600 focus:text-red-600 focus:bg-red-50"
         @click="onDelete"
       >
-        Delete Student
+        Delete
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
