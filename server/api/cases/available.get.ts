@@ -134,7 +134,7 @@ export default defineEventHandler(async (event) => {
     // attempt_number desc so the most recent attempt comes first per case.
     const { data: sessions, error: sErr } = await client
       .from("case_sessions")
-      .select("case_id, status, attempt_number, started_at, completed_at")
+      .select("id, case_id, status, attempt_number, started_at, completed_at")
       .eq("user_id", userId)
       .in("case_id", caseIds)
       .order("attempt_number", { ascending: false });
@@ -146,6 +146,7 @@ export default defineEventHandler(async (event) => {
     const latestSessionByCase = new Map<
       number,
       {
+        sessionId: string;
         status: string;
         started_at: string | null;
         completed_at: string | null;
@@ -156,6 +157,7 @@ export default defineEventHandler(async (event) => {
       if (!latestSessionByCase.has(s.case_id)) {
         // First one we see is the most recent (ordered desc)
         latestSessionByCase.set(s.case_id, {
+          sessionId: s.id,
           status: s.status,
           started_at: s.started_at,
           completed_at: s.completed_at,
@@ -192,6 +194,7 @@ export default defineEventHandler(async (event) => {
         classrooms: c.classrooms,
         status: uiStatus,
         completionDate: session?.completed_at ?? null,
+        sessionId: session?.sessionId ?? null,
       };
     });
 

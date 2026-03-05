@@ -5,9 +5,9 @@ import { reactive } from "vue";
 export interface CaseEvaluationModalBus {
   caseId: number | null;
   classroomId: number | null;
-  sessionId: number | null;
+  sessionId: string | null;
   openModal: boolean;
-  open: (caseId: number, classroomId: number, sessionId: number) => void;
+  open: (caseId: number, classroomId: number, sessionId: string) => void;
   close: () => void;
 }
 

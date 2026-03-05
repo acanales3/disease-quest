@@ -15,6 +15,7 @@ export interface Case {
   classrooms: { id: number; name: string }[];
   completionDate: string;
   status: "not started" | "in progress" | "completed";
+  sessionId?: string | null;
 }
 
 interface ColumnOptions {

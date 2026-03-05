@@ -11,10 +11,6 @@
         class="mb-8" 
         :data="evaluationData" 
         :render-dropdowns="false" 
-        :render-session-dropdown="true"
-        :sessions="sessions"
-        :initial-session-id="selectedSessionId"
-        @session-change="handleSessionChange"  
       />
 
       <div v-else class="text-center py-6 text-gray-500">
@@ -39,9 +35,6 @@ import { caseEvaluationModalBus } from "@/components/CaseEvaluationModal/modalBu
 const evaluationData = ref<any[]>([]);
 const loading = ref(false);
 
-const sessions = ref<{ id: number; label: string }[]>([])
-const selectedSessionId = ref<number | null>(null)
-
 const handleOpenChange = (value: boolean) => {
   if (!value) {
     caseEvaluationModalBus.close();
@@ -49,57 +42,23 @@ const handleOpenChange = (value: boolean) => {
 };
 
 watch(
-  () => caseEvaluationModalBus.caseId,
-  async (newCaseId) => {
-    if (!newCaseId) return;
+  () => caseEvaluationModalBus.openModal,
+  async (isOpen) => {
+    if (!isOpen || !caseEvaluationModalBus.sessionId) return;
 
     loading.value = true;
     evaluationData.value = [];
 
     try {
-      const classroomId = caseEvaluationModalBus.classroomId
-
-      // Fetch sessions
-      const sessionResponse = await $fetch(
-        `/api/case-sessions/${newCaseId}?classroomId=${classroomId}`
-      )
-
-      sessions.value = sessionResponse
-
-      // Default session = the one used to open modal
-      selectedSessionId.value = caseEvaluationModalBus.sessionId
-
-      // Fetch evaluation for that session
       const response = await $fetch(
-        `/api/analytics/session/${selectedSessionId.value}/score`
-      )
-      evaluationData.value = [response]
-
+        `/api/analytics/session/${caseEvaluationModalBus.sessionId}/score`
+      );
+      evaluationData.value = [response];
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch evaluation:", err);
     } finally {
       loading.value = false;
     }
   }
 );
-
-const handleSessionChange = async (sessionId: number) => {
-  loading.value = true;
-  evaluationData.value = [];
-
-  try {
-    selectedSessionId.value = sessionId
-
-    const response = await $fetch(
-      `/api/analytics/session/${sessionId}/score`
-    )
-
-    evaluationData.value = [response]
-
-  } catch (err) {
-    console.error(err);
-  } finally {
-    loading.value = false;
-  }
-}
 </script>
