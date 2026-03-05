@@ -5,10 +5,8 @@
       style="background: radial-gradient(125% 125% at 50% 10%, #fff 50%, #4d1979 100%)"
     />
 
-    <div class="absolute top-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4">
-      <span class="brand-name text-2xl tracking-tight text-gray-900">
-        Disease<span class="text-[#4d1979]">Quest</span>
-      </span>
+    <div class="absolute top-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4">
+      <img src="/dq-logo.svg" alt="DiseaseQuest" class="h-20 w-auto"/>
       <span class="h-7 w-px bg-gray-300" />
       <img src="/tcu-logo.png" alt="TCU Burnett School of Medicine" class="h-32 w-auto" />
     </div>
