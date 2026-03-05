@@ -7,6 +7,13 @@ export default defineNuxtConfig({
   app: {
     head: {
       title: "DiseaseQuest",
+      link: [
+        {
+          rel: "icon",
+          type: "image/png",
+          href: "/dq-logo.png",
+        },
+      ],
     },
   },
   css: ["./app/assets/css/main.css"],
