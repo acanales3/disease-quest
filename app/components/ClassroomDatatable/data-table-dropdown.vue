@@ -63,7 +63,6 @@ function handleDelete() {
           Manage Classroom
         </NuxtLink>
       </DropdownMenuItem>
-      <DropdownMenuSeparator v-if="props.role === 'admin' || props.role === 'instructor'" />
       <DropdownMenuItem
         v-if="props.role === 'admin' || props.role === 'instructor'"
         class="text-red-600 focus:text-red-600 focus:bg-red-50"

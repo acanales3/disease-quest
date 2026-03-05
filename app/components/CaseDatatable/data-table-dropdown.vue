@@ -128,9 +128,27 @@ const handleReplay = async () => {
         <span v-if="isReplaying">Resetting...</span>
         <span v-else>{{ getButtonText() }}</span>
       </DropdownMenuItem>
-
+      <DropdownMenuItem
+        v-if="props.caseData.status === 'completed'"
+        class="cursor-pointer"
+        @click="router.push(`/case/${props.caseData.id}/results`)"
+      >
+        Review Case
+      </DropdownMenuItem>
       <DropdownMenuItem v-if="props.role === 'admin'" class="cursor-pointer" @click="onEdit">
         Edit
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && props.classroomId"
+        @click="onRemoveFromClassroom"
+      >
+        Remove from Classroom
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && !props.classroomId && props.caseData.classrooms?.length"
+        @click="onRemoveFromClassrooms"
+      >
+        Remove from Classroom
       </DropdownMenuItem>
       <DropdownMenuItem
         v-if="props.role === 'admin'"
@@ -138,27 +156,6 @@ const handleReplay = async () => {
         @click="onDelete"
       >
         Delete
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        v-if="(props.role === 'admin' || props.role === 'instructor') && props.classroomId"
-        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-        @click="onRemoveFromClassroom"
-      >
-        Remove from Classroom
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        v-if="(props.role === 'admin' || props.role === 'instructor') && !props.classroomId && props.caseData.classrooms?.length"
-        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-        @click="onRemoveFromClassrooms"
-      >
-        Remove from Classroom
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        v-if="props.caseData.status === 'completed'"
-        class="cursor-pointer"
-        @click="router.push(`/case/${props.caseData.id}/results`)"
-      >
-        Review Case
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
