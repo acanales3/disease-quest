@@ -914,10 +914,10 @@ serve(async (req: Request) => {
         if ((responseData as Record<string, unknown>).order) {
           orderedTests[testId] = (responseData as Record<string, unknown>)
             .order as {
-            testId: string;
-            orderedAt: number;
-            resultAvailableAt: number;
-          };
+              testId: string;
+              orderedAt: number;
+              resultAvailableAt: number;
+            };
         }
 
         if (
@@ -1069,11 +1069,11 @@ serve(async (req: Request) => {
           differential:
             differentialHistory.length > 0
               ? ((
-                  differentialHistory[differentialHistory.length - 1] as Record<
-                    string,
-                    unknown
-                  >
-                ).diagnoses ?? [])
+                differentialHistory[differentialHistory.length - 1] as Record<
+                  string,
+                  unknown
+                >
+              ).diagnoses ?? [])
               : [],
           testsOrdered: Object.keys(orderedTests),
           testResults: [],
@@ -1246,7 +1246,7 @@ serve(async (req: Request) => {
 
         const { data: evalData, error: evalErr } = await db
           .from("evaluations")
-          .insert(evalPayload)
+          .upsert(evalPayload, { onConflict: "session_id" })
           .select();
 
         if (evalErr) {
@@ -1552,11 +1552,11 @@ serve(async (req: Request) => {
           const treatmentCat =
             actionType === "administer_treatment"
               ? classifyTreatment(
-                  payload.treatment ?? "",
-                  (caseContent.interventions ?? []) as Array<
-                    Record<string, unknown>
-                  >,
-                )
+                payload.treatment ?? "",
+                (caseContent.interventions ?? []) as Array<
+                  Record<string, unknown>
+                >,
+              )
               : "";
           if (treatmentCat === "anticonvulsant") {
             updatedPhysiology.has_seizure = false;
