@@ -81,7 +81,10 @@ const visibleColumns = computed(() => {
     "status",
     "actions",
   ];
-  return getColumns("student", () => refresh()).filter((column) => {
+  return getColumns("student", {
+    onRefresh: () => refresh(),
+    returnTo: "/student/cases",
+  }).filter((column) => {
     const key =
       "id" in column
         ? column.id

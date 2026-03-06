@@ -10,7 +10,7 @@
             Welcome back, {{ user.name }}
           </h1>
           <p class="text-white/60 text-[14px] mt-2 leading-relaxed max-w-lg">
-            Manage users, classrooms, and cases. Monitor student performance and assessment scores across your institution.
+            DiseaseQuest lets you practice diagnosis, treatment planning, and clinical decision-making through realistic, interactive patient simulations.
           </p>
           <div class="mt-4 flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 bg-white text-[#4d1979] text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">

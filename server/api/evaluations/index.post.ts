@@ -64,37 +64,28 @@ export default defineEventHandler(async (event) => {
       Math.round(Math.max(0, Math.min(1, n)) * 1000) / 1000;
   }
 
-  // ── Upsert — delete then insert to guarantee a fresh auto-increment id ────
-  // (The table has a unique constraint on user_id + case_id, so we delete
-  //  first to let the identity column produce a new increasing id.)
-  const { error: delErr } = await client
-    .from("evaluations")
-    .delete()
-    .eq("user_id", userId)
-    .eq("case_id", caseId);
-
-  if (delErr) {
-    console.error("[POST /api/evaluations] delete error:", delErr.message);
-    // Non-fatal — row may not exist yet; continue to insert
-  }
-
-  const insertPayload: Record<string, unknown> = {
+  // ── Upsert (atomic) — single operation keyed on (user_id, case_id) ────────
+  // previously this was a delete then insert to get a fresh auto-increment id,
+  // but that created a data-loss window if the server crashed between the two
+  // operations. upsert is atomic and sufficient for this use case.
+  const upsertPayload: Record<string, unknown> = {
     user_id: userId,
     case_id: caseId,
     ...sanitisedScores,
   };
   if (reflectionDocument) {
-    insertPayload.reflection_document = reflectionDocument;
+    upsertPayload.reflection_document = reflectionDocument;
   }
 
   const { data, error: insertErr } = await client
     .from("evaluations")
-    .insert(insertPayload)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .upsert(upsertPayload as any, { onConflict: "user_id,case_id" })
     .select()
     .single();
 
   if (insertErr) {
-    console.error("[POST /api/evaluations] insert error:", insertErr.message);
+    console.error("[POST /api/evaluations] upsert error:", insertErr.message);
     throw createError({
       statusCode: 500,
       message: `Failed to save evaluation: ${insertErr.message}`,

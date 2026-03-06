@@ -144,6 +144,7 @@ const visibleColumns = computed(() => {
   return getColumns("instructor", {
     onRemoveFromClassrooms: openRemoveDialog,
     onRefresh: () => refreshCases(),
+    returnTo: "/instructor/cases",
   }).filter((column) => {
     const key =
       "id" in column

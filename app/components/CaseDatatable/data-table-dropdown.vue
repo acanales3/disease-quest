@@ -16,19 +16,30 @@ interface Props {
   caseData: Case;
   role: string;
   classroomId?: number;
+  returnTo?: string;
 }
 
 const props = defineProps<Props>();
 const router = useRouter();
 
 const emit = defineEmits<{
+  (e: "edit", caseData: Case): void;
+  (e: "delete", caseData: Case): void;
   (e: "removeFromClassroom", caseId: number): void;
   (e: "removeFromClassrooms", caseData: Case): void;
   (e: "refresh"): void;
 }>();
 
+const onEdit = () => {
+  emit("edit", props.caseData);
+};
+
+const onDelete = () => {
+  emit("delete", props.caseData);
+};
+
 const onRemoveFromClassroom = () => {
-  emit("removeFromClassroom", props.caseData.id);
+  emit("removeFromClassroom", Number(props.caseData.id));
 };
 
 const onRemoveFromClassrooms = () => {
@@ -54,7 +65,22 @@ const handlePrimaryAction = async () => {
   if (props.caseData.status === "completed") {
     await handleReplay();
   } else {
-    router.push(`/case/${props.caseData.id}/introduction`);
+    const caseId = Number(props.caseData.id);
+    const classroomId = props.classroomId || (props.caseData as any).classroomId;
+    const params = new URLSearchParams();
+    if (classroomId) params.set("classroomId", String(classroomId));
+    if (props.returnTo) params.set("returnTo", props.returnTo);
+
+    let step = "introduction";
+    if (props.caseData.status === "in progress" && import.meta.client) {
+      const saved = localStorage.getItem(`dq_case_step_${caseId}`);
+      if (saved && ["introduction", "mentor", "patient", "evaluation"].includes(saved)) {
+        step = saved;
+      }
+    }
+    const query = params.toString();
+    const url = `/case/${caseId}/${step}${query ? `?${query}` : ""}`;
+    router.push(url);
   }
 };
 
@@ -79,6 +105,11 @@ const handleReplay = async () => {
       method: "POST",
       body: { sessionId: activeRes.sessionId },
     });
+
+    // Clear saved step so next Begin starts at introduction
+    if (import.meta.client) {
+      localStorage.removeItem(`dq_case_step_${props.caseData.id}`);
+    }
 
     // Tell the parent table to re-fetch cases so this row updates
     // from "completed / Replay" → "not started / Begin" without any navigation
@@ -139,30 +170,6 @@ const openEvaluationModal = async () => {
         <span v-if="isReplaying">Resetting...</span>
         <span v-else>{{ getButtonText() }}</span>
       </DropdownMenuItem>
-
-      <DropdownMenuItem v-if="props.role === 'admin'" class="cursor-pointer">
-        Edit
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        v-if="props.role === 'admin'"
-        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-      >
-        Delete
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        v-if="(props.role === 'admin' || props.role === 'instructor') && props.classroomId"
-        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-        @click="onRemoveFromClassroom"
-      >
-        Remove from Classroom
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        v-if="(props.role === 'admin' || props.role === 'instructor') && !props.classroomId && props.caseData.classrooms?.length"
-        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
-        @click="onRemoveFromClassrooms"
-      >
-        Remove from Classroom
-      </DropdownMenuItem>
       <DropdownMenuItem
         v-if="props.caseData.status === 'completed'"
         class="cursor-pointer"
@@ -170,6 +177,29 @@ const openEvaluationModal = async () => {
       >
         Review Case
       </DropdownMenuItem>
+      <DropdownMenuItem v-if="props.role === 'admin'" class="cursor-pointer" @click="onEdit">
+        Edit
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && props.classroomId"
+        @click="onRemoveFromClassroom"
+      >
+        Remove from Classroom
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="(props.role === 'admin' || props.role === 'instructor') && !props.classroomId && props.caseData.classrooms?.length"
+        @click="onRemoveFromClassrooms"
+      >
+        Remove from Classroom
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        v-if="props.role === 'admin'"
+        class="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+        @click="onDelete"
+      >
+        Delete
+      </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
+

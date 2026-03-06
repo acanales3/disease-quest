@@ -20,12 +20,18 @@ export interface Case {
 
 interface ColumnOptions {
   classroomId?: number;
+  returnTo?: string;
+  onEdit?: (caseData: Case) => void;
+  onDelete?: (caseData: Case) => void;
   onRemoveFromClassroom?: (caseId: number) => void;
   onRemoveFromClassrooms?: (caseData: Case) => void;
   onRefresh?: () => void;
 }
 
-export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Case>[] {
+export function getColumns(
+  role: string,
+  options?: ColumnOptions,
+): ColumnDef<Case>[] {
   return [
     {
       accessorKey: "id",
@@ -33,7 +39,11 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
       cell: ({ row }) => {
         const original = row.original as Case;
         const dbId = original.case_id ?? original.id;
-        return h("div", { class: "text-[13px] text-gray-400 tabular-nums" }, String(dbId));
+        return h(
+          "div",
+          { class: "text-[13px] text-gray-400 tabular-nums" },
+          String(dbId),
+        );
       },
     },
     {
@@ -41,7 +51,11 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
       header: () => h("div", {}, "NAME"),
       cell: ({ row }) => {
         const name = row.getValue("name") as string;
-        return h("div", { class: "text-[13px] font-medium text-gray-900" }, name);
+        return h(
+          "div",
+          { class: "text-[13px] font-medium text-gray-900" },
+          name,
+        );
       },
     },
     {
@@ -83,7 +97,8 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
                     h(
                       "div",
                       {
-                        class: "text-[13px] cursor-pointer text-gray-600 hover:text-gray-900 transition",
+                        class:
+                          "text-[13px] cursor-pointer text-gray-600 hover:text-gray-900 transition",
                       },
                       truncated,
                     ),
@@ -109,14 +124,6 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
       },
     },
     {
-      accessorKey: "completionDate",
-      header: () => h("div", {}, "COMPLETION DATE"),
-      cell: ({ row }) => {
-        const completionDate = row.getValue("completionDate") as string;
-        return h("div", { class: "text-[13px] text-gray-600" }, completionDate);
-      },
-    },
-    {
       accessorKey: "status",
       header: () => h("div", {}, "STATUS"),
       cell: ({ row }) => {
@@ -125,7 +132,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
         const statusClasses = {
           "not started": "bg-red-50 text-red-600 border border-red-200",
           "in progress": "bg-blue-50 text-blue-600 border border-blue-200",
-          "completed": "bg-green-50 text-green-700 border border-green-200"
+          completed: "bg-green-50 text-green-700 border border-green-200",
         };
 
         const statusText = {
@@ -156,6 +163,9 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
             caseData,
             role,
             classroomId: options?.classroomId,
+            returnTo: options?.returnTo,
+            onEdit: options?.onEdit,
+            onDelete: options?.onDelete,
             onRemoveFromClassroom: options?.onRemoveFromClassroom,
             onRemoveFromClassrooms: options?.onRemoveFromClassrooms,
             onRefresh: options?.onRefresh,

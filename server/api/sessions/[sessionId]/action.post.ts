@@ -109,13 +109,14 @@ export default defineEventHandler(async (event) => {
 
       const { data: fullSession } = await serviceClient
         .from("case_sessions")
-        .select("user_id, case_id")
+        .select("user_id, case_id, classroom_id")
         .eq("id", sessionId)
         .single();
 
       if (fullSession) {
         const sessionUserId = fullSession.user_id;
         const caseId = fullSession.case_id;
+        const classroomId = fullSession.classroom_id ?? null;
         const evalData = result.evaluation;
         const dbScores = result.db_scores || evalData?.db_scores;
 
@@ -124,19 +125,26 @@ export default defineEventHandler(async (event) => {
           sessionUserId,
           "case_id:",
           caseId,
+          "classroom_id:",
+          classroomId,
           "session_id:",
           sessionId,
         );
         console.log("[action/end_case] db_scores:", JSON.stringify(dbScores));
 
         if (dbScores && Object.keys(dbScores).length > 0) {
-          // Always INSERT a fresh evaluation row — never delete or upsert.
-          // Each completed attempt gets its own permanent evaluation entry.
-          // This preserves history for analytics, leaderboards, and progress tracking.
+          // Delete any existing evaluation for this session to prevent duplicates
+          // (e.g., if end_case is triggered multiple times)
+          await serviceClient
+            .from("evaluations")
+            .delete()
+            .eq("session_id", sessionId);
+
           const evalPayload = {
             user_id: sessionUserId,
             case_id: caseId,
             session_id: sessionId,
+            classroom_id: classroomId,
             ...dbScores,
             reflection_document: JSON.stringify(evalData),
           };
