@@ -151,6 +151,7 @@ const visibleColumns = computed(() => {
     onDelete: handleDeleteClick,
     onRemoveFromClassrooms: openRemoveDialog,
     onRefresh: () => refreshCases(),
+    returnTo: "/admin/cases",
   }).filter((column) => {
     const key =
       "id" in column

@@ -15,6 +15,7 @@ interface Props {
   caseData: Case;
   role: string;
   classroomId?: number;
+  returnTo?: string;
 }
 
 const props = defineProps<Props>();
@@ -63,13 +64,22 @@ const handlePrimaryAction = async () => {
   if (props.caseData.status === "completed") {
     await handleReplay();
   } else {
-    // If classroomId is provided as a prop (from dashboard) or part of the caseData, pass it in URL
-    const id = props.classroomId || (props.caseData as any).classroomId;
-    if (id) {
-      router.push(`/case/${props.caseData.id}/introduction?classroomId=${id}`);
-    } else {
-      router.push(`/case/${props.caseData.id}/introduction`);
+    const caseId = Number(props.caseData.id);
+    const classroomId = props.classroomId || (props.caseData as any).classroomId;
+    const params = new URLSearchParams();
+    if (classroomId) params.set("classroomId", String(classroomId));
+    if (props.returnTo) params.set("returnTo", props.returnTo);
+
+    let step = "introduction";
+    if (props.caseData.status === "in progress" && import.meta.client) {
+      const saved = localStorage.getItem(`dq_case_step_${caseId}`);
+      if (saved && ["introduction", "mentor", "patient", "evaluation"].includes(saved)) {
+        step = saved;
+      }
     }
+    const query = params.toString();
+    const url = `/case/${caseId}/${step}${query ? `?${query}` : ""}`;
+    router.push(url);
   }
 };
 
@@ -94,6 +104,11 @@ const handleReplay = async () => {
       method: "POST",
       body: { sessionId: activeRes.sessionId },
     });
+
+    // Clear saved step so next Begin starts at introduction
+    if (import.meta.client) {
+      localStorage.removeItem(`dq_case_step_${props.caseData.id}`);
+    }
 
     // Tell the parent table to re-fetch cases so this row updates
     // from "completed / Replay" → "not started / Begin" without any navigation
