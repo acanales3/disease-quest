@@ -45,14 +45,20 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "caseId is required" });
   }
 
-  // Guard: if a non-completed session already exists for this user+case,
-  // return it instead of creating a duplicate.
-  const { data: existingSession } = await client
+  // Guard: if a non-completed session already exists for this user+case+classroom,
+  // return it instead of creating a duplicate. Each (user, case, classroom) has its own session.
+  let existingQuery = client
     .from("case_sessions")
     .select("id, status, phase, attempt_number")
     .eq("user_id", userId)
     .eq("case_id", caseId)
-    .in("status", ["created", "in_progress"])
+    .in("status", ["created", "in_progress"]);
+  if (classroomId != null) {
+    existingQuery = existingQuery.eq("classroom_id", classroomId);
+  } else {
+    existingQuery = existingQuery.is("classroom_id", null);
+  }
+  const { data: existingSession } = await existingQuery
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -103,12 +109,18 @@ export default defineEventHandler(async (event) => {
     .map((d) => d.id);
   console.log("[session/create] Start disclosures:", startDisclosures);
 
-  // Determine attempt_number: count ALL prior sessions for this user+case
-  const { count: priorCount } = await client
+  // Determine attempt_number: count prior sessions for this user+case+classroom
+  let countQuery = client
     .from("case_sessions")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("case_id", caseId);
+  if (classroomId != null) {
+    countQuery = countQuery.eq("classroom_id", classroomId);
+  } else {
+    countQuery = countQuery.is("classroom_id", null);
+  }
+  const { count: priorCount } = await countQuery;
 
   const attemptNumber = (priorCount ?? 0) + 1;
   console.log("[session/create] attempt_number:", attemptNumber);
