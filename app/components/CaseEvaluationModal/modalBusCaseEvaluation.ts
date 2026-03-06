@@ -17,7 +17,7 @@ export const caseEvaluationModalBus = reactive<CaseEvaluationModalBus>({
   sessionId: null,
   openModal: false,
 
-  open(caseId: number, classroomId: number, sessionId: number) {
+  open(caseId: number, classroomId: number, sessionId: string) {
     this.caseId = caseId;
     this.classroomId = classroomId;
     this.sessionId = sessionId;

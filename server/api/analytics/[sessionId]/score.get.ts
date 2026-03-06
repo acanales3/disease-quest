@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fetch the evaluation row joined with session + case info
-  const { data: evaluation, error } = await client
+  const { data: evaluations, error } = await client
     .from("evaluations")
     .select(`
       history_taking_synthesis,
@@ -31,14 +31,17 @@ export default defineEventHandler(async (event) => {
       case_sessions(classroom_id, classrooms(name))
     `)
     .eq("session_id", sessionId)
-    .single();
+    .order("created_at", { ascending: false })
+    .limit(1);
 
-  if (error || !evaluation) {
+  if (error || !evaluations?.length) {
     throw createError({
       statusCode: 404,
       message: "No evaluation found for this session",
     });
   }
+
+  const evaluation = evaluations[0];
 
   const caseName =
     Array.isArray(evaluation.cases)
@@ -60,12 +63,12 @@ export default defineEventHandler(async (event) => {
     classroomId,
     classroomName,
     count: 1,
-    history_taking_synthesis: evaluation.history_taking_synthesis ?? 0,
-    physical_exam_interpretation: evaluation.physical_exam_interpretation ?? 0,
-    differential_diagnosis_formulation: evaluation.differential_diagnosis_formulation ?? 0,
-    diagnostic_tests: evaluation.diagnostic_tests ?? 0,
-    management_reasoning: evaluation.management_reasoning ?? 0,
-    communication_empathy: evaluation.communication_empathy ?? 0,
-    reflection_metacognition: evaluation.reflection_metacognition ?? 0,
+    history_taking_synthesis: (evaluation.history_taking_synthesis ?? 0) * 100,
+    physical_exam_interpretation: (evaluation.physical_exam_interpretation ?? 0) * 100,
+    differential_diagnosis_formulation: (evaluation.differential_diagnosis_formulation ?? 0) * 100,
+    diagnostic_tests: (evaluation.diagnostic_tests ?? 0) * 100,
+    management_reasoning: (evaluation.management_reasoning ?? 0) * 100,
+    communication_empathy: (evaluation.communication_empathy ?? 0) * 100,
+    reflection_metacognition: (evaluation.reflection_metacognition ?? 0) * 100,
   };
 });

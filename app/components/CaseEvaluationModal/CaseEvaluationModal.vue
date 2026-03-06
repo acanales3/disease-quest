@@ -51,7 +51,7 @@ watch(
 
     try {
       const response = await $fetch(
-        `/api/analytics/session/${caseEvaluationModalBus.sessionId}/score`
+        `/api/analytics/${caseEvaluationModalBus.sessionId}/score`
       );
       evaluationData.value = [response];
     } catch (err) {
