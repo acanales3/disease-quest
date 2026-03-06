@@ -8,7 +8,7 @@
           <p class="text-gray-500 text-[15px] mt-2">
             View and join classrooms.
           </p>
-          <div class="mt-4 inline-flex items-center gap-2 px-3 py-2 rounded-md bg-[#4d1979]">
+          <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
             <ClassroomIcon :size="15" icon-class="text-white" />
             <span class="text-[13px] font-medium text-white">{{ data.length }} classrooms</span>
           </div>
