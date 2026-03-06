@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fetch the evaluation row joined with session + case info
-  const { data: evaluations, error } = await client
+  const { data: evaluation, error } = await client
     .from("evaluations")
     .select(`
       history_taking_synthesis,
@@ -31,17 +31,14 @@ export default defineEventHandler(async (event) => {
       case_sessions(classroom_id, classrooms(name))
     `)
     .eq("session_id", sessionId)
-    .order("created_at", { ascending: false })
-    .limit(1);
+    .single();
 
-  if (error || !evaluations?.length) {
+  if (error || !evaluation) {
     throw createError({
       statusCode: 404,
       message: "No evaluation found for this session",
     });
   }
-
-  const evaluation = evaluations[0];
 
   const caseName =
     Array.isArray(evaluation.cases)
