@@ -19,6 +19,7 @@ export interface Case {
 
 interface ColumnOptions {
   classroomId?: number;
+  returnTo?: string;
   onEdit?: (caseData: Case) => void;
   onDelete?: (caseData: Case) => void;
   onRemoveFromClassroom?: (caseId: number) => void;
@@ -157,6 +158,7 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cas
             caseData,
             role,
             classroomId: options?.classroomId,
+            returnTo: options?.returnTo,
             onEdit: options?.onEdit,
             onDelete: options?.onDelete,
             onRemoveFromClassroom: options?.onRemoveFromClassroom,
