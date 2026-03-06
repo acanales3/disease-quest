@@ -254,6 +254,7 @@ const caseColumns = computed(() => {
   return getCaseColumns("instructor", {
     classroomId,
     onRemoveFromClassroom: handleRemoveCaseFromClassroom,
+    returnTo: `/instructor/classroom/${classroomId}`,
   }).filter((column) => {
     const key =
       "id" in column

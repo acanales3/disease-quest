@@ -28,10 +28,14 @@ const currentStepIndex = computed(() => {
   return index >= 0 ? index : 0;
 });
 
-// Navigate to a step (include caseId)
+// Navigate to a step (include caseId, preserve query params)
 const goToStep = (slug: string) => {
   if (!caseId.value) return;
-  router.push(`/case/${caseId.value}/${slug}`);
+  const q = route.query;
+  const query = (q && Object.keys(q).length)
+    ? "?" + new URLSearchParams(q as Record<string, string>).toString()
+    : "";
+  router.push(`/case/${caseId.value}/${slug}${query}`);
 };
 </script>
 
