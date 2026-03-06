@@ -36,7 +36,7 @@ function buildSystemPrompt(caseContent: Record<string, unknown>): string {
   const interventions = (caseContent.interventions as Array<{ id: string; display_name: string }>) ?? [];
   const interventionsText = interventions.map((i) => `  - ${i.display_name}`).join("\n");
 
-  return `You are a supportive clinical instructor helping a medical student work through a pediatric case in a simulation. You're friendly, encouraging, and want the student to succeed.
+  return `You are a supportive clinical instructor helping a medical student work through a clinical simulation case. You're friendly, encouraging, and want the student to succeed.
 
 CASE CONTEXT:
 - Setting: ${caseContent.setting ?? "Unknown"}
@@ -48,7 +48,7 @@ DIAGNOSIS DISCLOSURE RULES (CRITICAL):
 - You MUST NOT state the diagnosis directly (or name it) unless:
   1) the student has explicitly proposed it first, OR
   2) the student explicitly asks you to reveal the diagnosis multiple times (3+ separate requests).
-- Until then, speak in categories (e.g., "serious CNS infection", "invasive bacterial infection") and focus on reasoning.
+- Until then, speak in broad clinical categories and focus on reasoning.
 
 LEARNING OBJECTIVES:
 ${objectivesText}
@@ -72,23 +72,23 @@ YOUR TEACHING STYLE:
 You are a helpful mentor, not a gatekeeper. Your job is to GUIDE the student toward the right answer.
 
 CRITICAL RULES FOR RESPONSES:
-1. When the student asks "what should I do?" or "what's next?", give SPECIFIC actions they can take in the simulation. For example: "Go to the Orders tab and order a CBC and Blood Cultures" or "Go to the Treatment tab and start empiric antibiotics."
+1. When the student asks "what should I do?" or "what's next?", give SPECIFIC actions they can take in the simulation. For example: "Go to the Orders tab and order the highest-yield test from the available list" or "Go to the Treatment tab and choose the most appropriate available intervention."
 2. Be warm and encouraging – acknowledge when they're on the right track
 3. If they're missing something important, tell them EXACTLY what to do: which tab to go to, which test to order, which treatment to give
 4. You CAN confirm correct reasoning ("Yes, that's exactly right because...")
 5. You CAN point them toward the right category of answer
 6. You CAN explain WHY something is important
 7. Give concrete, actionable guidance – never vague
-8. If the patient is deteriorating (shock, seizure), be URGENT and tell them exactly what treatments to administer immediately
+8. If the patient is deteriorating, be URGENT and tell them exactly what actions to take immediately
 
 CRITICAL CONSTRAINT:
 You MUST ONLY recommend actions that exist in the lists above. NEVER suggest medications, tests, or interventions that are NOT in the available lists. For example, do NOT suggest "acetaminophen" or "ibuprofen" if they are not in the Treatment tab list. If a student asks about something not available, explain that it's not available in this simulation and redirect them to what IS available.
 
 EXAMPLE GOOD RESPONSES:
-- "The elevated heart rate is likely from the fever and infection. Go to the Treatment tab and start empiric antibiotics (Ceftriaxone + Vancomycin) — this targets the underlying cause. Also consider a Fluid bolus if you're concerned about perfusion."
-- "This looks like shock! Go to the Treatment tab RIGHT NOW and administer a Fluid bolus for shock (20 mL/kg NS or LR). If BP doesn't improve, come back and Initiate vasopressors (dopamine/epinephrine)."
-- "Before starting antibiotics, go to the Orders tab and order Blood Cultures x2 first — cultures before antibiotics is a critical step."
-- "Go to the DDx tab and build your differential. Think about what infections could cause fever + lethargy + petechiae in a 9-month-old."
+- "Your next best step is to go to the Orders tab and pick the highest-yield test from the list above that would help separate your top diagnoses."
+- "The patient is showing signs of clinical deterioration. Go to the Treatment tab now and choose the most appropriate stabilizing intervention from the available options."
+- "Go to the DDx tab and update your differential. Prioritize the diagnoses that best explain the current vitals, exam findings, and most recent results."
+- "Use the Interview and Exam tabs to close the biggest data gaps before you commit to a final diagnosis."
 
 WHAT YOU SHOULD AVOID:
 - NEVER recommend medications or tests that are NOT in the available lists above
@@ -131,26 +131,58 @@ function countDiagnosisInsistence(msgs: string[]): number {
   return count;
 }
 
-function studentProposedMeningitis(
+function getDiagnosisKeywords(correctDiagnosis: string): string[] {
+  return correctDiagnosis
+    .toLowerCase()
+    .split(/[\s,()\/-]+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 3)
+    .filter(
+      (part) =>
+        ![
+          "acute",
+          "chronic",
+          "with",
+          "without",
+          "from",
+          "due",
+          "type",
+          "stage",
+          "syndrome",
+        ].includes(part),
+    );
+}
+
+function studentProposedDiagnosis(
   msgs: string[],
-  differential: Array<{ diagnosis: string }>
+  differential: Array<{ diagnosis: string }>,
+  diagnosisKeywords: string[],
 ): boolean {
+  if (diagnosisKeywords.length === 0) return false;
+
   for (const m of msgs) {
-    if (/\bmeningitis\b/i.test(m)) return true;
+    const lower = m.toLowerCase();
+    if (diagnosisKeywords.some((keyword) => lower.includes(keyword))) return true;
   }
   for (const dx of differential ?? []) {
-    if ((dx.diagnosis ?? "").toLowerCase().includes("meningitis")) return true;
+    const lower = (dx.diagnosis ?? "").toLowerCase();
+    if (diagnosisKeywords.some((keyword) => lower.includes(keyword))) return true;
   }
   return false;
 }
 
-function redactDiagnosisTerms(text: string): string {
+function redactDiagnosisTerms(text: string, diagnosisKeywords: string[]): string {
+  const escapedKeywords = diagnosisKeywords
+    .map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .filter(Boolean);
+
+  if (escapedKeywords.length === 0) return text;
+
   const redactions: [RegExp, string][] = [
-    [/\bacute bacterial meningitis\b/gi, "a serious CNS infection"],
-    [/\bbacterial meningitis\b/gi, "a serious CNS infection"],
-    [/\bmeningitis\b/gi, "a serious CNS infection"],
-    [/\bstreptococcus pneumoniae\b/gi, "a likely invasive bacterial pathogen"],
-    [/\bpneumococcal\b/gi, "a likely invasive bacterial"],
+    [
+      new RegExp(`\\b(?:${escapedKeywords.join("|")})\\b`, "gi"),
+      "the likely underlying condition",
+    ],
   ];
   let out = text;
   for (const [pat, repl] of redactions) {
@@ -202,8 +234,15 @@ serve(async (req: Request) => {
       .map((m) => m.content);
     studentMsgs.push(question);
 
+    const diagnosisKeywords = getDiagnosisKeywords(
+      String(caseContent.correct_diagnosis ?? ""),
+    );
     const insistCount = countDiagnosisInsistence(studentMsgs);
-    const proposed = studentProposedMeningitis(studentMsgs, sessionContext.differential ?? []);
+    const proposed = studentProposedDiagnosis(
+      studentMsgs,
+      sessionContext.differential ?? [],
+      diagnosisKeywords,
+    );
     const allowDiagnosis = proposed || insistCount >= 3;
 
     ctxParts.push(`Diagnosis reveal allowed: ${allowDiagnosis}`);
@@ -231,7 +270,7 @@ serve(async (req: Request) => {
 
     // Safety net: redact diagnosis terms if not allowed yet
     if (!allowDiagnosis) {
-      responseText = redactDiagnosisTerms(responseText);
+      responseText = redactDiagnosisTerms(responseText, diagnosisKeywords);
     }
 
     return new Response(

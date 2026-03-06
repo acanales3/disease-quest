@@ -425,6 +425,42 @@ function clampNumber(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+function sanitizeDiagnosisHint(
+  text: string,
+  correctDiagnosis: string,
+): string {
+  const keywords = correctDiagnosis
+    .toLowerCase()
+    .split(/[\s,()\/-]+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 3)
+    .filter(
+      (part) =>
+        ![
+          "acute",
+          "chronic",
+          "with",
+          "without",
+          "from",
+          "due",
+          "type",
+          "stage",
+          "syndrome",
+        ].includes(part),
+    );
+
+  let sanitized = text;
+  for (const keyword of keywords) {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    sanitized = sanitized.replace(
+      new RegExp(`\\b${escaped}\\b`, "gi"),
+      "the underlying condition",
+    );
+  }
+
+  return sanitized;
+}
+
 function worsenMentalStatus(current: unknown): string {
   const idx = MENTAL_STATUS_ORDER.indexOf(String(current ?? "alert"));
   if (idx < 0) return "drowsy";
@@ -1732,8 +1768,10 @@ serve(async (req: Request) => {
     const clinicalNote = (responseData as Record<string, unknown>).clinical_note as string | undefined;
     if (clinicalNote && actionType !== "ask_patient" && actionType !== "consult_tutor") {
       // Strip diagnosis hints from the AI-generated clinical note
-      const sanitizedNote = clinicalNote
-        .replace(/\b(bacterial meningitis|meningitis|sepsis|encephalitis|meningococcal|pneumococcal)\b/gi, "the underlying condition")
+      const sanitizedNote = sanitizeDiagnosisHint(
+        clinicalNote,
+        String(caseContent.correct_diagnosis ?? ""),
+      )
         .replace(/antibiot\w+/gi, "antimicrobial therapy")
         .replace(/without .+?intervention/gi, "without intervention")
         .trim();
