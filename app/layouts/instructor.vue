@@ -56,7 +56,7 @@ const sidebarOpen = ref(false)
 
     <!-- Desktop sidebar -->
     <aside class="hidden lg:flex w-60 min-h-screen bg-white border-r border-gray-200/80 flex-col shrink-0">
-      <div class="flex items-center gap-2 px-5 h-16 border-b border-gray-100 shrink-0">
+      <div class="flex items-center gap-1 px-5 h-16 border-b border-gray-100 shrink-0">
         <img src="/dq-logo.svg" alt="DiseaseQuest" class="h-10 w-auto"/>
         <span class="h-5 w-px bg-gray-300" />
         <img src="/tcu-logo.png" alt="TCU" class="h-16 w-auto" />
