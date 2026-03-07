@@ -3,7 +3,7 @@
     <!-- Left Panel -->
     <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col justify-between p-14" style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 30%, #c4b5fd 70%, #7c3aed 100%)">
       <div class="relative z-10 flex items-center gap-3">
-        <span class="text-gray-900 text-lg font-semibold tracking-tight">DiseaseQuest</span>
+        <img src="/dq-logo.svg" alt="DiseaseQuest" class="h-15 w-auto"/>
         <span class="h-5 w-px bg-gray-400/50" />
         <img src="/tcu-logo.png" alt="TCU Burnett School of Medicine" class="h-22 w-auto" />
       </div>

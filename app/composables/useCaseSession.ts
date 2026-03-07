@@ -80,13 +80,13 @@ export function useCaseSession() {
 
   // ── Session management ──
 
-  async function createSession(caseId: number): Promise<string | null> {
+  async function createSession(caseId: number, classroomId?: number): Promise<string | null> {
     actionLoading.value = true;
     error.value = null;
     try {
       const res = await $fetch<{ sessionId: string }>("/api/sessions/create", {
         method: "POST",
-        body: { caseId },
+        body: { caseId, classroomId },
       });
       persistSessionId(caseId, res.sessionId);
       await loadSession(res.sessionId);

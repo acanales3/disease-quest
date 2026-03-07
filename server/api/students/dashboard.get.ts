@@ -10,6 +10,7 @@ type DashboardCase = {
   name: string;
   description: string;
   classroom: string;
+  classroomId: number | null;
   completionDate: string;
   status: "not started" | "in progress" | "completed";
 };
@@ -180,6 +181,7 @@ export default defineEventHandler(async (event) => {
         name: c.name,
         description: c.description ?? "",
         classroom: row.classrooms?.code ?? "",
+        classroomId: row.classroom_id,
         completionDate: completionDate ?? "-",
         status,
       };
