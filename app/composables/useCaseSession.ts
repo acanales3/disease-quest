@@ -40,6 +40,7 @@ export interface SessionState {
     hasSeizure: boolean;
     hasRespiratoryFailure?: boolean;
   };
+  patientSex?: string | null;
   startedAt?: string;
 }
 

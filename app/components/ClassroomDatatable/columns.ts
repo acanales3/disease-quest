@@ -88,10 +88,10 @@ export function getColumns(role: string, options?: ColumnOptions): ColumnDef<Cla
       return h(
         "span",
         {
-          class: `inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+          class: `inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium text-white shadow-sm ${
             isActive
-              ? "bg-green-50 text-green-700 border-green-200"
-              : "bg-red-50 text-red-600 border-red-200"
+              ? "bg-gradient-to-r from-emerald-600 to-teal-700"
+              : "bg-gradient-to-r from-rose-600 to-red-700"
           }`,
         },
         isActive ? "Active" : "Inactive"

@@ -52,11 +52,7 @@ interface ClinicalEngineRequest {
     unlocked_disclosure_content: Array<{ id: string; title: string; content: Record<string, unknown> }>;
     scoring_categories: Record<string, unknown>;
   };
-  flags: {
-    meningitis_suspected: boolean;
-    antibiotics_ordered: boolean;
-    shock_addressed: boolean;
-  };
+  flags: Record<string, boolean>;
 }
 
 serve(async (req: Request) => {
@@ -121,9 +117,10 @@ TREATMENTS GIVEN SO FAR: ${body.treatmentsGiven.join(', ') || 'None — no treat
 TESTS ORDERED: ${body.testsOrdered.join(', ') || 'None'}
 
 FLAGS:
-- Meningitis suspected by student: ${body.flags.meningitis_suspected}
-- Antibiotics ordered: ${body.flags.antibiotics_ordered}
-- Shock addressed: ${body.flags.shock_addressed}
+${Object.entries(body.flags ?? {})
+      .filter(([key, value]) => !key.startsWith("_") && typeof value === "boolean")
+      .map(([key, value]) => `- ${key}: ${value ? "Yes" : "No"}`)
+      .join("\n") || "- None recorded"}
 
 THE STUDENT JUST DID: ${body.lastAction.type} — "${body.lastAction.detail}"
 
@@ -135,12 +132,11 @@ CRITICAL RULES:
 Based on the FULL CASE CONTEXT and real pathophysiology, determine what happens next.
 
 CRITICAL TIMING RULES (MUST FOLLOW):
-- For the FIRST 8 MINUTES: the patient is STABLE but sick. Vitals change VERY SLOWLY. NO shock, NO seizure, NO respiratory failure. The student needs time to assess, interview, examine, and order tests.
-- From 0-5 minutes: vitals stay near baseline. Only tiny changes (HR ±5, BP ±3, Temp ±0.2). Patient is lethargic but stable.
-- From 5-8 minutes WITHOUT antibiotics: mild worsening only (HR +5-10, slight BP drop). Still NO shock or seizure.
-- ONLY after 8+ minutes WITHOUT antibiotics: NOW shock and seizure can develop (per deterioration rules).
-- ONLY after 12+ minutes with unaddressed shock: multi-organ risk.
-- If antibiotics ARE given at any point: patient stabilizes, then GRADUALLY improves over the next several actions.
+- This engine must work for ANY uploaded case, not one specific diagnosis pattern.
+- Early in a case, keep changes subtle unless the case context, current vitals, deterioration rules, or recent unsafe treatment justify sharper decline.
+- Use the uploaded deterioration rules and the current patient state as the primary driver of worsening. Do not assume seizures, shock, respiratory failure, antibiotics, or any other event are universally relevant.
+- If the student gives appropriate treatment for the likely problem, improvement should be gradual over multiple actions, not instant.
+- If the student gives unnecessary or harmful treatment, worsening can occur, but it still needs to stay physiologically plausible and tied to what was actually given.
 
 ABSOLUTE PHYSIOLOGICAL LIMITS (a living patient MUST stay within these):
   - HR: 30–220 bpm (NEVER 0 — a heart rate of 0 means death, which is NOT allowed)
@@ -164,16 +160,14 @@ CHANGE MAGNITUDE RULES:
 - If the student is just talking to the patient or ordering tests, vitals should barely change (±1-2 on any value)
 
 WHEN TO TRIGGER COMPLICATIONS:
-- has_shock should ONLY become true if: elapsed >= 8 AND no antibiotics AND BP has been trending down over multiple actions
-- has_seizure should ONLY become true if: elapsed >= 8 AND no antibiotics AND it was triggered by deterioration rules
-- has_respiratory_failure should ONLY become true if: has_shock has been true for multiple actions without treatment
-- If ANY appropriate treatment has been given (antibiotics, fluids, vasopressors), do NOT trigger new complications
+- Trigger complications only when supported by the case-specific deterioration rules, worsening physiology, or consequences of unsafe treatment.
+- Keep complication timing believable: most serious events should emerge after a pattern of deterioration, not out of nowhere.
+- Do not introduce diagnosis-specific complications unless the case context supports them.
 
 IMPROVEMENT RULES:
-- Antibiotics: gradual improvement — HR drops 3-8 per action, temp drops 0.1-0.2 per action
-- Fluids: BP improves 3-5, cap refill improves 0.3-0.5
-- Vasopressors: BP improves 5-10, shock resolves over 1-2 actions
-- Multiple treatments together: slightly faster improvement but still gradual
+- Appropriate treatments should improve the relevant physiology gradually.
+- Supportive care such as fluids, airway support, antimicrobials, vasopressors, and other case-defined interventions should change the specific vitals they would realistically affect.
+- Multiple appropriate treatments together can improve the trajectory slightly faster, but still gradually. 
 
 Return ONLY valid JSON with this exact structure:
 {

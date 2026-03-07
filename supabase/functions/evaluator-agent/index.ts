@@ -100,6 +100,22 @@ function formatRubric(rubrics: RubricDomain[]): {
   };
 }
 
+function formatBooleanFlags(flags: Record<string, boolean> | undefined): string {
+  if (!flags) return "- None recorded";
+
+  const entries = Object.entries(flags).filter(
+    ([key, value]) =>
+      !key.startsWith("_") && typeof value === "boolean",
+  );
+
+  if (entries.length === 0) return "- None recorded";
+
+  return entries
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `- ${key}: ${value ? "Yes" : "No"}`)
+    .join("\n");
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -112,6 +128,11 @@ serve(async (req: Request) => {
     const rubrics = (caseContent.evaluation_rubrics ?? []) as RubricDomain[];
     const { rubricText, scoreKeys } = formatRubric(rubrics);
     const totalMax = rubrics.reduce((s, r) => s + r.max_points, 0);
+    const rubricSourceText = String(
+      ((caseContent.rubric_source ?? {}) as Record<string, unknown>).source_text ??
+        "",
+    ).slice(0, 12000);
+    const flagsText = formatBooleanFlags(sessionData.flags);
 
     const logSummary = (sessionData.actionLog ?? [])
       .map((a) => {
@@ -174,6 +195,9 @@ ${rubricText}
 
 Total possible points: ${totalMax}
 
+CASE-SPECIFIC RUBRIC SOURCE:
+${rubricSourceText || "No uploaded rubric source provided beyond the structured rubric above."}
+
 ═══════════════════════════════════════════════
 STUDENT PERFORMANCE DATA
 ═══════════════════════════════════════════════
@@ -195,10 +219,8 @@ ${testsText || "No tests ordered"}
 
 TIMING & FLAGS:
 - Total case time: ${sessionData.elapsedMinutes} minutes
-- Antibiotics ordered: ${sessionData.flags?.antibiotics_ordered ? "Yes" : "No"}
-- Cultures before antibiotics: ${sessionData.flags?.cultures_before_antibiotics ? "Yes" : "No/Unknown"}
-- Meningitis suspected: ${sessionData.flags?.meningitis_suspected ? "Yes" : "No"}
-- Shock recognized: ${sessionData.flags?.shock_recognized ? "Yes" : "No"}
+- Runtime flags:
+${flagsText}
 - Treatments given: ${(sessionData.treatmentsAdministered ?? []).join(", ") || "None"}
 
 ═══════════════════════════════════════════════
@@ -210,6 +232,7 @@ SCORING INSTRUCTIONS
 3. Evaluate PROCESS and REASONING, not just outcomes.
 4. Be SPECIFIC — cite exact moments, timestamps, and actions from the interaction log as evidence for each score.
 5. For each domain, identify concrete strengths AND areas for improvement.
+6. If the uploaded rubric source includes extra grading ideas that are not first-class DB domains, reflect them inside the closest matching core domain feedback and scoring rationale.
 
 DOMAIN-SPECIFIC GUIDANCE:
 - History Taking: Assess completeness, organization, and synthesis of HPI, PMH, social history, ROS.
