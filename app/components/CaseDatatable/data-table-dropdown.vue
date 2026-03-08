@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import type { Case } from "./columns";
+import { caseEvaluationModalBus } from "../CaseEvaluationModal/modalBusCaseEvaluation";
 
 interface Props {
   caseData: Case;
@@ -121,6 +122,32 @@ const handleReplay = async () => {
     isReplaying.value = false;
   }
 };
+
+const openEvaluationModal = async () => {
+  let sessionId = (props.caseData as any).sessionId ?? null;
+
+  if (!sessionId) {
+    try {
+      const activeRes = await $fetch<{ sessionId: string | null }>(
+        `/api/sessions/active?caseId=${props.caseData.id}&includeCompleted=true`
+      );
+      sessionId = activeRes.sessionId;
+    } catch (err) {
+      console.error("Could not find session for case:", err);
+      return;
+    }
+  }
+
+  if (!sessionId) return;
+
+  const classroomId = props.classroomId ?? props.caseData.classrooms?.[0]?.id ?? 0;
+
+  caseEvaluationModalBus.open(
+    Number(props.caseData.id),
+    classroomId,
+    sessionId
+  );
+};
 </script>
 
 <template>
@@ -146,7 +173,7 @@ const handleReplay = async () => {
       <DropdownMenuItem
         v-if="props.caseData.status === 'completed'"
         class="cursor-pointer"
-        @click="router.push(`/case/${props.caseData.id}/results`)"
+        @click="openEvaluationModal"
       >
         Review Case
       </DropdownMenuItem>

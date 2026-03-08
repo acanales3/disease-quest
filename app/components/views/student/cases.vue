@@ -42,6 +42,9 @@
     <div v-else class="w-full">
       <DataTable :columns="visibleColumns" :data="data" @refresh="refresh()" />
     </div>
+
+    <CaseEvaluationModal />
+
   </div>
 </template>
 
@@ -51,6 +54,9 @@ import { ref, computed, watchEffect } from "vue";
 import { getColumns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { Icon } from "#components";
+
+import CaseEvaluationModal from "~/components/CaseEvaluationModal/CaseEvaluationModal.vue";
+import { caseEvaluationModalBus } from "~/components/CaseEvaluationModal/modalBusCaseEvaluation";
 
 const data = ref<Case[]>([]);
 

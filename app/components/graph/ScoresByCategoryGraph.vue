@@ -9,7 +9,7 @@
 
       <div class="flex gap-2">
         <!-- Case selector -->
-        <ui-dropdown-menu>
+        <ui-dropdown-menu v-if="props.renderDropdowns">
           <ui-dropdown-menu-trigger as-child>
             <button class="px-3 h-8 border border-gray-200 rounded-lg text-[12px] font-medium min-w-[120px] flex justify-between items-center gap-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors">
               <span class="truncate">{{ selectedCase?.name || "All Cases" }}</span>
@@ -25,7 +25,7 @@
         </ui-dropdown-menu>
 
         <!-- Classroom selector -->
-        <ui-dropdown-menu>
+        <ui-dropdown-menu v-if="props.renderDropdowns">
           <ui-dropdown-menu-trigger as-child>
             <button class="px-3 h-8 border border-gray-200 rounded-lg text-[12px] font-medium min-w-[130px] flex justify-between items-center gap-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors">
               <span class="truncate">{{ selectedClassroom?.name || "All Classrooms" }}</span>
@@ -94,9 +94,25 @@ const route = useRoute()
 type Category = { label: string; score: number };
 type Item = { id: number; name: string };
 
-const props = defineProps<{
-  data: AnalyticsScoreEntry[];
-  loading?: boolean;
+const props = defineProps({
+  data: {
+    type: Array as () => AnalyticsScoreEntry[],
+    required: true
+  },
+  loading: {
+    type: Boolean,
+    required: false,
+    default: false
+  },
+  renderDropdowns: {
+    type: Boolean,
+    required: false,
+    default: true
+  }
+})
+
+const emit = defineEmits<{
+  (e: 'session-change', sessionId: number): void
 }>()
 
 const selectedCase = ref<Item | null>(null);
@@ -104,63 +120,63 @@ const selectedClassroom = ref<Item | null>(null);
 
 // Derive Unique Lists from Data
 const cases = computed(() => {
-    const map = new Map<number, string>()
-    props.data.forEach(d => map.set(d.caseId, d.caseName))
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a,b) => a.name.localeCompare(b.name))
+  const map = new Map<number, string>()
+  props.data.forEach(d => map.set(d.caseId, d.caseName))
+  return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))
 })
 
 const classroomsList = computed(() => {
-    const map = new Map<number, string>()
-    props.data.forEach(d => map.set(d.classroomId, d.classroomName))
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a,b) => a.name.localeCompare(b.name))
+  const map = new Map<number, string>()
+  props.data.forEach(d => map.set(d.classroomId, d.classroomName))
+  return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))
 })
 
 watchEffect(() => {
-    const classroomIdQuery = route.query.classroomId
-    if (classroomIdQuery) {
-        const id = Number(classroomIdQuery)
-        const nameQuery = route.query.classroomName as string
-        const found = classroomsList.value.find(c => c.id === id)
-        if (found) {
-            selectedClassroom.value = found
-        } else {
-            selectedClassroom.value = { id, name: nameQuery || 'Selected Classroom' }
-        }
+  const classroomIdQuery = route.query.classroomId
+  if (classroomIdQuery) {
+    const id = Number(classroomIdQuery)
+    const nameQuery = route.query.classroomName as string
+    const found = classroomsList.value.find(c => c.id === id)
+    if (found) {
+      selectedClassroom.value = found
+    } else {
+      selectedClassroom.value = { id, name: nameQuery || 'Selected Classroom' }
     }
+  }
 })
 
 // Compute Aggregated Scores
 const processedCategories = computed<Category[]>(() => {
-    if (!props.data || !props.data.length) return []
+  if (!props.data || !props.data.length) return []
 
-    // 1. Filter
-    const filtered = props.data.filter(d => {
-        if (selectedCase.value && d.caseId !== selectedCase.value.id) return false
-        if (selectedClassroom.value && d.classroomId !== selectedClassroom.value.id) return false
-        return true
-    })
+  // 1. Filter
+  const filtered = props.data.filter(d => {
+    if (selectedCase.value && d.caseId !== selectedCase.value.id) return false
+    if (selectedClassroom.value && d.classroomId !== selectedClassroom.value.id) return false
+    return true
+  })
 
-    if (!filtered.length) return []
+  if (!filtered.length) return []
 
-    // 2. Aggregate (Weighted Average)
-    const totalCount = filtered.reduce((sum, d) => sum + d.count, 0)
-    if (totalCount === 0) return []
+  // 2. Aggregate (Weighted Average)
+  const totalCount = filtered.reduce((sum, d) => sum + d.count, 0)
+  if (totalCount === 0) return []
 
-    const weightedSum = (field: keyof AnalyticsScoreEntry) => {
-        return filtered.reduce((sum, d) => sum + (d[field] as number * d.count), 0)
-    }
+  const weightedSum = (field: keyof AnalyticsScoreEntry) => {
+    return filtered.reduce((sum, d) => sum + (d[field] as number * d.count), 0)
+  }
 
-    const avg = (field: keyof AnalyticsScoreEntry) => Math.round(weightedSum(field) / totalCount * 10) / 10
+  const avg = (field: keyof AnalyticsScoreEntry) => Math.round(weightedSum(field) / totalCount * 10) / 10
 
-    return [
-      { label: 'History Taking and Synthesis', score: avg('history_taking_synthesis') },
-      { label: 'Physical Exam Interpretation', score: avg('physical_exam_interpretation') },
-      { label: 'Differential Diagnosis Formulation', score: avg('differential_diagnosis_formulation') },
-      { label: 'Diagnostic Tests', score: avg('diagnostic_tests') },
-      { label: 'Management Reasoning', score: avg('management_reasoning') },
-      { label: 'Communication and Empathy', score: avg('communication_empathy') },
-      { label: 'Reflection and Metacognition', score: avg('reflection_metacognition') },
-    ]
+  return [
+    { label: 'History Taking and Synthesis', score: avg('history_taking_synthesis') },
+    { label: 'Physical Exam Interpretation', score: avg('physical_exam_interpretation') },
+    { label: 'Differential Diagnosis Formulation', score: avg('differential_diagnosis_formulation') },
+    { label: 'Diagnostic Tests', score: avg('diagnostic_tests') },
+    { label: 'Management Reasoning', score: avg('management_reasoning') },
+    { label: 'Communication and Empathy', score: avg('communication_empathy') },
+    { label: 'Reflection and Metacognition', score: avg('reflection_metacognition') },
+  ]
 })
 
 // Animation: bars grow from 0 to their target on load/filter change
