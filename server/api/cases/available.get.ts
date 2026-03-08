@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
     if (error) throw createError({ statusCode: 500, message: error.message });
 
-    return (data ?? []).map((c: any) => {
+    const caseRows = (data ?? []).map((c: any) => {
       let classrooms = (c.classroom_cases || [])
         .map((cc: any) => cc.classrooms)
         .filter(Boolean);
@@ -60,6 +60,32 @@ export default defineEventHandler(async (event) => {
         classrooms,
       };
     });
+
+    const caseIds = caseRows.map((c: any) => c.id);
+    const statusMap = new Map<number, string>();
+
+    if (caseIds.length > 0) {
+      const { data: sessions } = await client
+        .from("case_sessions")
+        .select("case_id, status")
+        .in("case_id", caseIds);
+
+      for (const s of sessions ?? []) {
+        const prev = statusMap.get(s.case_id);
+        if (s.status === "completed") {
+          statusMap.set(s.case_id, "completed");
+        } else if (s.status === "in_progress" && prev !== "completed") {
+          statusMap.set(s.case_id, "in progress");
+        } else if (!prev) {
+          statusMap.set(s.case_id, "not started");
+        }
+      }
+    }
+
+    return caseRows.map((c: any) => ({
+      ...c,
+      status: statusMap.get(c.id) ?? "not started",
+    }));
   }
 
   if (role === "STUDENT") {

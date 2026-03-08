@@ -11,7 +11,7 @@
             DiseaseQuest lets you practice diagnosis, treatment planning, and clinical decision-making through realistic, interactive patient simulations.          </p>
           <div class="mt-4 flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 bg-white text-[#4d1979] text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">
-              <ClassroomIcon :size="20" icon-class="text-[#4d1979]" />
+              <ClassroomIcon :size="15" icon-class="text-[#4d1979]" />
               {{ dashboardData?.totalClassrooms ?? 0 }} classrooms
             </span>
           </div>
@@ -123,7 +123,7 @@
             </NuxtLink>
             <NuxtLink to="/instructor/classrooms" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
               <div class="w-8 h-8 rounded-lg bg-[#f5f3ff] text-[#4d1979] flex items-center justify-center">
-                <ClassroomIcon :size="20" icon-class="text-[#4d1979]" />
+                <ClassroomIcon :size="15" icon-class="text-[#4d1979]" />
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Classrooms</p>

@@ -60,7 +60,7 @@
 
         <NuxtLink to="/admin/classrooms" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <ClassroomIcon :size="22" icon-class="text-white" />
+            <ClassroomIcon :size="16" icon-class="text-white" />
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Classrooms</p>

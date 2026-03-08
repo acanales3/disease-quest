@@ -20,7 +20,7 @@
       >
         <ClassroomIcon
           v-if="iconType === 'classroom'"
-          :size="compact ? 20 : 22"
+          :size="compact ? 20 : 25"
           icon-class="text-black"
         />
         <Icon v-else :name="icon" :size="compact ? 20 : 25" class="text-black" />
