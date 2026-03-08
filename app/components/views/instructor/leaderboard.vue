@@ -6,7 +6,7 @@
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Insights</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Leaderboard</h1>
           <p class="text-gray-500 text-[15px] mt-2 leading-relaxed">
-            Students ranked by completed cases and average scores.
+            View student rankings by completed cases and average scores.
           </p>
         </div>
         <button

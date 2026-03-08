@@ -7,7 +7,7 @@
         <div>
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Content</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Classrooms</h1>
-          <p class="text-gray-500 text-[15px] mt-2">Create, edit, and manage classrooms.</p>
+          <p class="text-gray-500 text-[15px] mt-2">View, create, edit, and manage classrooms.</p>
           <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
             <ClassroomIcon :size="15" icon-class="text-white" />
             <span class="text-[13px] font-medium text-white">{{ data.length }} classrooms</span>
@@ -69,6 +69,7 @@
 import { getColumns } from "../../ClassroomDatatable/columns";
 import type { Classroom } from "../../ClassroomDatatable/columns";
 import { onMounted, ref, computed } from "vue";
+import { useRouter } from 'vue-router'
 import DataTable from "../../ClassroomDatatable/data-table.vue";
 import TotalCount from "../../ui/TotalCount.vue";
 import { Button } from "../../ui/button";
@@ -84,6 +85,8 @@ type DeleteState =
   | { status: "loading"; message?: string }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
+
+const router = useRouter();
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
@@ -202,12 +205,19 @@ function openCreateModal() {
   isCreateModalOpen.value = true;
 }
 
-function handleClassroomCreated(classroom: any) {
-  pageMessage.value = {
-    type: "success",
-    text: `Classroom "${classroom.name}" created successfully.`,
-  };
-  refreshClassrooms();
+function handleClassroomCreated(response: {
+  id: number;
+  inviteCode?: string;
+  [key: string]: any;
+}) {
+  isCreateModalOpen.value = false;
+
+  router.push({
+    path: `/admin/classrooms/${response.id}`,
+    query: response.inviteCode
+      ? { inviteCode: response.inviteCode }
+      : undefined,
+  });
 }
 
 onMounted(async () => {
