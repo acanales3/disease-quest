@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event);
   const caseId = query.caseId;
+  const classroomId = query.classroomId;
   const includeCompleted = query.includeCompleted === "true";
 
   if (!caseId) {
@@ -29,20 +30,28 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const statuses = includeCompleted
-    ? ["created", "in_progress", "completed"]
-    : ["created", "in_progress"];
-
-  const { data, error } = (await client
+  let activeQuery = client
     .from("case_sessions")
-    .select("id, status, phase, elapsed_minutes, created_at, attempt_number")
+    .select("id, status, phase, elapsed_minutes, created_at, attempt_number, completed_at")
     .eq("user_id", userId)
-    .eq("case_id", parseInt(caseId as string))
-    .in("status", statuses)
+    .eq("case_id", parseInt(caseId as string));
+  if (classroomId != null && classroomId !== "") {
+    activeQuery = activeQuery.eq("classroom_id", parseInt(classroomId as string));
+  }
+
+  // For replay, we want the most recent completed session.
+  // Some legacy rows may have completed_at set but status not updated to 'completed'.
+  if (includeCompleted) {
+    activeQuery = activeQuery.or("status.eq.completed,completed_at.not.is.null");
+  } else {
+    activeQuery = activeQuery.in("status", ["created", "in_progress"]);
+  }
+
+  const { data, error } = (await activeQuery
     .order("attempt_number", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()) as {
+    .maybeSingle()) as {
     data: {
       id: string;
       status: string;
@@ -53,7 +62,10 @@ export default defineEventHandler(async (event) => {
     error: any;
   };
 
-  if (error || !data) {
+  if (error) {
+    return { sessionId: null };
+  }
+  if (!data) {
     return { sessionId: null };
   }
 

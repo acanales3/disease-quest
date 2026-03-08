@@ -136,110 +136,89 @@ export default defineEventHandler(async (event) => {
 
     if (ccErr) throw createError({ statusCode: 500, message: ccErr.message });
 
-    // Deduplicate: one entry per unique case_id, collecting all classrooms
-    const caseMap = new Map<
-      number,
-      {
-        case_id: number;
-        name: string;
-        description: string;
-        created_at: string;
-        classrooms: { id: number; name: string }[];
-      }
-    >();
+    // One entry per (classroom_id, case_id) — same case in multiple classes = multiple rows
+    const entries: {
+      classroom_id: number;
+      case_id: number;
+      name: string;
+      description: string;
+      created_at: string;
+      classroomName: string;
+    }[] = [];
 
     for (const r of rows ?? []) {
       const caseData = Array.isArray(r.cases) ? r.cases[0] : r.cases;
       if (!caseData) continue;
-
-      const existing = caseMap.get(r.case_id);
-      const classroom = {
-        id: r.classroom_id,
-        name: classroomNames[r.classroom_id] ?? `Classroom ${r.classroom_id}`,
-      };
-
-      if (existing) {
-        // Add classroom if not already present
-        if (!existing.classrooms.some((c) => c.id === classroom.id)) {
-          existing.classrooms.push(classroom);
-        }
-      } else {
-        caseMap.set(r.case_id, {
-          case_id: r.case_id,
-          name: caseData.name,
-          description: caseData.description,
-          created_at: caseData.created_at,
-          classrooms: [classroom],
-        });
-      }
+      entries.push({
+        classroom_id: r.classroom_id,
+        case_id: r.case_id,
+        name: caseData.name,
+        description: caseData.description,
+        created_at: caseData.created_at,
+        classroomName:
+          classroomNames[r.classroom_id] ?? `Classroom ${r.classroom_id}`,
+      });
     }
 
-    if (caseMap.size === 0) return [];
+    if (entries.length === 0) return [];
 
-    const caseIds = [...caseMap.keys()];
+    const caseIds = [...new Set(entries.map((e) => e.case_id))];
 
-    // Fetch ALL sessions for this student across these cases, ordered by
-    // attempt_number desc so the most recent attempt comes first per case.
     const { data: sessions, error: sErr } = await client
       .from("case_sessions")
-      .select("case_id, status, attempt_number, started_at, completed_at")
+      .select("case_id, classroom_id, status, attempt_number, started_at, completed_at")
       .eq("user_id", userId)
       .in("case_id", caseIds)
       .order("attempt_number", { ascending: false });
 
     if (sErr) throw createError({ statusCode: 500, message: sErr.message });
 
-    // For each case, pick the most recent session (highest attempt_number)
-    // and map its status to the UI status.
-    const latestSessionByCase = new Map<
-      number,
-      {
-        status: string;
-        started_at: string | null;
-        completed_at: string | null;
-      }
+    // Per (case_id, classroom_id): latest session state and count of completed attempts
+    const key = (cid: number, clid: number | null) =>
+      `${cid}:${clid ?? "null"}`;
+    const latestByKey = new Map<
+      string,
+      { status: string; started_at: string | null; completed_at: string | null }
     >();
+    const completedCountByKey = new Map<string, number>();
 
     for (const s of sessions ?? []) {
-      if (!latestSessionByCase.has(s.case_id)) {
-        // First one we see is the most recent (ordered desc)
-        latestSessionByCase.set(s.case_id, {
+      const k = key(s.case_id, s.classroom_id ?? null);
+      if (!latestByKey.has(k)) {
+        latestByKey.set(k, {
           status: s.status,
           started_at: s.started_at,
           completed_at: s.completed_at,
         });
       }
+      if (s.status === "completed" || !!s.completed_at) {
+        completedCountByKey.set(k, (completedCountByKey.get(k) ?? 0) + 1);
+      }
     }
 
-    const result = [...caseMap.values()].map((c) => {
-      const session = latestSessionByCase.get(c.case_id);
+    const result = entries.map((e) => {
+      const k = key(e.case_id, e.classroom_id);
+      const session = latestByKey.get(k);
 
-      // Map DB session status → UI status
-      // DB statuses: 'created' | 'in_progress' | 'completed' | 'abandoned'
-      // UI statuses: 'not started' | 'in progress' | 'completed'
       let uiStatus: "not started" | "in progress" | "completed" = "not started";
-
       if (session) {
-        if (session.status === "completed") {
-          uiStatus = "completed";
-        } else if (session.status === "in_progress") {
+        if (session.completed_at) uiStatus = "completed";
+        else if (session.status === "in_progress" || session.started_at)
           uiStatus = "in progress";
-        } else {
-          // 'created' or 'abandoned' both map to 'not started'
-          uiStatus = "not started";
-        }
       }
 
       return {
-        // Use the real case_id (number) so the dropdown can pass it to
-        // /api/sessions/active?caseId=... correctly
-        id: c.case_id,
-        name: c.name,
-        description: c.description,
-        created_at: c.created_at,
-        classrooms: c.classrooms,
+        id: e.case_id,
+        name: e.name,
+        description: e.description,
+        created_at: e.created_at,
+        classrooms: [
+          { id: e.classroom_id, name: e.classroomName },
+        ],
+        classroomId: e.classroom_id,
         status: uiStatus,
-        completionDate: session?.completed_at ?? null,
+        completionDate: session?.completed_at ?? "-",
+        attempts: completedCountByKey.get(k) ?? 0,
       };
     });
 

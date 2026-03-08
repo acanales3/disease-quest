@@ -87,10 +87,10 @@ const handleReplay = async () => {
   isReplaying.value = true;
 
   try {
-    // Look up the most recent completed session for this case
-    const activeRes = await $fetch<{ sessionId: string | null }>(
-      `/api/sessions/active?caseId=${props.caseData.id}&includeCompleted=true`,
-    );
+    // Look up the most recent completed session for this case (and classroom when applicable)
+    const classroomId = props.classroomId ?? (props.caseData as any).classroomId;
+    const activeUrl = `/api/sessions/active?caseId=${props.caseData.id}&includeCompleted=true${classroomId != null ? `&classroomId=${classroomId}` : ""}`;
+    const activeRes = await $fetch<{ sessionId: string | null }>(activeUrl);
 
     if (!activeRes.sessionId) {
       // No session found — nothing to reset, just emit refresh so the

@@ -117,7 +117,8 @@ async function startCase() {
     const sessionId = await createSession(parseInt(caseId), classroomId)
     if (sessionId) {
       useState('currentSessionId', () => sessionId).value = sessionId
-      router.push(`/case/${caseId}/mentor`)
+      const mentorPath = classroomId != null ? `/case/${caseId}/mentor?classroomId=${classroomId}` : `/case/${caseId}/mentor`
+      router.push(mentorPath)
     } else {
       startError.value = sessionError.value || 'Session creation failed. Check the server logs for details.'
     }

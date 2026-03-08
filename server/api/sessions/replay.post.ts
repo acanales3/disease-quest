@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
   // Verify ownership and that the session is completed
   const { data: session, error: sessionErr } = await client
     .from("case_sessions")
-    .select("id, user_id, case_id, status, attempt_number")
+    .select("id, user_id, case_id, status, attempt_number, completed_at")
     .eq("id", sessionId)
     .eq("user_id", userId)
     .single();
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: "Session not found" });
   }
 
-  if (session.status !== "completed") {
+  if (session.status !== "completed" && !session.completed_at) {
     throw createError({
       statusCode: 400,
       message: "Only completed sessions can be replayed",
