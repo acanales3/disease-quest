@@ -6,6 +6,8 @@
  * - Resets status → 'created', phase → 'prologue'
  * - Resets elapsed_minutes, patient_state, flags, etc. back to initial values
  * - Increments attempt_number
+ * - Preserves classroom_id so the replayed session stays scoped to the
+ *   same classroom as the original attempt
  * - Keeps the case_sessions row and any evaluation entries (they are preserved)
  *
  * Body: { sessionId: string }
@@ -34,10 +36,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "sessionId is required" });
   }
 
-  // Verify ownership and that the session is completed
+  // Verify ownership and that the session is completed.
+  // Also fetch classroom_id so we can preserve it after reset.
   const { data: session, error: sessionErr } = await client
     .from("case_sessions")
-    .select("id, user_id, case_id, status, attempt_number")
+    .select("id, user_id, case_id, status, attempt_number, classroom_id")
     .eq("id", sessionId)
     .eq("user_id", userId)
     .single();
@@ -105,7 +108,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Reset the session back to its initial state, incrementing attempt_number
+  // Reset the session back to its initial state, incrementing attempt_number.
+  // classroom_id is explicitly preserved so the replay stays scoped to the
+  // same classroom as the original attempt.
   const { error: updateErr } = await serviceClient
     .from("case_sessions")
     .update({
@@ -133,6 +138,8 @@ export default defineEventHandler(async (event) => {
       completed_at: null,
       updated_at: new Date().toISOString(),
       attempt_number: (session.attempt_number ?? 1) + 1,
+      // Explicitly keep classroom_id unchanged — do NOT set to null
+      classroom_id: session.classroom_id ?? null,
     })
     .eq("id", sessionId);
 
