@@ -71,6 +71,7 @@ const visibleColumns = computed(() => {
     "name",
     "description",
     "classrooms",
+    "attempts",
     "status",
     "actions",
   ];

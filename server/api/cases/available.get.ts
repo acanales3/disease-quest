@@ -36,6 +36,20 @@ export default defineEventHandler(async (event) => {
 
     if (error) throw createError({ statusCode: 500, message: error.message });
 
+    const caseIds = (data ?? []).map((c: any) => c.id);
+    const attemptsByCase: Record<number, number> = {};
+
+    if (caseIds.length > 0) {
+      const { data: sessions } = await client
+        .from("case_sessions")
+        .select("case_id")
+        .in("case_id", caseIds)
+        .or("status.eq.completed,completed_at.not.is.null");
+      for (const s of sessions ?? []) {
+        attemptsByCase[s.case_id] = (attemptsByCase[s.case_id] ?? 0) + 1;
+      }
+    }
+
     return (data ?? []).map((c: any) => {
       let classrooms = (c.classroom_cases || [])
         .map((cc: any) => cc.classrooms)
@@ -58,6 +72,7 @@ export default defineEventHandler(async (event) => {
         description: c.description,
         created_at: c.created_at,
         classrooms,
+        attempts: attemptsByCase[c.id] ?? 0,
       };
     });
   }
