@@ -40,19 +40,21 @@
       Failed to load cases.
     </div>
     <div v-else class="w-full">
-      <DataTable :columns="visibleColumns" :data="data" @refresh="refresh()" />
+      <DataTable :columns="visibleColumns" :data="data" :classrooms="classroomsData" @refresh="refresh()" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
+import type { Classroom } from "~/assets/interface/Classroom";
 import { ref, computed, watchEffect } from "vue";
 import { getColumns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { Icon } from "#components";
 
 const data = ref<Case[]>([]);
+const classroomsData = ref<Classroom[]>([]);
 
 const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
   "/api/cases/available",
@@ -61,8 +63,17 @@ const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
   },
 );
 
+const {
+  data: classroomsApi,
+  pending: classroomsPending,
+  error: classroomsError,
+} = await useFetch<Classroom[]>("/api/classrooms", {
+  default: () => [],
+});
+
 watchEffect(() => {
   data.value = apiData.value ?? [];
+  classroomsData.value = classroomsApi.value ?? [];
 });
 
 const visibleColumns = computed(() => {
