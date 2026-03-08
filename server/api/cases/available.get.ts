@@ -36,21 +36,7 @@ export default defineEventHandler(async (event) => {
 
     if (error) throw createError({ statusCode: 500, message: error.message });
 
-    const caseIds = (data ?? []).map((c: any) => c.id);
-    const attemptsByCase: Record<number, number> = {};
-
-    if (caseIds.length > 0) {
-      const { data: sessions } = await client
-        .from("case_sessions")
-        .select("case_id")
-        .in("case_id", caseIds)
-        .or("status.eq.completed,completed_at.not.is.null");
-      for (const s of sessions ?? []) {
-        attemptsByCase[s.case_id] = (attemptsByCase[s.case_id] ?? 0) + 1;
-      }
-    }
-
-    return (data ?? []).map((c: any) => {
+    const mappedCases = (data ?? []).map((c: any) => {
       let classrooms = (c.classroom_cases || [])
         .map((cc: any) => cc.classrooms)
         .filter(Boolean);
@@ -72,7 +58,65 @@ export default defineEventHandler(async (event) => {
         description: c.description,
         created_at: c.created_at,
         classrooms,
+      };
+    });
+
+    if (mappedCases.length === 0) return [];
+
+    const caseIds = mappedCases.map((c: any) => c.id);
+
+    const attemptsByCase: Record<number, number> = {};
+    const { data: allSessions } = await client
+      .from("case_sessions")
+      .select("case_id")
+      .in("case_id", caseIds)
+      .or("status.eq.completed,completed_at.not.is.null");
+    for (const s of allSessions ?? []) {
+      attemptsByCase[s.case_id] = (attemptsByCase[s.case_id] ?? 0) + 1;
+    }
+
+    const { data: sessions, error: sErr } = await client
+      .from("case_sessions")
+      .select("case_id, status, attempt_number, completed_at")
+      .eq("user_id", userId)
+      .in("case_id", caseIds)
+      .order("attempt_number", { ascending: false });
+
+    if (sErr) throw createError({ statusCode: 500, message: sErr.message });
+
+    const latestSessionByCase = new Map<
+      number,
+      { status: string; completed_at: string | null }
+    >();
+
+    for (const s of sessions ?? []) {
+      if (!latestSessionByCase.has(s.case_id)) {
+        latestSessionByCase.set(s.case_id, {
+          status: s.status,
+          completed_at: s.completed_at,
+        });
+      }
+    }
+
+    return mappedCases.map((c: any) => {
+      const session = latestSessionByCase.get(c.id);
+      let uiStatus: "not started" | "in progress" | "completed" = "not started";
+
+      if (session) {
+        if (session.status === "completed") {
+          uiStatus = "completed";
+        } else if (session.status === "in_progress") {
+          uiStatus = "in progress";
+        } else {
+          uiStatus = "not started";
+        }
+      }
+
+      return {
+        ...c,
         attempts: attemptsByCase[c.id] ?? 0,
+        status: uiStatus,
+        completionDate: session?.completed_at ?? null,
       };
     });
   }
