@@ -127,7 +127,7 @@
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Classrooms</p>
-                <p class="text-[12px] text-gray-400">Create, edit, and manage classrooms</p>
+                <p class="text-[12px] text-gray-400">View, create, edit, and manage classrooms</p>
               </div>
             </NuxtLink>
             <NuxtLink to="/instructor/cases" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
@@ -136,7 +136,7 @@
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Cases</p>
-                <p class="text-[12px] text-gray-400">Play and assign cases to classrooms</p>
+                <p class="text-[12px] text-gray-400">Play, review, and assign cases to classrooms</p>
               </div>
             </NuxtLink>
             <NuxtLink to="/instructor/analytics" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">

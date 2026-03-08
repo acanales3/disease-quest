@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
   const role = userData.role;
 
-  // 2. Determine Scope (Allowed Classrooms)
+  // 2. Determine allowed classrooms
   let allowedClassroomIds: number[] = [];
 
   if (role === "INSTRUCTOR") {
@@ -42,47 +42,55 @@ export default defineEventHandler(async (event) => {
       .from("classrooms")
       .select("id")
       .eq("instructor_id", userId);
-
-    if (classrooms) {
-      allowedClassroomIds = classrooms.map((c) => c.id);
-    }
+    if (classrooms) allowedClassroomIds = classrooms.map((c) => c.id);
   } else if (role === "STUDENT") {
     const { data: enrollments } = await client
       .from("classroom_students")
       .select("classroom_id")
       .eq("student_id", userId);
-
-    if (enrollments) {
+    if (enrollments)
       allowedClassroomIds = enrollments.map((e) => e.classroom_id);
-    }
   }
 
-  // 3. Build Query
+  // 3. Fetch evaluations joined to case_sessions (for attempt_number + completed_at)
+  //    and to cases → classroom_cases → classrooms (for classroom context).
+  //
+  //    Each row = one evaluation = one attempt.
+  //    We JOIN case_sessions so we get attempt_number and completed_at.
+  //    session_id can be null (legacy rows without a session) — those get
+  //    attempt_number = 1 and completed_at = evaluation.created_at as fallback.
   let dbQuery = client.from("evaluations").select(`
-            user_id,
-            history_taking_synthesis,
-            physical_exam_interpretation,
-            differential_diagnosis_formulation,
-            diagnostic_tests,
-            management_reasoning,
-            communication_empathy,
-            reflection_metacognition,
-            cases!inner (
-                id,
-                name,
-                classroom_cases!inner (
-                    classroom_id,
-                    classrooms!inner (
-                        id,
-                        name
-                    )
-                )
-            )
-        `);
+    id,
+    user_id,
+    session_id,
+    history_taking_synthesis,
+    physical_exam_interpretation,
+    differential_diagnosis_formulation,
+    diagnostic_tests,
+    management_reasoning,
+    communication_empathy,
+    reflection_metacognition,
+    created_at,
+    case_sessions (
+      attempt_number,
+      completed_at,
+      classroom_id
+    ),
+    cases!inner (
+      id,
+      name,
+      classroom_cases!inner (
+        classroom_id,
+        classrooms!inner (
+          id,
+          name
+        )
+      )
+    )
+  `);
 
-  // Apply Role Filters
+  // Role-based filters
   if (role === "STUDENT") {
-    // ← was: .eq('student_id', userId) — column is now user_id
     dbQuery = dbQuery.eq("user_id", userId);
     if (allowedClassroomIds.length > 0) {
       dbQuery = dbQuery.in(
@@ -105,30 +113,30 @@ export default defineEventHandler(async (event) => {
     return [];
   }
 
+  // Order by completed_at ascending so attempt history is chronological
+  dbQuery = dbQuery.order("created_at", { ascending: true });
+
   const { data, error } = await dbQuery;
 
   if (error) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: error.message,
-    });
+    throw createError({ statusCode: 500, statusMessage: error.message });
   }
 
-  const evaluationRows = data ?? [];
+  const evaluationRows = (data ?? []) as any[];
   if (evaluationRows.length === 0) return [];
 
-  // 4. Resolve active classroom membership for evaluation users.
+  // 4. Verify active classroom membership (same logic as before)
   const relevantStudentIds = Array.from(
     new Set(
       evaluationRows
-        .map((row: any) => row.user_id)
-        .filter((id: unknown): id is string => typeof id === "string" && id.length > 0),
+        .map((row) => row.user_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
     ),
   );
 
   const relevantClassroomIds = Array.from(
     new Set(
-      evaluationRows.flatMap((row: any) =>
+      evaluationRows.flatMap((row) =>
         Array.isArray(row.cases?.classroom_cases)
           ? row.cases.classroom_cases
               .map((cc: any) => cc?.classroom_id)
@@ -138,133 +146,102 @@ export default defineEventHandler(async (event) => {
     ),
   );
 
-  if (relevantStudentIds.length === 0 || relevantClassroomIds.length === 0) return [];
+  if (relevantStudentIds.length === 0 || relevantClassroomIds.length === 0)
+    return [];
 
-  const { data: memberships, error: membershipError } = await client
+  const { data: memberships } = await client
     .from("classroom_students")
     .select("classroom_id, student_id")
     .in("student_id", relevantStudentIds)
     .in("classroom_id", relevantClassroomIds);
 
-  if (membershipError) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: membershipError.message,
-    });
-  }
-
   const activeMemberships = new Set(
     (memberships ?? []).map((m) => `${m.classroom_id}:${m.student_id}`),
   );
 
-  // 5. Aggregate in memory
-  const aggregationMap = new Map<
-    string,
-    {
-      caseId: number;
-      caseName: string;
-      classroomId: number;
-      classroomName: string;
-      count: number;
-      scores: {
-        history_taking_synthesis: number[];
-        physical_exam_interpretation: number[];
-        differential_diagnosis_formulation: number[];
-        diagnostic_tests: number[];
-        management_reasoning: number[];
-        communication_empathy: number[];
-        reflection_metacognition: number[];
-      };
-    }
-  >();
+  // 5. Build one result row per evaluation (per attempt) per classroom the
+  //    case belongs to, filtering by active membership.
+  const results: object[] = [];
 
-  evaluationRows.forEach((row: any) => {
-    if (typeof row.user_id !== "string" || row.user_id.length === 0) return;
+  for (const row of evaluationRows) {
+    if (typeof row.user_id !== "string" || row.user_id.length === 0) continue;
 
     const caseData = row.cases;
-    if (!caseData || !caseData.classroom_cases) return;
+    if (!caseData?.classroom_cases) continue;
 
-    caseData.classroom_cases.forEach((cc: any) => {
+    // The session may carry a specific classroom_id (the room the student was
+    // in when they played). If available, use that; otherwise fan-out across
+    // all classrooms the case belongs to (legacy behaviour).
+    const sessionClassroomId: number | null =
+      row.case_sessions?.classroom_id ?? null;
+
+    const classroomCases: any[] = Array.isArray(caseData.classroom_cases)
+      ? caseData.classroom_cases
+      : [];
+
+    for (const cc of classroomCases) {
       const cls = cc.classrooms;
-      if (!cls) return;
+      if (!cls) continue;
 
-      const classroomId =
+      const classroomId: number =
         typeof cc.classroom_id === "number" ? cc.classroom_id : cls.id;
 
-      if (role !== "ADMIN" && !allowedClassroomIds.includes(classroomId)) return;
-      if (!activeMemberships.has(`${classroomId}:${row.user_id}`)) return;
+      // If we know the session's classroom, only emit for that one
+      if (sessionClassroomId !== null && classroomId !== sessionClassroomId)
+        continue;
 
-      const key = `${caseData.id}-${classroomId}`;
+      if (role !== "ADMIN" && !allowedClassroomIds.includes(classroomId))
+        continue;
+      if (!activeMemberships.has(`${classroomId}:${row.user_id}`)) continue;
 
-      if (!aggregationMap.has(key)) {
-        aggregationMap.set(key, {
-          caseId: caseData.id,
-          caseName: caseData.name,
-          classroomId,
-          classroomName: cls.name,
-          count: 0,
-          scores: {
-            history_taking_synthesis: [],
-            physical_exam_interpretation: [],
-            differential_diagnosis_formulation: [],
-            diagnostic_tests: [],
-            management_reasoning: [],
-            communication_empathy: [],
-            reflection_metacognition: [],
-          },
-        });
-      }
+      // Attempt number: prefer case_sessions.attempt_number; fallback to 1
+      const attemptNumber: number = row.case_sessions?.attempt_number ?? 1;
 
-      const entry = aggregationMap.get(key)!;
-      entry.count++;
+      // Completed at: prefer case_sessions.completed_at; fallback to evaluation.created_at
+      const completedAt: string | null =
+        row.case_sessions?.completed_at ?? row.created_at ?? null;
 
-      const pushScore = (field: string) => {
-        if (typeof row[field] === "number") {
-          // @ts-ignore
-          entry.scores[field].push(row[field]);
-        }
-      };
+      // Scores stored as 0.0–1.0 decimals → multiply × 100 for display
+      const toPercent = (v: unknown) =>
+        typeof v === "number" ? Math.round(v * 100) : 0;
 
-      pushScore("history_taking_synthesis");
-      pushScore("physical_exam_interpretation");
-      pushScore("differential_diagnosis_formulation");
-      pushScore("diagnostic_tests");
-      pushScore("management_reasoning");
-      pushScore("communication_empathy");
-      pushScore("reflection_metacognition");
-    });
-  });
+      results.push({
+        evaluationId: row.id,
+        sessionId: row.session_id ?? null,
+        caseId: caseData.id,
+        caseName: caseData.name,
+        classroomId,
+        classroomName: cls.name,
+        attemptNumber,
+        completedAt,
+        count: 1,
+        history_taking_synthesis: toPercent(row.history_taking_synthesis),
+        physical_exam_interpretation: toPercent(
+          row.physical_exam_interpretation,
+        ),
+        differential_diagnosis_formulation: toPercent(
+          row.differential_diagnosis_formulation,
+        ),
+        diagnostic_tests: toPercent(row.diagnostic_tests),
+        management_reasoning: toPercent(row.management_reasoning),
+        communication_empathy: toPercent(row.communication_empathy),
+        reflection_metacognition: toPercent(row.reflection_metacognition),
+      });
+    }
+  }
 
-  // 5. Compute averages (scores are stored as 0.0–1.0, multiply by 100 for %)
-  const results = Array.from(aggregationMap.values()).map((entry) => {
-    const avg = (nums: number[]) =>
-      nums.length
-        ? Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100)
-        : 0;
-
-    return {
-      caseId: entry.caseId,
-      caseName: entry.caseName,
-      classroomId: entry.classroomId,
-      classroomName: entry.classroomName,
-      count: entry.count,
-      history_taking_synthesis: avg(entry.scores.history_taking_synthesis),
-      physical_exam_interpretation: avg(
-        entry.scores.physical_exam_interpretation,
-      ),
-      differential_diagnosis_formulation: avg(
-        entry.scores.differential_diagnosis_formulation,
-      ),
-      diagnostic_tests: avg(entry.scores.diagnostic_tests),
-      management_reasoning: avg(entry.scores.management_reasoning),
-      communication_empathy: avg(entry.scores.communication_empathy),
-      reflection_metacognition: avg(entry.scores.reflection_metacognition),
-    };
-  });
-
-  return results.sort((a, b) => {
+  // Sort: classroom → case → attempt (chronological)
+  results.sort((a: any, b: any) => {
     if (a.classroomName !== b.classroomName)
       return a.classroomName.localeCompare(b.classroomName);
-    return a.caseName.localeCompare(b.caseName);
+    if (a.caseName !== b.caseName) return a.caseName.localeCompare(b.caseName);
+    // Chronological within same case
+    if (a.completedAt && b.completedAt)
+      return (
+        new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime()
+      );
+    return a.attemptNumber - b.attemptNumber;
   });
+
+  return results;
 });

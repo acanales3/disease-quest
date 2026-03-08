@@ -133,29 +133,24 @@ export default defineEventHandler(async (event) => {
         console.log("[action/end_case] db_scores:", JSON.stringify(dbScores));
 
         if (dbScores && Object.keys(dbScores).length > 0) {
-          // Delete any existing evaluation for this session to prevent duplicates
-          // (e.g., if end_case is triggered multiple times)
-          await serviceClient
-            .from("evaluations")
-            .delete()
-            .eq("session_id", sessionId);
-
           const evalPayload = {
             user_id: sessionUserId,
             case_id: caseId,
             session_id: sessionId,
-            classroom_id: classroomId,
             ...dbScores,
             reflection_document: JSON.stringify(evalData),
           };
           console.log(
-            "[action/end_case] Inserting evaluation with keys:",
+            "[action/end_case] Upserting evaluation with keys:",
             Object.keys(evalPayload),
           );
 
-          const { data: insertedEval, error: evalErr } = await serviceClient
+          // upsert keyed on session_id — if the orchestrator already saved
+          // this evaluation, this becomes a no-op update. if it didn't,
+          // this acts as the backup save.
+          const { data: upsertedEval, error: evalErr } = await serviceClient
             .from("evaluations")
-            .insert(evalPayload)
+            .upsert(evalPayload, { onConflict: "session_id" })
             .select();
 
           if (evalErr) {
@@ -169,7 +164,7 @@ export default defineEventHandler(async (event) => {
           } else {
             console.log(
               "[action/end_case] Evaluation saved successfully, id:",
-              (insertedEval as any)?.[0]?.id,
+              (upsertedEval as any)?.[0]?.id,
             );
           }
         } else {

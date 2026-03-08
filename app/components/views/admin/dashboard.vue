@@ -38,13 +38,13 @@
       <p class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-4">Quick Actions</p>
       <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
 
-        <NuxtLink to="/admin/students" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
+        <NuxtLink to="/admin/admins" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <Icon name="hugeicons:students" size="16" class="text-white" />
+            <Icon name="eos-icons-admin" size="16" class="text-white" />
           </div>
           <div>
-            <p class="text-sm font-semibold text-gray-900">Students</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View, invite, edit, and manage students</p>
+            <p class="text-sm font-semibold text-gray-900">Administrators</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View, invite, edit, and manage administrators</p>
           </div>
         </NuxtLink>
 
@@ -58,13 +58,23 @@
           </div>
         </NuxtLink>
 
+        <NuxtLink to="/admin/students" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
+          <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
+            <Icon name="hugeicons:students" size="16" class="text-white" />
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-900">Students</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View, invite, edit, and manage students</p>
+          </div>
+        </NuxtLink>
+
         <NuxtLink to="/admin/classrooms" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
           <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
             <Icon name="simple-icons:googleclassroom" size="16" class="text-white" />
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Classrooms</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Create, edit, and manage classrooms</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View, create, edit, and manage classrooms</p>
           </div>
         </NuxtLink>
 
@@ -74,17 +84,7 @@
           </div>
           <div>
             <p class="text-sm font-semibold text-gray-900">Cases</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">Create, edit, play, and assign cases to classrooms</p>
-          </div>
-        </NuxtLink>
-
-        <NuxtLink to="/admin/admins" class="group bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 hover:border-[#4d1979]/30 hover:shadow-sm transition-all">
-          <div class="w-9 h-9 rounded-lg bg-black flex items-center justify-center shrink-0">
-            <Icon name="eos-icons-admin" size="16" class="text-white" />
-          </div>
-          <div>
-            <p class="text-sm font-semibold text-gray-900">Administrators</p>
-            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View, invite, edit, and manage administrators</p>
+            <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">View, create, edit, play, review, and assign cases to classrooms</p>
           </div>
         </NuxtLink>
 
