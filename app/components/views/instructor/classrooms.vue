@@ -6,7 +6,7 @@
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Content</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Classrooms</h1>
           <p class="text-gray-500 text-[15px] mt-2">
-            Create, edit, and manage classrooms.
+            View, create, edit, and manage classrooms.
           </p>
           <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
             <Icon name="simple-icons:googleclassroom" size="15" class="text-white" />
