@@ -1,5 +1,9 @@
 <template>
   <div class="space-y-10">
+    <div>
+      <BackwardButton route="/instructor/classrooms" />
+    </div>
+
     <!-- INVITE CODE BANNER (shown after classroom creation) -->
     <div
       v-if="inviteCode"
@@ -195,6 +199,7 @@ import type { Case } from "../../CaseDatatable/columns";
 import { getColumns as getCaseColumns } from "../../CaseDatatable/columns";
 import CaseDataTable from "../../CaseDatatable/data-table.vue";
 import { cases } from "~/assets/interface/Case";
+import BackwardButton from "@/components/BackwardButton/BackwardButton.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
