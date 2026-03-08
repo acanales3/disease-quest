@@ -4,6 +4,7 @@ import {
   serverSupabaseUser,
 } from "#supabase/server";
 import { logNotification } from "../../utils/notifications";
+import { deleteInvitationsForInvitee } from "../../utils/invitations";
 
 export default defineEventHandler(async (event) => {
   // 1) Authenticate actor
@@ -100,6 +101,18 @@ export default defineEventHandler(async (event) => {
     targetId;
 
   // 5) Delete from Supabase Auth (cascades to public.users → public.admins)
+  const invitationCleanupError = await deleteInvitationsForInvitee(client, {
+    email: targetUser?.email ?? null,
+    role: "ADMIN",
+  });
+
+  if (invitationCleanupError) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: `Failed to remove admin invitations: ${invitationCleanupError.message}`,
+    });
+  }
+
   const { error: deleteAuthError } =
     await client.auth.admin.deleteUser(targetId);
 
