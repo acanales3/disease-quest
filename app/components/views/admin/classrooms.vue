@@ -69,6 +69,7 @@
 import { getColumns } from "../../ClassroomDatatable/columns";
 import type { Classroom } from "../../ClassroomDatatable/columns";
 import { onMounted, ref, computed } from "vue";
+import { useRouter } from 'vue-router'
 import DataTable from "../../ClassroomDatatable/data-table.vue";
 import TotalCount from "../../ui/TotalCount.vue";
 import { Button } from "../../ui/button";
@@ -83,6 +84,8 @@ type DeleteState =
   | { status: "loading"; message?: string }
   | { status: "success"; message: string }
   | { status: "error"; message: string };
+
+const router = useRouter();
 
 const data = ref<Classroom[]>([]);
 const isCreateModalOpen = ref(false);
@@ -201,12 +204,19 @@ function openCreateModal() {
   isCreateModalOpen.value = true;
 }
 
-function handleClassroomCreated(classroom: any) {
-  pageMessage.value = {
-    type: "success",
-    text: `Classroom "${classroom.name}" created successfully.`,
-  };
-  refreshClassrooms();
+function handleClassroomCreated(response: {
+  id: number;
+  inviteCode?: string;
+  [key: string]: any;
+}) {
+  isCreateModalOpen.value = false;
+
+  router.push({
+    path: `/admin/classrooms/${response.id}`,
+    query: response.inviteCode
+      ? { inviteCode: response.inviteCode }
+      : undefined,
+  });
 }
 
 onMounted(async () => {
