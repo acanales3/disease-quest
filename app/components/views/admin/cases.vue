@@ -33,7 +33,7 @@
 
     <div class="w-full py-2">
       <!-- Cases Table -->
-      <DataTable :columns="visibleColumns" :data="data" @refresh="refreshCases()" />
+      <DataTable :columns="visibleColumns" :data="data" :classrooms="classroomsData" @refresh="refreshCases()" />
     </div>
 
     <EditCaseDialog
