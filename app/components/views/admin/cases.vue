@@ -5,7 +5,7 @@
         <div>
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Content</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Cases</h1>
-          <p class="text-gray-500 text-[15px] mt-2">Create, edit, play, and assign cases to classrooms.</p>
+          <p class="text-gray-500 text-[15px] mt-2">View, create, edit, play, review, and assign cases to classrooms.</p>
           <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
             <Icon name="si:book-line" size="15" class="text-white" />
             <span class="text-[13px] font-medium text-white">{{ data.length }} cases</span>
