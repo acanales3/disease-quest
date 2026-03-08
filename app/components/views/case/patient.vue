@@ -215,9 +215,7 @@
           </div>
 
           <template v-if="examFindings">
-            <!-- Hospital-style PE report -->
             <div class="border border-neutral-300 bg-white font-serif">
-              <!-- Header -->
               <div class="border-b border-neutral-300 px-6 py-3 bg-neutral-50 flex justify-between items-center">
                 <div>
                   <p class="text-xs font-bold uppercase tracking-wider text-neutral-600">Physical Examination Report</p>
@@ -228,8 +226,6 @@
                   <p>Time: {{ displayElapsed }} min</p>
                 </div>
               </div>
-
-              <!-- Vitals -->
               <div class="border-b border-neutral-200 px-6 py-3">
                 <p class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Vital Signs</p>
                 <div class="grid grid-cols-3 gap-x-8 gap-y-1 text-sm">
@@ -239,8 +235,6 @@
                   </div>
                 </div>
               </div>
-
-              <!-- Systems -->
               <div class="px-6 py-3 space-y-3 text-sm">
                 <div v-if="examFindings.general_appearance">
                   <span class="font-bold text-neutral-700">GENERAL: </span>
@@ -268,7 +262,6 @@
         <!-- ORDERS -->
         <div v-if="activeTab === 'orders'" class="max-w-3xl mx-auto">
           <div class="grid grid-cols-2 gap-8">
-            <!-- Order column -->
             <div>
               <h2 class="text-base font-semibold text-neutral-800 mb-4">Order Tests</h2>
               <div class="space-y-1.5">
@@ -287,13 +280,10 @@
                     Ordering...
                   </span>
                   <span v-else-if="orderedTestIds.has(test.id)" class="text-[10px] font-semibold uppercase text-green-600">Ordered</span>
-                  <span v-else class="text-[10px] text-neutral-400">
-                    {{ test.cost_points }} pts
-                  </span>
+                  <span v-else class="text-[10px] text-neutral-400">{{ test.cost_points }} pts</span>
                 </button>
               </div>
             </div>
-            <!-- Results column - hospital lab report style -->
             <div>
               <div class="flex items-center justify-between mb-4">
                 <h2 class="text-base font-semibold text-neutral-800">Results</h2>
@@ -303,7 +293,6 @@
                   Refresh
                 </button>
               </div>
-              <!-- Pending results indicators -->
               <div v-for="testId in [...orderedTestIds].filter(id => !testResultsList.find(r => r.testId === id))" :key="'pending-'+testId"
                 class="flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-amber-200 bg-amber-50 text-sm text-amber-700">
                 <svg class="w-3.5 h-3.5 animate-spin flex-shrink-0" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
@@ -313,12 +302,10 @@
                 No results yet.
               </div>
               <div v-for="r in testResultsList" :key="r.testId" class="border border-neutral-300 bg-white mb-4">
-                <!-- Lab report header -->
                 <div class="border-b border-neutral-300 px-4 py-2 bg-neutral-50 flex justify-between items-center cursor-pointer" @click="toggleResult(r.testId)">
                   <p class="text-xs font-bold uppercase tracking-wider text-neutral-600">{{ r.testName }}</p>
                   <span class="text-neutral-400 text-xs">{{ expandedResults.has(r.testId) ? '▾' : '▸' }}</span>
                 </div>
-                <!-- Lab values table -->
                 <div v-if="expandedResults.has(r.testId)">
                   <table class="w-full text-xs">
                     <thead>
@@ -375,8 +362,6 @@
               + Add
             </button>
           </div>
-
-          <!-- Differential rows -->
           <div v-if="differentialRows.length === 0" class="text-sm text-neutral-400 text-center py-8">
             Click "+ Add" to build your differential diagnosis list.
           </div>
@@ -407,13 +392,10 @@
                 class="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
             </div>
           </div>
-
           <button v-if="differentialRows.length > 0" @click="handleSubmitDifferential" :disabled="loading || differentialRows.every(r => !r.diagnosis.trim())"
             class="w-full py-3 text-sm font-semibold bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 disabled:opacity-50 transition">
             {{ differentialSubmitted ? 'Update Differential' : 'Submit Differential' }}
           </button>
-
-          <!-- Previously submitted -->
           <div v-if="session?.differentialHistory?.length" class="border-t pt-4 mt-4 space-y-3">
             <p class="text-[10px] uppercase tracking-wider text-neutral-400 font-medium">History</p>
             <div v-for="(entry, i) in session.differentialHistory" :key="i" class="text-xs text-neutral-500 space-y-1">
@@ -447,8 +429,8 @@
         </div>
         </div>
       </div>
-      </div><!-- end right panel -->
-    </div><!-- end content flex row -->
+      </div>
+    </div>
 
     <!-- ═══ MENTOR DRAWER ═══ -->
     <Teleport to="body">
@@ -484,6 +466,11 @@ const route = useRoute()
 const router = useRouter()
 const caseId = route.params.caseId as string
 
+// Read classroomId from URL — present for students, absent for admin/instructor
+const classroomId = route.query.classroomId
+  ? parseInt(route.query.classroomId as string)
+  : undefined
+
 const {
   session, patientMessages, tutorMessages, patientLoading, tutorLoading, actionLoading, error, displayElapsed,
   resumeSession, askPatient, performExam,
@@ -518,14 +505,9 @@ const tabs = [
   { id: 'diagnosis' as const, label: 'Diagnosis' },
 ]
 
-const systemFeedMessages = computed(() =>
-  patientMessages.value.filter((m) => m.role === 'system')
-)
-const interviewMessages = computed(() =>
-  patientMessages.value.filter((m) => m.role !== 'system')
-)
+const systemFeedMessages = computed(() => patientMessages.value.filter((m) => m.role === 'system'))
+const interviewMessages = computed(() => patientMessages.value.filter((m) => m.role !== 'system'))
 
-// Red alert flicker when a critical event arrives
 const alertFlicker = ref(false)
 let flickerTimer: ReturnType<typeof setTimeout> | null = null
 let lastAlertCount = 0
@@ -534,7 +516,6 @@ watch(systemFeedMessages, (msgs) => {
   const alerts = msgs.filter((m) => m.content.startsWith('🚨'))
   if (alerts.length > lastAlertCount) {
     lastAlertCount = alerts.length
-    // Triple flicker: on → off → on → off
     alertFlicker.value = true
     if (flickerTimer) clearTimeout(flickerTimer)
     flickerTimer = setTimeout(() => {
@@ -553,7 +534,6 @@ watch(systemFeedMessages, (msgs) => {
   }
 }, { deep: true })
 
-// Sim clock display: MM:SS derived from fractional elapsedMinutes
 const simClock = computed(() => {
   const total = session.value?.elapsedMinutes ?? 0
   const mins = Math.floor(total)
@@ -561,7 +541,6 @@ const simClock = computed(() => {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 })
 
-// Alert helpers
 const hrAlert = computed(() => (session.value?.vitals?.hr_bpm ?? 0) > 160)
 const bpAlert = computed(() => (session.value?.vitals?.bp_systolic ?? 999) < 60)
 const spo2Alert = computed(() => (session.value?.vitals?.spo2_percent ?? 100) < 92)
@@ -572,29 +551,18 @@ const { data: caseData } = useFetch(`/api/cases/${caseId}`)
 const availableTests = computed(() => (caseData.value as Record<string, unknown>)?.available_tests as Array<{ id: string; name: string; cost_points: number; tat_minutes?: number }> ?? [])
 const availableInterventions = computed(() => (caseData.value as Record<string, unknown>)?.available_interventions as Array<{ id: string; name: string }> ?? [])
 
-// ── Real-time sim clock ──────────────────────────────────────────
-// 1 real second = 1 sim second → 1 real minute = 1 sim minute.
-// The local ticker increments the display every second.
-// Every 60 seconds we sync to the server (advance_time 1) so the DB
-// stays current, deterioration rules fire, and test results unlock.
 let clockTick: ReturnType<typeof setInterval> | null = null
 let secondsSinceSync = 0
 
 function startSimClock() {
-  if (clockTick) return // already running
+  if (clockTick) return
   clockTick = setInterval(async () => {
     if (!session.value || session.value.status === 'completed') return
-
-    // Tick local display every second
     session.value.elapsedMinutes = (session.value.elapsedMinutes ?? 0) + (1 / 60)
-
     secondsSinceSync++
     if (secondsSinceSync >= 60) {
       secondsSinceSync = 0
-      // Server sync: advance 1 sim-minute, fire deterioration + result checks
-      try {
-        await advanceTime(1)
-      } catch { /* non-critical */ }
+      try { await advanceTime(1) } catch { /* non-critical */ }
     }
   }, 1000)
 }
@@ -604,7 +572,8 @@ function stopSimClock() {
 }
 
 onMounted(async () => {
-  await resumeSession(parseInt(caseId))
+  // Pass classroomId so the correct classroom-scoped session is loaded
+  await resumeSession(parseInt(caseId), classroomId)
   if (session.value?.sessionId) {
     await restoreHistory(session.value.sessionId)
   }
@@ -624,10 +593,8 @@ async function restoreHistory(sessionId: string) {
       examFindings: Record<string, unknown> | null
     }>(`/api/sessions/${sessionId}/history`)
 
-    // Restore ordered tests
     for (const t of h.orderedTests) orderedTestIds.value.add(t)
 
-    // Restore test results
     const completedTestIds = new Set<string>()
     for (const r of h.testResults) {
       if (!testResultsList.value.find(x => x.testId === r.testId)) {
@@ -637,14 +604,12 @@ async function restoreHistory(sessionId: string) {
       completedTestIds.add(r.testId)
     }
 
-    // Start pollers for tests that were ordered but results not yet in.
-    // caseData may not be loaded yet, so fetch it inline if needed.
     let testDefs = availableTests.value
     if (!testDefs.length) {
       try {
         const cd = await $fetch<Record<string, unknown>>(`/api/cases/${caseId}`)
         testDefs = (cd?.available_tests as typeof testDefs) ?? []
-      } catch { /* use empty — names will fallback to testId */ }
+      } catch { /* use empty */ }
     }
     for (const testId of h.orderedTests) {
       if (!completedTestIds.has(testId)) {
@@ -653,13 +618,9 @@ async function restoreHistory(sessionId: string) {
       }
     }
 
-    // Restore treatments
     for (const t of h.treatments) administeredTreatments.value.add(t)
-
-    // Restore exam findings
     if (h.examFindings) examFindings.value = h.examFindings
 
-    // Restore differential from session
     if (session.value?.differentialHistory?.length) {
       const latest = session.value.differentialHistory[session.value.differentialHistory.length - 1] as { diagnoses: Array<{ diagnosis: string; likelihood: string; reasoning?: string }> }
       differentialRows.value = latest.diagnoses.map(d => ({
@@ -670,7 +631,7 @@ async function restoreHistory(sessionId: string) {
       differentialSubmitted.value = true
     }
   } catch {
-    // Non-critical — UI just won't have history
+    // Non-critical
   }
 }
 
@@ -698,18 +659,14 @@ async function handleOrderTest(testId: string) {
   }
 }
 
-// Results come in 10 real seconds after ordering, regardless of TAT.
 async function fetchResultsAfterDelay(testId: string, testName: string, _tatMinutes: number) {
-  if (pendingResultTests.value.has(testId)) return // already polling
+  if (pendingResultTests.value.has(testId)) return
   pendingResultTests.value.add(testId)
-
   await new Promise(resolve => setTimeout(resolve, 10_000))
-
   if (testResultsList.value.find(r => r.testId === testId)) {
     pendingResultTests.value.delete(testId)
     return
   }
-
   const res = await getResults(testId)
   if (res?.status === 'complete' && res?.results) {
     const raw = { ...res.results as Record<string, unknown> }
@@ -738,6 +695,7 @@ async function manualRefreshResults() {
 }
 
 function toggleResult(id: string) { expandedResults.value.has(id) ? expandedResults.value.delete(id) : expandedResults.value.add(id) }
+
 async function handleTreatment(t: string) {
   loadingTreatments.value.add(t)
   try {
@@ -749,12 +707,8 @@ async function handleTreatment(t: string) {
   }
 }
 
-function addDifferentialRow() {
-  differentialRows.value.push({ diagnosis: '', likelihood: 'medium', reasoning: '' })
-}
-function removeDifferentialRow(idx: number) {
-  differentialRows.value.splice(idx, 1)
-}
+function addDifferentialRow() { differentialRows.value.push({ diagnosis: '', likelihood: 'medium', reasoning: '' }) }
+function removeDifferentialRow(idx: number) { differentialRows.value.splice(idx, 1) }
 async function handleSubmitDifferential() {
   const valid = differentialRows.value.filter(r => r.diagnosis.trim())
   if (valid.length === 0) return
@@ -767,12 +721,18 @@ async function handleSubmitDiagnosis() { await submitDiagnosis(diagnosisText.val
 async function handleEndCase() {
   stopSimClock()
   useState('evaluationSessionId', () => session.value?.sessionId ?? '').value = session.value?.sessionId ?? ''
-  router.push(`/case/${caseId}/evaluation`)
+  // Preserve classroomId in the URL so evaluation.vue scopes to the correct session
+  const query: Record<string, string> = {}
+  if (classroomId) query.classroomId = String(classroomId)
+  router.push({ path: `/case/${caseId}/evaluation`, query })
 }
 
 function checkForAlerts(r: Record<string, unknown> | null) {
   if (!r) return
-  if (r.deterioration_events) { deteriorationAlert.value = (r.deterioration_events as string[]).join(' | '); setTimeout(() => { deteriorationAlert.value = null }, 15000) }
+  if (r.deterioration_events) {
+    deteriorationAlert.value = (r.deterioration_events as string[]).join(' | ')
+    setTimeout(() => { deteriorationAlert.value = null }, 15000)
+  }
 }
 
 function formatLabel(k: string) { return k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }
@@ -780,7 +740,6 @@ function isAbnormal(v: string) { return typeof v === 'string' && /HIGH|LOW|LEFT 
 function formatResultVal(val: unknown): string {
   if (val === null || val === undefined) return '—'
   if (typeof val === 'object') {
-    // Format nested objects like susceptibilities as key: value lines
     return Object.entries(val as Record<string, unknown>)
       .map(([k, v]) => `${formatLabel(k)}: ${v}`)
       .join(' | ')
@@ -794,56 +753,18 @@ function formatResultVal(val: unknown): string {
 .slide-enter-from, .slide-leave-to { transform: translateX(100%); }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.15s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-
-/* Red alert flicker */
 .flicker-enter-active { transition: opacity 0.08s ease-in; }
 .flicker-leave-active { transition: opacity 0.18s ease-out; }
 .flicker-enter-from, .flicker-leave-to { opacity: 0; }
-
-/* ── Monitor styles ── */
-.monitor-body {
-  background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
-}
-.monitor-screen {
-  background: #0a0a0a;
-  position: relative;
-}
-/* Clean crisp text - no glow */
-.monitor-text {
-  text-shadow: none;
-}
-/* Alert flash */
-.monitor-alert {
-  animation: alertFlash 1s ease-in-out infinite;
-}
-@keyframes alertFlash {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-/* Blinking dot */
-.monitor-blink {
-  animation: blink 1.2s ease-in-out infinite;
-}
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
-}
-/* ECG waveform animation */
-.ecg-line {
-  stroke-dasharray: 200;
-  stroke-dashoffset: 200;
-  animation: ecgDraw 2s linear infinite;
-}
-@keyframes ecgDraw {
-  to { stroke-dashoffset: 0; }
-}
-/* Pleth waveform animation */
-.pleth-line {
-  stroke-dasharray: 200;
-  stroke-dashoffset: 200;
-  animation: plethDraw 1.5s linear infinite;
-}
-@keyframes plethDraw {
-  to { stroke-dashoffset: 0; }
-}
+.monitor-body { background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%); }
+.monitor-screen { background: #0a0a0a; position: relative; }
+.monitor-text { text-shadow: none; }
+.monitor-alert { animation: alertFlash 1s ease-in-out infinite; }
+@keyframes alertFlash { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.monitor-blink { animation: blink 1.2s ease-in-out infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+.ecg-line { stroke-dasharray: 200; stroke-dashoffset: 200; animation: ecgDraw 2s linear infinite; }
+@keyframes ecgDraw { to { stroke-dashoffset: 0; } }
+.pleth-line { stroke-dasharray: 200; stroke-dashoffset: 200; animation: plethDraw 1.5s linear infinite; }
+@keyframes plethDraw { to { stroke-dashoffset: 0; } }
 </style>

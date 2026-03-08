@@ -42,10 +42,12 @@ import { useCaseSession } from '@/composables/useCaseSession'
 
 const route = useRoute()
 const caseId = route.params.caseId as string
+const classroomId = route.query.classroomId ? parseInt(route.query.classroomId as string) : undefined
+
 const { session, tutorMessages, tutorLoading, error, resumeSession, consultTutor } = useCaseSession()
 
 onMounted(async () => {
-  await resumeSession(parseInt(caseId))
+  await resumeSession(parseInt(caseId), classroomId)
 })
 
 async function handleSend(msg: string) { await consultTutor(msg) }

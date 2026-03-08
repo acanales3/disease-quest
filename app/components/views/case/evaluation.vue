@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-[calc(100vh-80px)] bg-white flex justify-center py-12 px-6">
-
     <!-- ═══ LOADING / AGENT THINKING ═══ -->
     <div v-if="evaluating" class="w-full max-w-xl text-center space-y-8 pt-12">
       <div>
@@ -8,11 +7,9 @@
         <h1 class="text-2xl font-bold text-neutral-900 mt-2">Generating Evaluation</h1>
         <p class="text-sm text-neutral-500 mt-1">Our evaluator agent is analyzing your performance...</p>
       </div>
-
       <div class="flex justify-center">
         <div class="w-10 h-10 border-2 border-neutral-200 border-t-neutral-900 rounded-full animate-spin"></div>
       </div>
-
       <div class="text-left max-w-md mx-auto space-y-3">
         <div v-for="(step, i) in visibleSteps" :key="i" class="flex items-start gap-3 animate-fadeIn">
           <div class="mt-1 flex-shrink-0">
@@ -24,7 +21,6 @@
           <p class="text-sm" :class="i < visibleSteps.length - 1 ? 'text-neutral-500' : 'text-neutral-800 font-medium'">{{ step }}</p>
         </div>
       </div>
-
       <div class="max-w-md mx-auto">
         <div class="w-full bg-neutral-100 rounded-full h-1.5">
           <div class="bg-neutral-900 h-1.5 rounded-full transition-all duration-1000" :style="{ width: progressPercent + '%' }"></div>
@@ -125,15 +121,11 @@
 
         <!-- RIGHT: Debrief Chat (2 cols) -->
         <div class="lg:col-span-2 flex flex-col border rounded-xl overflow-hidden" style="height: calc(100vh - 160px); position: sticky; top: 100px;">
-          <!-- Header -->
           <div class="px-4 py-3 border-b bg-neutral-50 flex-shrink-0">
             <h3 class="text-sm font-semibold text-neutral-800">Debrief with Evaluator</h3>
             <p class="text-[11px] text-neutral-500">Ask about your scores, what you missed, or how to improve</p>
           </div>
-
-          <!-- Messages -->
           <div ref="debriefContainer" class="flex-1 overflow-y-auto p-4 space-y-3" style="min-height: 0;">
-            <!-- Welcome message -->
             <div v-if="debriefMessages.length === 0 && !debriefLoading" class="flex justify-start">
               <div class="max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm bg-purple-50 text-purple-900">
                 <p class="text-[10px] font-semibold mb-1 uppercase tracking-wider opacity-50">Evaluator</p>
@@ -146,7 +138,6 @@
                 </div>
               </div>
             </div>
-
             <div v-for="(msg, idx) in debriefMessages" :key="idx" class="flex" :class="msg.role === 'student' ? 'justify-end' : 'justify-start'">
               <div class="max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm" :class="msg.role === 'student' ? 'bg-neutral-900 text-white' : 'bg-purple-50 text-purple-900'">
                 <p class="text-[10px] font-semibold mb-1 uppercase tracking-wider opacity-50">{{ msg.role === 'student' ? 'You' : 'Evaluator' }}</p>
@@ -154,8 +145,6 @@
                 <p v-else class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}</p>
               </div>
             </div>
-
-            <!-- Typing indicator -->
             <div v-if="debriefLoading" class="flex justify-start">
               <div class="rounded-xl px-3.5 py-2.5 text-sm bg-purple-50">
                 <p class="text-[10px] font-semibold mb-1 uppercase tracking-wider opacity-50">Evaluator</p>
@@ -167,8 +156,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Input -->
           <div class="flex gap-2 p-3 border-t flex-shrink-0">
             <input
               v-model="debriefInput"
@@ -205,12 +192,16 @@ const route = useRoute()
 const router = useRouter()
 const caseId = route.params.caseId as string
 
+// Read classroomId from URL — present for students, absent for admin/instructor
+const classroomId = route.query.classroomId
+  ? parseInt(route.query.classroomId as string)
+  : undefined
+
 const evaluation = ref<Record<string, unknown> | null>(null)
 const evaluating = ref(false)
 const visibleSteps = ref<string[]>([])
 const progressPercent = ref(0)
 
-// Debrief chat
 const debriefMessages = ref<Array<{ role: string; content: string }>>([])
 const debriefInput = ref('')
 const debriefLoading = ref(false)
@@ -238,11 +229,9 @@ const evalData = computed(() => {
 })
 
 const percentage = computed(() => (evaluation.value?.percentage ?? 0) as number)
-
 const competencyScores = computed(() =>
   evalData.value?.competency_scores as Record<string, { earned: number; max: number; feedback?: string }> | null
 )
-
 const rubricDomains = computed(() => {
   if (!evaluation.value) return {} as Record<string, string>
   const domains = (evaluation.value.rubric_domains ?? []) as Array<{ id: string; name: string }>
@@ -261,7 +250,6 @@ function barColor(e: number, m: number) {
   return p >= 75 ? 'bg-green-500' : p >= 50 ? 'bg-amber-500' : 'bg-red-500'
 }
 
-// Simple markdown to HTML (bold, italic, numbered lists, bullet lists)
 function formatMarkdown(text: string): string {
   return text
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -270,15 +258,10 @@ function formatMarkdown(text: string): string {
     .replace(/^[-•]\s+/gm, '<span class="text-purple-400 mr-1">-</span> ')
 }
 
-const quickQuestions = [
-  'Why this score?',
-  'What did I miss?',
-  'How to improve?',
-]
+const quickQuestions = ['Why this score?', 'What did I miss?', 'How to improve?']
 
 function downloadPdf() {
   if (!evaluation.value || !evalData.value) return
-
   const ev = evalData.value
   const scores = competencyScores.value ?? {}
   const totalScore = (evaluation.value.total_score ?? 0) as number
@@ -402,24 +385,17 @@ function downloadPdf() {
   pdfMake.createPdf(docDefinition).download(`evaluation-case-${caseId}.pdf`)
 }
 
-// Debrief chat
 async function sendDebrief() {
   const q = debriefInput.value.trim()
   if (!q || debriefLoading.value) return
-
   debriefMessages.value.push({ role: 'student', content: q })
   debriefInput.value = ''
   debriefLoading.value = true
-
   const sessionId = useState<string>('evaluationSessionId').value || useState<string>('currentSessionId').value
-
   try {
     const result = await $fetch<{ response: string }>(
       `/api/sessions/${sessionId}/debrief`,
-      {
-        method: 'POST',
-        body: { question: q, evaluationData: evalData.value },
-      }
+      { method: 'POST', body: { question: q, evaluationData: evalData.value } }
     )
     debriefMessages.value.push({ role: 'evaluator', content: result.response })
   } catch {
@@ -429,18 +405,14 @@ async function sendDebrief() {
   }
 }
 
-// Auto-scroll debrief
 watch(
   [() => debriefMessages.value.length, () => debriefLoading.value],
   async () => {
     await nextTick()
-    if (debriefContainer.value) {
-      debriefContainer.value.scrollTop = debriefContainer.value.scrollHeight
-    }
+    if (debriefContainer.value) debriefContainer.value.scrollTop = debriefContainer.value.scrollHeight
   }
 )
 
-// Animate thinking steps
 function animateSteps() {
   let stepIndex = 0
   const interval = setInterval(() => {
@@ -473,13 +445,20 @@ onMounted(async () => {
   let sessionId = useState<string>('evaluationSessionId').value
     || useState<string>('currentSessionId').value
 
-  // Fallback: check localStorage or server for active session
+  // Fallback: check localStorage scoped to classroom, then server
   if (!sessionId && import.meta.client) {
-    sessionId = localStorage.getItem(`dq_session_${caseId}`) ?? ''
+    const storageKey = classroomId
+      ? `dq_session_${caseId}_cls_${classroomId}`
+      : `dq_session_${caseId}`
+    sessionId = localStorage.getItem(storageKey) ?? ''
   }
+
   if (!sessionId) {
     try {
-      const res = await $fetch<{ sessionId: string | null }>(`/api/sessions/active?caseId=${caseId}`)
+      // Scope the active session lookup to the correct classroom
+      const params = new URLSearchParams({ caseId })
+      if (classroomId) params.set('classroomId', String(classroomId))
+      const res = await $fetch<{ sessionId: string | null }>(`/api/sessions/active?${params.toString()}`)
       sessionId = res.sessionId ?? ''
     } catch { /* no session */ }
   }
@@ -510,14 +489,7 @@ onMounted(async () => {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-fadeIn {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-.prose-chat :deep(strong) {
-  font-weight: 600;
-  color: inherit;
-}
-.prose-chat :deep(em) {
-  font-style: italic;
-}
+.animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+.prose-chat :deep(strong) { font-weight: 600; color: inherit; }
+.prose-chat :deep(em) { font-style: italic; }
 </style>

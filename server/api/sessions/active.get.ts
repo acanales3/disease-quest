@@ -1,6 +1,9 @@
 /**
- * GET /api/sessions/active?caseId=52&includeCompleted=true
- * Returns the most recent session for this user + case.
+ * GET /api/sessions/active?caseId=52&classroomId=3&includeCompleted=true
+ * Returns the most recent session for this user + case + classroom.
+ *
+ * classroomId is optional — if omitted, falls back to matching any session
+ * for the case (used by admins/instructors who have no classroom context).
  *
  * By default only returns non-completed sessions (created/in_progress).
  * Pass includeCompleted=true to also match completed sessions (used by replay).
@@ -20,6 +23,7 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event);
   const caseId = query.caseId;
+  const classroomId = query.classroomId; // optional
   const includeCompleted = query.includeCompleted === "true";
 
   if (!caseId) {
@@ -33,12 +37,21 @@ export default defineEventHandler(async (event) => {
     ? ["created", "in_progress", "completed"]
     : ["created", "in_progress"];
 
-  const { data, error } = (await client
+  let dbQuery = client
     .from("case_sessions")
-    .select("id, status, phase, elapsed_minutes, created_at, attempt_number")
+    .select("id, status, phase, elapsed_minutes, created_at, attempt_number, classroom_id")
     .eq("user_id", userId)
     .eq("case_id", parseInt(caseId as string))
-    .in("status", statuses)
+    .in("status", statuses);
+
+  // If classroomId is provided, scope the lookup to that classroom only.
+  // This ensures students in the same case across two classrooms get
+  // separate session tracking.
+  if (classroomId) {
+    dbQuery = dbQuery.eq("classroom_id", parseInt(classroomId as string));
+  }
+
+  const { data, error } = (await dbQuery
     .order("attempt_number", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(1)
@@ -49,6 +62,7 @@ export default defineEventHandler(async (event) => {
       phase: string;
       elapsed_minutes: number;
       attempt_number: number;
+      classroom_id: number | null;
     } | null;
     error: any;
   };
@@ -62,5 +76,6 @@ export default defineEventHandler(async (event) => {
     status: data.status,
     phase: data.phase,
     attempt_number: data.attempt_number,
+    classroom_id: data.classroom_id,
   };
 });

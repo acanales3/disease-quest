@@ -10,6 +10,7 @@ import {
 export interface Case {
   id: number | string;
   case_id?: number;
+  classroom_id?: number; // per-row classroom context (students only)
   name: string;
   description: string;
   classrooms: { id: number; name: string }[];
@@ -18,7 +19,7 @@ export interface Case {
 }
 
 interface ColumnOptions {
-  classroomId?: number;
+  classroomId?: number; // kept for admin/instructor classroom pages
   returnTo?: string;
   onEdit?: (caseData: Case) => void;
   onDelete?: (caseData: Case) => void;
@@ -155,13 +156,19 @@ export function getColumns(
       cell: ({ row }) => {
         const caseData = row.original;
 
+        // For students: classroomId comes from the row itself (each row is a
+        // unique case+classroom pair). For admin/instructor classroom pages:
+        // falls back to the global options.classroomId as before.
+        const resolvedClassroomId =
+          caseData.classroom_id ?? options?.classroomId;
+
         return h(
           "div",
           { class: "relative flex justify-end" },
           h(DropdownAction, {
             caseData,
             role,
-            classroomId: options?.classroomId,
+            classroomId: resolvedClassroomId,
             returnTo: options?.returnTo,
             onEdit: options?.onEdit,
             onDelete: options?.onDelete,

@@ -113,11 +113,21 @@ async function startCase() {
   starting.value = true
   startError.value = null
   try {
-    const classroomId = route.query.classroomId ? parseInt(route.query.classroomId as string) : undefined
+    const classroomId = route.query.classroomId
+      ? parseInt(route.query.classroomId as string)
+      : undefined
+
     const sessionId = await createSession(parseInt(caseId), classroomId)
+
     if (sessionId) {
       useState('currentSessionId', () => sessionId).value = sessionId
-      router.push(`/case/${caseId}/mentor`)
+
+      // Preserve classroomId in the URL so mentor/patient/evaluation pages
+      // can scope their session lookups to the correct classroom.
+      const query: Record<string, string> = {}
+      if (classroomId) query.classroomId = String(classroomId)
+
+      router.push({ path: `/case/${caseId}/mentor`, query })
     } else {
       startError.value = sessionError.value || 'Session creation failed. Check the server logs for details.'
     }

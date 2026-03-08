@@ -13,27 +13,33 @@ type CaseStep = (typeof steps)[number];
 const route = useRoute();
 const router = useRouter();
 
-// Get caseId from route
 const caseId = computed(() => route.params.caseId as string);
-
-// Compute current step from route
 const currentStep = computed(() => route.path.split("/")[3] as CaseStep);
-
-// Current step index
 const currentIndex = computed(() => {
   return steps.indexOf(
     steps.includes(currentStep.value) ? currentStep.value : "introduction"
   );
 });
 
-// Preserve query params (returnTo, classroomId) when navigating between steps
+// classroomId from URL query — present for students, absent for admin/instructor
+const classroomId = computed(() =>
+  route.query.classroomId ? String(route.query.classroomId) : null
+);
+
+// Step key scoped to (caseId, classroomId) so the same case in two classrooms
+// saves independent step positions.
+const stepStorageKey = computed(() =>
+  classroomId.value
+    ? `dq_case_step_${caseId.value}_cls_${classroomId.value}`
+    : `dq_case_step_${caseId.value}`
+);
+
 const queryString = computed(() => {
   const q = route.query;
   if (!q || !Object.keys(q).length) return "";
   return "?" + new URLSearchParams(q as Record<string, string>).toString();
 });
 
-// Previous / Next routes (include caseId and query)
 const previousRoute = computed(() => {
   if (currentIndex.value > 0) {
     return `/case/${caseId.value}/${steps[currentIndex.value - 1]}${queryString.value}`;
@@ -47,10 +53,9 @@ const nextRoute = computed(() =>
     : (route.query.returnTo as string) || "/student/cases"
 );
 
-// Save progress and go back to cases page
 function saveProgressAndGoBack() {
   if (import.meta.client && caseId.value) {
-    localStorage.setItem(`dq_case_step_${caseId.value}`, currentStep.value);
+    localStorage.setItem(stepStorageKey.value, currentStep.value);
   }
   const returnTo = (route.query.returnTo as string) || "/student/cases";
   router.push(returnTo);
