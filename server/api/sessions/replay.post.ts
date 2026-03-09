@@ -1,14 +1,10 @@
 /**
  * POST /api/sessions/replay
- * Resets a completed session so the student can play it again.
+ * Creates a fresh session so the student can replay a completed case.
  *
- * - Deletes all session_messages and session_actions for the session
- * - Resets status → 'created', phase → 'prologue'
- * - Resets elapsed_minutes, patient_state, flags, etc. back to initial values
- * - Increments attempt_number
- * - Preserves classroom_id so the replayed session stays scoped to the
- *   same classroom as the original attempt
- * - Keeps the case_sessions row and any evaluation entries (they are preserved)
+ * The completed session (and its evaluation) are kept intact so that the
+ * "attempts" counter — which counts evaluations — naturally increments
+ * with every completion.
  *
  * Body: { sessionId: string }
  */
@@ -36,8 +32,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "sessionId is required" });
   }
 
-  // Verify ownership and that the session is completed.
-  // Also fetch classroom_id so we can preserve it after reset.
   const { data: session, error: sessionErr } = await client
     .from("case_sessions")
     .select("id, user_id, case_id, status, attempt_number, completed_at, classroom_id")
@@ -56,6 +50,37 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const serviceClient = serverSupabaseServiceRole(event);
+
+  // If a non-completed session already exists for this user+case+classroom,
+  // return it instead of creating a duplicate.
+  let guardQuery = serviceClient
+    .from("case_sessions")
+    .select("id, status, phase, attempt_number")
+    .eq("user_id", userId)
+    .eq("case_id", session.case_id)
+    .in("status", ["created", "in_progress"]);
+
+  if (session.classroom_id) {
+    guardQuery = guardQuery.eq("classroom_id", session.classroom_id);
+  } else {
+    guardQuery = guardQuery.is("classroom_id", null);
+  }
+
+  const { data: existingActive } = await guardQuery
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingActive) {
+    return {
+      success: true,
+      sessionId: existingActive.id,
+      attempt_number: existingActive.attempt_number,
+      message: "Active session already exists for this case.",
+    };
+  }
+
   // Load the case to get the initial patient state and start disclosures
   const { data: caseRow, error: caseErr } = await client
     .from("cases")
@@ -70,7 +95,6 @@ export default defineEventHandler(async (event) => {
   const content = (caseRow.content ?? {}) as Record<string, unknown>;
   const initialPatientState = content.initial_patient_state ?? {};
 
-  // Dynamically find disclosures that unlock at START
   const disclosures = (content.disclosures ?? []) as Array<{
     id: string;
     unlock?: { type: string };
@@ -79,50 +103,23 @@ export default defineEventHandler(async (event) => {
     .filter((d) => d.unlock?.type === "START")
     .map((d) => d.id);
 
-  // Use service role to delete messages and actions (bypasses RLS)
-  const serviceClient = serverSupabaseServiceRole(event);
+  const newAttempt = (session.attempt_number ?? 1) + 1;
 
-  // Delete all session messages for this session
-  const { error: msgDeleteErr } = await serviceClient
-    .from("session_messages")
-    .delete()
-    .eq("session_id", sessionId);
-
-  if (msgDeleteErr) {
-    throw createError({
-      statusCode: 500,
-      message: `Failed to clear session messages: ${msgDeleteErr.message}`,
-    });
-  }
-
-  // Delete all session actions for this session
-  const { error: actDeleteErr } = await serviceClient
-    .from("session_actions")
-    .delete()
-    .eq("session_id", sessionId);
-
-  if (actDeleteErr) {
-    throw createError({
-      statusCode: 500,
-      message: `Failed to clear session actions: ${actDeleteErr.message}`,
-    });
-  }
-
-  // Reset the session back to its initial state, incrementing attempt_number.
-  // classroom_id is explicitly preserved so the replay stays scoped to the
-  // same classroom as the original attempt.
-  const { error: updateErr } = await serviceClient
+  const { data: newSession, error: insertErr } = await serviceClient
     .from("case_sessions")
-    .update({
+    .insert({
+      user_id: userId,
+      case_id: session.case_id,
+      classroom_id: session.classroom_id ?? null,
       status: "created",
       phase: "prologue",
       elapsed_minutes: 0,
       unlocked_disclosures: startDisclosures,
       patient_state: initialPatientState,
       differential_history: [],
-      final_diagnosis: null,
       management_plan: [],
       scoring: {},
+      attempt_number: newAttempt,
       flags: {
         correct_diagnosis_suspected: false,
         antibiotics_ordered: false,
@@ -134,26 +131,21 @@ export default defineEventHandler(async (event) => {
         _triggered_actions: [],
         _triggered_events: [],
       },
-      started_at: null,
-      completed_at: null,
-      updated_at: new Date().toISOString(),
-      attempt_number: (session.attempt_number ?? 1) + 1,
-      // Explicitly keep classroom_id unchanged — do NOT set to null
-      classroom_id: session.classroom_id ?? null,
-    })
-    .eq("id", sessionId);
+    } as any)
+    .select()
+    .single();
 
-  if (updateErr) {
+  if (insertErr || !newSession) {
     throw createError({
       statusCode: 500,
-      message: `Failed to reset session: ${updateErr.message}`,
+      message: `Failed to create replay session: ${insertErr?.message ?? "unknown error"}`,
     });
   }
 
   return {
     success: true,
-    sessionId,
-    attempt_number: (session.attempt_number ?? 1) + 1,
-    message: "Session reset successfully. You can now replay the case.",
+    sessionId: (newSession as any).id,
+    attempt_number: newAttempt,
+    message: "New session created for replay. Previous evaluation is preserved.",
   };
 });
