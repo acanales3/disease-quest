@@ -44,6 +44,7 @@ export default defineEventHandler(async (event) => {
       name: c.name,
       code: c.code,
       instructor_id: c.instructor_id ?? null,
+      instructor: instructor_name,
       instructor_name,
       school: c.school,
       section: c.section,
