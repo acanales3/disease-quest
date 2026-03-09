@@ -178,7 +178,7 @@ export default defineEventHandler(async (event) => {
 
     const { data: sessions, error: sErr } = await client
       .from("case_sessions")
-      .select("case_id, classroom_id, status, attempt_number, started_at, completed_at")
+      .select("id, case_id, classroom_id, status, attempt_number, started_at, completed_at")
       .eq("user_id", userId)
       .in("case_id", caseIds)
       .order("attempt_number", { ascending: false });

@@ -18,7 +18,7 @@
 
       <div class="flex gap-2">
         <!-- Case selector -->
-        <ui-dropdown-menu>
+        <ui-dropdown-menu v-if="props.renderDropdowns">
           <ui-dropdown-menu-trigger as-child>
             <button
               class="px-3 h-8 border border-gray-200 rounded-lg text-[12px] font-medium min-w-[120px] flex justify-between items-center gap-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors"
@@ -42,7 +42,7 @@
         </ui-dropdown-menu>
 
         <!-- Classroom selector -->
-        <ui-dropdown-menu>
+        <ui-dropdown-menu v-if="props.renderDropdowns">
           <ui-dropdown-menu-trigger as-child>
             <button
               class="px-3 h-8 border border-gray-200 rounded-lg text-[12px] font-medium min-w-[130px] flex justify-between items-center gap-2 text-gray-600 bg-white hover:bg-gray-50 transition-colors"
@@ -139,21 +139,35 @@ const route = useRoute();
 type Category = { label: string; score: number };
 type Item = { id: number; name: string };
 
-const props = defineProps<{
-  data: AnalyticsScoreEntry[];
-  loading?: boolean;
-}>();
+const props = defineProps({
+  data: {
+    type: Array as () => AnalyticsScoreEntry[],
+    required: true
+  },
+  loading: {
+    type: Boolean,
+    required: false,
+    default: false
+  },
+  renderDropdowns: {
+    type: Boolean,
+    required: false,
+    default: true
+  }
+})
+
+const emit = defineEmits<{
+  (e: 'session-change', sessionId: number): void
+}>()
 
 const selectedCase = ref<Item | null>(null);
 const selectedClassroom = ref<Item | null>(null);
 
 // Derive unique case/classroom lists from the per-attempt rows
 const cases = computed(() => {
-  const map = new Map<number, string>();
-  props.data.forEach((d) => map.set(d.caseId, d.caseName));
-  return Array.from(map.entries())
-    .map(([id, name]) => ({ id, name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const map = new Map<number, string>()
+  props.data.forEach(d => map.set(d.caseId, d.caseName))
+  return Array.from(map.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))
 });
 
 const classroomsList = computed(() => {
