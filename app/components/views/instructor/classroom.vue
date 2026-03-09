@@ -139,6 +139,7 @@
         :columns="caseColumns"
         :data="caseData"
         :hideClassroomFilter="true"
+        title="Assigned Cases"
       />
     </div>
 
@@ -149,6 +150,7 @@
         :data="studentData"
         :hideClassroomFilter="true"
         :hideClassroomColumn="true"
+        title="Classroom Roster"
       />
     </div>
 
