@@ -15,6 +15,7 @@ export interface Instructor {
   school: string;
   classrooms: { id: number; name: string }[];
   status: "active" | "deactivated";
+  isAdmin?: boolean;
 }
 
 // add handlers param so parent can pass callbacks (like delete)
@@ -33,7 +34,8 @@ export function getColumns(
       header: () => h("div", {}, "NAME"),
       cell: ({ row }) => {
         const name = row.getValue("name") as string;
-        return h("div", { class: "font-medium text-gray-900" }, name);
+        const isAdmin = row.original.isAdmin;
+        return h("div", { class: "font-medium text-gray-900" }, isAdmin ? `${name} (Admin)` : name);
       },
     },
     {
@@ -95,11 +97,10 @@ export function getColumns(
         return h(
           "span",
           {
-            class: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white shadow-sm ${
-              isActive
+            class: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white shadow-sm ${isActive
                 ? "bg-gradient-to-r from-emerald-600 to-teal-700"
                 : "bg-gradient-to-r from-rose-600 to-red-700"
-            }`,
+              }`,
           },
           isActive ? "Active" : "Deactivated"
         );

@@ -82,6 +82,32 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // fetch classrooms where the admin is the instructor
+  const adminUserIds = (data ?? []).map((row: any) => row.user_id);
+
+  const { data: classroomsData, error: classroomsError } = await client
+    .from("classrooms")
+    .select("id, name, instructor_id")
+    .in("instructor_id", adminUserIds) as { data: { id: number; name: string; instructor_id: string }[] | null; error: any };
+
+  console.log("[admins] classroomsData:", classroomsData);
+  console.log("[admins] classroomsError:", classroomsError);
+
+  if (classroomsError) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to fetch classrooms: " + classroomsError.message,
+    });
+  }
+
+  // group classrooms by instructor_id
+  const classroomsByInstructor = new Map<string, { id: number; name: string }[]>();
+  for (const c of classroomsData ?? []) {
+    const list = classroomsByInstructor.get(c.instructor_id) ?? [];
+    list.push({ id: c.id, name: c.name });
+    classroomsByInstructor.set(c.instructor_id, list);
+  }
+
   const admins = (data ?? []).map((row: any, idx: number) => {
     const u = row?.users;
     const name =
@@ -92,6 +118,7 @@ export default defineEventHandler(async (event) => {
       name,
       email: u?.email ?? "",
       school: u?.school ?? "",
+      classrooms: classroomsByInstructor.get(row.user_id) ?? [],
     };
   });
 

@@ -27,7 +27,8 @@ export default defineEventHandler(async (event) => {
         first_name,
         last_name,
         email,
-        school
+        school,
+        role
       ),
       classrooms (
         id,
@@ -49,5 +50,6 @@ export default defineEventHandler(async (event) => {
     school: row.user.school,
     classrooms: row.classrooms ?? [],
     status: row.status,
+    isAdmin: row.user.role === "ADMIN",
   }));
 });
