@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import BackwardButton from "~/components/BackwardButton/BackwardButton.vue";
 import ForwardButton from "~/components/ForwardButton/ForwardButton.vue";
@@ -20,6 +20,8 @@ const currentIndex = computed(() => {
     steps.includes(currentStep.value) ? currentStep.value : "introduction"
   );
 });
+
+const isEvaluationStep = computed(() => currentStep.value === "evaluation");
 
 // classroomId from URL query — present for students, absent for admin/instructor
 const classroomId = computed(() =>
@@ -60,13 +62,42 @@ function saveProgressAndGoBack() {
   const returnTo = (route.query.returnTo as string) || "/student/cases";
   router.push(returnTo);
 }
+
+const endCaseLoading = ref(false);
+async function endCaseAndExit() {
+  const returnTo = (route.query.returnTo as string) || "/student/cases";
+  let sessionId = useState<string>("evaluationSessionId").value || useState<string>("currentSessionId").value;
+  if (!sessionId && import.meta.client) {
+    const storageKey = classroomId.value
+      ? `dq_session_${caseId.value}_cls_${classroomId.value}`
+      : `dq_session_${caseId.value}`;
+    sessionId = localStorage.getItem(storageKey) ?? "";
+  }
+  if (!sessionId) {
+    router.push(returnTo);
+    return;
+  }
+  endCaseLoading.value = true;
+  try {
+    await $fetch(`/api/sessions/${sessionId}/action`, {
+      method: "POST",
+      body: { actionType: "end_case", payload: {} },
+    });
+  } catch {
+    // Session may already be completed (e.g. evaluation page already called end_case) — still exit
+  } finally {
+    endCaseLoading.value = false;
+  }
+  router.push(returnTo);
+}
 </script>
 
 <template>
   <div class="flex flex-col min-h-screen">
-    <!-- Top bar: exit button -->
+    <!-- Top bar: Save & Exit (hidden on evaluation) | End Case (only on evaluation, right) -->
     <div class="w-full flex items-center justify-between px-6 py-2.5 bg-gray-50 border-b border-gray-200 flex-shrink-0">
       <Button
+        v-if="!isEvaluationStep"
         variant="ghost"
         size="sm"
         class="gap-1.5 text-gray-600 hover:text-gray-900"
@@ -74,6 +105,17 @@ function saveProgressAndGoBack() {
       >
         <ArrowLeft class="w-4 h-4" />
         Save &amp; Exit
+      </Button>
+      <div v-else class="w-0 min-w-0" />
+      <Button
+        v-if="isEvaluationStep"
+        variant="default"
+        size="sm"
+        class="gap-1.5"
+        :disabled="endCaseLoading"
+        @click="endCaseAndExit"
+      >
+        {{ endCaseLoading ? "Ending…" : "End Case" }}
       </Button>
     </div>
 
