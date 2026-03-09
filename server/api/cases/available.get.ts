@@ -172,7 +172,7 @@ export default defineEventHandler(async (event) => {
     // Fetch sessions including classroom_id so we can match per (case, classroom)
     const { data: sessions, error: sErr } = await client
       .from("case_sessions")
-      .select("case_id, classroom_id, status, attempt_number, started_at, completed_at")
+      .select("id, case_id, classroom_id, status, attempt_number, started_at, completed_at")
       .eq("user_id", userId)
       .in("case_id", caseIds)
       .order("attempt_number", { ascending: false });
@@ -183,6 +183,7 @@ export default defineEventHandler(async (event) => {
     const latestSessionByPair = new Map<
       string,
       {
+        sessionId: string;
         status: string;
         started_at: string | null;
         completed_at: string | null;
@@ -193,6 +194,7 @@ export default defineEventHandler(async (event) => {
       const key = `${s.case_id}:${s.classroom_id}`;
       if (!latestSessionByPair.has(key)) {
         latestSessionByPair.set(key, {
+          sessionId: s.id,
           status: s.status,
           started_at: s.started_at,
           completed_at: s.completed_at,
@@ -227,6 +229,7 @@ export default defineEventHandler(async (event) => {
         classrooms: [e.classroom],
         status: uiStatus,
         completionDate: session?.completed_at ?? null,
+        sessionId: session?.sessionId ?? null,
       };
     });
 
