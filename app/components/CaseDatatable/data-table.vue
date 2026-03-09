@@ -47,6 +47,7 @@ const props = defineProps<{
   data: TData[];
   classrooms?: Classroom[];
   hideClassroomFilter?: boolean;
+  title?: string;
 }>();
 
 // Bubble the refresh event up to the page so it can re-fetch cases
@@ -141,7 +142,7 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
   <div class="bg-white border border-gray-200 rounded-xl w-full max-w-full min-w-0 overflow-hidden">
     <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
       <p class="text-[13px] font-medium text-gray-900">
-        {{ table.getFilteredRowModel().rows.length }} record{{ table.getFilteredRowModel().rows.length === 1 ? "" : "s" }}
+        {{ title || `${table.getFilteredRowModel().rows.length} record${table.getFilteredRowModel().rows.length === 1 ? "" : "s"}` }}
       </p>
 
       <div class="flex items-center gap-2">

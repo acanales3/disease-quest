@@ -49,6 +49,7 @@ const props = defineProps<{
   classrooms?: Classroom[];
   hideClassroomFilter?: boolean;
   hideClassroomColumn?: boolean;
+  title?: string;
 }>();
 
 const sorting = ref<SortingState>([]);
@@ -177,7 +178,7 @@ const handleClassroomSelect = (classroom: Classroom | null) => {
     <div
       class="flex items-center justify-between px-5 py-4 border-b border-gray-100"
     >
-      <p class="text-sm font-medium text-gray-900">Records</p>
+      <p class="text-sm font-medium text-gray-900">{{ title || "Records" }}</p>
 
       <div class="flex items-center gap-2">
         <FilterDialog
