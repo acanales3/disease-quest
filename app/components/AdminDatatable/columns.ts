@@ -2,6 +2,11 @@ import type { ColumnDef } from "@tanstack/vue-table";
 import { h } from "vue";
 import { ArrowUpDown } from "lucide-vue-next";
 import DropdownAction from "./data-table-dropdown.vue";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 export interface Administrator {
   id: number; // row number (UI only)
@@ -9,6 +14,7 @@ export interface Administrator {
   name: string;
   email: string;
   school: string;
+  classrooms: { id: number; name: string }[];
 }
 
 export function getColumns(
@@ -68,6 +74,35 @@ export function getColumns(
           { class: "capitalize" },
           row.getValue("school") ?? "-"
         ),
+    },
+    {
+      accessorKey: "classrooms",
+      header: () => h("div", {}, "CLASSROOM"),
+      cell: ({ row }) => {
+        const classrooms = row.getValue("classrooms") as { id: number; name: string }[] | undefined;
+
+        if (!classrooms || classrooms.length === 0) {
+          return h("div", { class: "text-gray-400" }, "-");
+        }
+
+        const first = classrooms[0]?.name ?? "-";
+        const truncated = first.length > 10 || classrooms.length > 1 ? first.slice(0, 10) + "..." : first;
+
+        return h(
+          Tooltip,
+          {},
+          {
+            default: () => [
+              h(TooltipTrigger, { asChild: true }, {
+                default: () => h("div", { class: "cursor-pointer text-gray-600 hover:text-gray-900 transition" }, truncated),
+              }),
+              h(TooltipContent, { side: "bottom", class: "bg-white shadow-md w-56" }, {
+                default: () => classrooms.map((c) => h("div", { key: c.id, class: "py-1 text-sm text-gray-600" }, c.name)),
+              }),
+            ],
+          }
+        );
+      },
     },
     {
       id: "actions",
