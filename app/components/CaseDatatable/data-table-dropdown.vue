@@ -29,57 +29,52 @@ const emit = defineEmits<{
   (e: "refresh"): void;
 }>();
 
-const onEdit = () => {
-  emit("edit", props.caseData);
-};
-
-const onDelete = () => {
-  emit("delete", props.caseData);
-};
-
-const onRemoveFromClassroom = () => {
-  emit("removeFromClassroom", Number(props.caseData.id));
-};
-
-const onRemoveFromClassrooms = () => {
-  emit("removeFromClassrooms", props.caseData);
-};
+const onEdit = () => emit("edit", props.caseData);
+const onDelete = () => emit("delete", props.caseData);
+const onRemoveFromClassroom = () => emit("removeFromClassroom", Number(props.caseData.id));
+const onRemoveFromClassrooms = () => emit("removeFromClassrooms", props.caseData);
 
 const isReplaying = ref(false);
 
 const getButtonText = () => {
   switch (props.caseData.status) {
-    case "not started":
-      return "Begin";
-    case "in progress":
-      return "Continue";
-    case "completed":
-      return "Replay";
-    default:
-      return "Begin";
+    case "not started": return "Begin";
+    case "in progress": return "Continue";
+    case "completed": return "Replay";
+    default: return "Begin";
   }
 };
+
+const resolvedClassroomId = computed(
+  () => props.classroomId ?? (props.caseData as any).classroom_id ?? null,
+);
+
+// Step key scoped to (caseId, classroomId) so the same case in two classrooms
+// remembers independent steps.
+function stepStorageKey(caseId: number | string) {
+  return resolvedClassroomId.value
+    ? `dq_case_step_${caseId}_cls_${resolvedClassroomId.value}`
+    : `dq_case_step_${caseId}`;
+}
 
 const handlePrimaryAction = async () => {
   if (props.caseData.status === "completed") {
     await handleReplay();
   } else {
     const caseId = Number(props.caseData.id);
-    const classroomId = props.classroomId || (props.caseData as any).classroomId;
     const params = new URLSearchParams();
-    if (classroomId) params.set("classroomId", String(classroomId));
+    if (resolvedClassroomId.value) params.set("classroomId", String(resolvedClassroomId.value));
     if (props.returnTo) params.set("returnTo", props.returnTo);
 
     let step = "introduction";
     if (props.caseData.status === "in progress" && import.meta.client) {
-      const saved = localStorage.getItem(`dq_case_step_${caseId}`);
+      const saved = localStorage.getItem(stepStorageKey(caseId));
       if (saved && ["introduction", "mentor", "patient", "evaluation"].includes(saved)) {
         step = saved;
       }
     }
     const query = params.toString();
-    const url = `/case/${caseId}/${step}${query ? `?${query}` : ""}`;
-    router.push(url);
+    router.push(`/case/${caseId}/${step}${query ? `?${query}` : ""}`);
   }
 };
 
@@ -87,35 +82,35 @@ const handleReplay = async () => {
   isReplaying.value = true;
 
   try {
-    // Look up the most recent completed session for this case (and classroom when applicable)
-    const classroomId = props.classroomId ?? (props.caseData as any).classroomId;
-    const activeUrl = `/api/sessions/active?caseId=${props.caseData.id}&includeCompleted=true${classroomId != null ? `&classroomId=${classroomId}` : ""}`;
-    const activeRes = await $fetch<{ sessionId: string | null }>(activeUrl);
+    const activeParams = new URLSearchParams({
+      caseId: String(props.caseData.id),
+      includeCompleted: "true",
+    });
+    if (resolvedClassroomId.value) {
+      activeParams.set("classroomId", String(resolvedClassroomId.value));
+    }
+
+    const activeRes = await $fetch<{ sessionId: string | null }>(
+      `/api/sessions/active?${activeParams.toString()}`,
+    );
 
     if (!activeRes.sessionId) {
-      // No session found — nothing to reset, just emit refresh so the
-      // parent re-fetches and the row shows the correct state
       emit("refresh");
       return;
     }
 
-    // Reset the completed session in the database
     await $fetch("/api/sessions/replay", {
       method: "POST",
       body: { sessionId: activeRes.sessionId },
     });
 
-    // Clear saved step so next Begin starts at introduction
     if (import.meta.client) {
-      localStorage.removeItem(`dq_case_step_${props.caseData.id}`);
+      localStorage.removeItem(stepStorageKey(props.caseData.id));
     }
 
-    // Tell the parent table to re-fetch cases so this row updates
-    // from "completed / Replay" → "not started / Begin" without any navigation
     emit("refresh");
   } catch (err) {
     console.error("Replay failed:", err);
-    // Still emit refresh so the UI isn't left in a stale state
     emit("refresh");
   } finally {
     isReplaying.value = false;
@@ -175,4 +170,3 @@ const handleReplay = async () => {
     </DropdownMenuContent>
   </DropdownMenu>
 </template>
-

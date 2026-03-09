@@ -1,6 +1,9 @@
 /**
- * GET /api/sessions/active?caseId=52&includeCompleted=true
- * Returns the most recent session for this user + case.
+ * GET /api/sessions/active?caseId=52&classroomId=3&includeCompleted=true
+ * Returns the most recent session for this user + case + classroom.
+ *
+ * classroomId is optional — if omitted, falls back to matching any session
+ * for the case (used by admins/instructors who have no classroom context).
  *
  * By default only returns non-completed sessions (created/in_progress).
  * Pass includeCompleted=true to also match completed sessions (used by replay).
@@ -20,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event);
   const caseId = query.caseId;
-  const classroomId = query.classroomId;
+  const classroomId = query.classroomId; // optional
   const includeCompleted = query.includeCompleted === "true";
 
   if (!caseId) {
@@ -30,24 +33,25 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  let activeQuery = client
+  let dbQuery = client
     .from("case_sessions")
-    .select("id, status, phase, elapsed_minutes, created_at, attempt_number, completed_at")
+    .select("id, status, phase, elapsed_minutes, created_at, attempt_number, classroom_id")
     .eq("user_id", userId)
     .eq("case_id", parseInt(caseId as string));
-  if (classroomId != null && classroomId !== "") {
-    activeQuery = activeQuery.eq("classroom_id", parseInt(classroomId as string));
+
+  // If classroomId is provided, scope the lookup to that classroom only.
+  if (classroomId) {
+    dbQuery = dbQuery.eq("classroom_id", parseInt(classroomId as string));
   }
 
-  // For replay, we want the most recent completed session.
-  // Some legacy rows may have completed_at set but status not updated to 'completed'.
+  // For replay (includeCompleted): match completed or rows with completed_at (legacy).
   if (includeCompleted) {
-    activeQuery = activeQuery.or("status.eq.completed,completed_at.not.is.null");
+    dbQuery = dbQuery.or("status.eq.completed,completed_at.not.is.null");
   } else {
-    activeQuery = activeQuery.in("status", ["created", "in_progress"]);
+    dbQuery = dbQuery.in("status", ["created", "in_progress"]);
   }
 
-  const { data, error } = (await activeQuery
+  const { data, error } = (await dbQuery
     .order("attempt_number", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(1)
@@ -58,6 +62,7 @@ export default defineEventHandler(async (event) => {
       phase: string;
       elapsed_minutes: number;
       attempt_number: number;
+      classroom_id: number | null;
     } | null;
     error: any;
   };
@@ -74,5 +79,6 @@ export default defineEventHandler(async (event) => {
     status: data.status,
     phase: data.phase,
     attempt_number: data.attempt_number,
+    classroom_id: data.classroom_id,
   };
 });

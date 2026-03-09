@@ -6,7 +6,7 @@
           <p class="text-xs font-medium text-[#4d1979] uppercase tracking-widest mb-2">Learning</p>
           <h1 class="text-3xl font-semibold text-gray-900 tracking-tight leading-snug">Cases</h1>
           <p class="text-gray-500 text-[15px] mt-2">
-            Play cases to practice clinical simulations.
+            Play and review cases to practice clinical simulations.
           </p>
           <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
             <Icon name="si:book-line" size="15" class="text-white" />
@@ -40,19 +40,21 @@
       Failed to load cases.
     </div>
     <div v-else class="w-full">
-      <DataTable :columns="visibleColumns" :data="data" @refresh="refresh()" />
+      <DataTable :columns="visibleColumns" :data="data" :classrooms="classroomsData" @refresh="refresh()" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Case } from "../../CaseDatatable/columns";
+import type { Classroom } from "~/assets/interface/Classroom";
 import { ref, computed, watchEffect } from "vue";
 import { getColumns } from "../../CaseDatatable/columns";
 import DataTable from "../../CaseDatatable/data-table.vue";
 import { Icon } from "#components";
 
 const data = ref<Case[]>([]);
+const classroomsData = ref<Classroom[]>([]);
 
 const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
   "/api/cases/available",
@@ -61,8 +63,17 @@ const { data: apiData, pending, error, refresh } = await useFetch<Case[]>(
   },
 );
 
+const {
+  data: classroomsApi,
+  pending: classroomsPending,
+  error: classroomsError,
+} = await useFetch<Classroom[]>("/api/classrooms", {
+  default: () => [],
+});
+
 watchEffect(() => {
   data.value = apiData.value ?? [];
+  classroomsData.value = classroomsApi.value ?? [];
 });
 
 const visibleColumns = computed(() => {

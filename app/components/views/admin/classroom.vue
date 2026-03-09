@@ -1,5 +1,9 @@
 <template>
   <div class="space-y-4">
+    <div>
+      <BackwardButton route="/admin/classrooms" />
+    </div>
+
     <!-- CLASSROOM DETAILS -->
     <div
       v-if="classroom"
@@ -217,6 +221,7 @@ import StudentDataTable from "../../StudentDatatable/data-table.vue";
 import { modalBus } from "@/components/AdminEditStudentDialog/modalBusEditStudent";
 import AdminEditStudentDialog from "@/components/AdminEditStudentDialog/AdminEditStudentDialog.vue";
 import DeleteStudentModal from "@/components/DeleteStudentModal/DeleteStudentModal.vue";
+import BackwardButton from "@/components/BackwardButton/BackwardButton.vue";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

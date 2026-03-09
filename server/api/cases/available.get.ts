@@ -75,6 +75,7 @@ export default defineEventHandler(async (event) => {
       attemptsByCase[s.case_id] = (attemptsByCase[s.case_id] ?? 0) + 1;
     }
 
+    // Admins/instructors: progress is per case only (no classroom context)
     const { data: sessions, error: sErr } = await client
       .from("case_sessions")
       .select("case_id, status, attempt_number, completed_at")
@@ -184,7 +185,6 @@ export default defineEventHandler(async (event) => {
 
     if (sErr) throw createError({ statusCode: 500, message: sErr.message });
 
-    // Per (case_id, classroom_id): latest session state and count of completed attempts
     const key = (cid: number, clid: number | null) =>
       `${cid}:${clid ?? "null"}`;
     const latestByKey = new Map<

@@ -4,6 +4,7 @@ import {
 } from "#supabase/server";
 import { getQuery, getRouterParam } from "h3";
 import { logNotification } from "../../utils/notifications";
+import { deleteInvitationsForInvitee } from "../../utils/invitations";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -117,6 +118,31 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 403,
       message: "Forbidden: Only admins can delete students",
+    });
+  }
+
+  const { data: targetUser, error: targetUserError } = await client
+    .from("users")
+    .select("email")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (targetUserError) {
+    throw createError({
+      statusCode: 500,
+      message: `Failed to fetch student email: ${targetUserError.message}`,
+    });
+  }
+
+  const invitationCleanupError = await deleteInvitationsForInvitee(client, {
+    email: (targetUser as any)?.email ?? null,
+    role: "STUDENT",
+  });
+
+  if (invitationCleanupError) {
+    throw createError({
+      statusCode: 500,
+      message: `Failed to remove student invitations: ${invitationCleanupError.message}`,
     });
   }
 

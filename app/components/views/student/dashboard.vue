@@ -135,7 +135,7 @@
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Practice Cases</p>
-                <p class="text-[12px] text-gray-400">Play cases</p>
+                <p class="text-[12px] text-gray-400">Play and review cases</p>
               </div>
             </NuxtLink>
             <NuxtLink to="/student/analytics" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
@@ -153,7 +153,7 @@
               </div>
               <div>
                 <p class="text-[13px] font-medium text-gray-900">Leaderboard</p>
-                <p class="text-[12px] text-gray-400">Ranked by completed cases and average scores.</p>
+                <p class="text-[12px] text-gray-400">View rankings by completed cases and average scores</p>
               </div>
             </NuxtLink>
           </div>

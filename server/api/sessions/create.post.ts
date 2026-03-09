@@ -6,7 +6,7 @@
  * via POST /api/sessions/replay. This endpoint is only for the very first
  * time a user attempts a case (or if no session exists yet).
  *
- * Body: { caseId: number }
+ * Body: { caseId: number, classroomId?: number }
  */
 import { defineEventHandler, createError, readBody } from "h3";
 import {
@@ -38,27 +38,29 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody(event);
   const caseId = body?.caseId;
-  const classroomId = body?.classroomId;
+  const classroomId = body?.classroomId ?? null;
   console.log("[session/create] caseId:", caseId, "classroomId:", classroomId);
 
   if (!caseId) {
     throw createError({ statusCode: 400, message: "caseId is required" });
   }
 
-  // Guard: if a non-completed session already exists for this user+case+classroom,
-  // return it instead of creating a duplicate. Each (user, case, classroom) has its own session.
-  let existingQuery = client
+  // Guard: if a non-completed session already exists for this user + case +
+  // classroom, return it instead of creating a duplicate.
+  let guardQuery = client
     .from("case_sessions")
     .select("id, status, phase, attempt_number")
     .eq("user_id", userId)
     .eq("case_id", caseId)
     .in("status", ["created", "in_progress"]);
-  if (classroomId != null) {
-    existingQuery = existingQuery.eq("classroom_id", classroomId);
+
+  if (classroomId) {
+    guardQuery = guardQuery.eq("classroom_id", classroomId);
   } else {
-    existingQuery = existingQuery.is("classroom_id", null);
+    guardQuery = guardQuery.is("classroom_id", null);
   }
-  const { data: existingSession } = await existingQuery
+
+  const { data: existingSession } = await guardQuery
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -109,19 +111,19 @@ export default defineEventHandler(async (event) => {
     .map((d) => d.id);
   console.log("[session/create] Start disclosures:", startDisclosures);
 
-  // Determine attempt_number: count prior sessions for this user+case+classroom
+  // Determine attempt_number: count prior sessions for this user + case +
+  // classroom so attempts are tracked independently per classroom.
   let countQuery = client
     .from("case_sessions")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("case_id", caseId);
-  if (classroomId != null) {
+  if (classroomId) {
     countQuery = countQuery.eq("classroom_id", classroomId);
   } else {
     countQuery = countQuery.is("classroom_id", null);
   }
   const { count: priorCount } = await countQuery;
-
   const attemptNumber = (priorCount ?? 0) + 1;
   console.log("[session/create] attempt_number:", attemptNumber);
 
@@ -172,7 +174,7 @@ export default defineEventHandler(async (event) => {
     .insert({
       user_id: userId,
       case_id: caseId,
-      classroom_id: classroomId || null,
+      classroom_id: classroomId,
       status: "created",
       phase: "prologue",
       elapsed_minutes: 0,

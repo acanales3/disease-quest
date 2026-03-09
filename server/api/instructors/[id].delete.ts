@@ -2,6 +2,7 @@ import { defineEventHandler, createError, getRouterParam } from "h3";
 import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import { logNotification } from "../../utils/notifications";
+import { deleteInvitationsForInvitee } from "../../utils/invitations";
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event);
@@ -97,6 +98,18 @@ export default defineEventHandler(async (event) => {
     [u?.first_name, u?.last_name].filter(Boolean).join(" ") ||
     u?.email ||
     instructorId;
+
+  const invitationCleanupError = await deleteInvitationsForInvitee(adminClient, {
+    email: u?.email ?? null,
+    role: "INSTRUCTOR",
+  });
+
+  if (invitationCleanupError) {
+    throw createError({
+      statusCode: 500,
+      message: `Failed to remove instructor invitations: ${invitationCleanupError.message}`,
+    });
+  }
 
   // 5) Find classrooms for instructor (needed for cascade counts + manual cleanup of non-cascaded tables)
   const { data: classrooms, error: classroomsErr } = await adminClient
