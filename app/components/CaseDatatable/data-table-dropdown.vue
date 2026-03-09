@@ -47,7 +47,7 @@ const getButtonText = () => {
 };
 
 const resolvedClassroomId = computed(
-  () => props.classroomId ?? (props.caseData as any).classroom_id ?? null,
+  () => props.classroomId ?? (props.caseData as any).classroomId ?? (props.caseData as any).classroom_id ?? null,
 );
 
 // Step key scoped to (caseId, classroomId) so the same case in two classrooms
@@ -79,6 +79,12 @@ const handlePrimaryAction = async () => {
   }
 };
 
+function sessionStorageKey(caseId: number | string) {
+  return resolvedClassroomId.value
+    ? `dq_session_${caseId}_cls_${resolvedClassroomId.value}`
+    : `dq_session_${caseId}`;
+}
+
 const handleReplay = async () => {
   isReplaying.value = true;
 
@@ -100,13 +106,16 @@ const handleReplay = async () => {
       return;
     }
 
-    await $fetch("/api/sessions/replay", {
+    const replayRes = await $fetch<{ sessionId: string }>("/api/sessions/replay", {
       method: "POST",
       body: { sessionId: activeRes.sessionId },
     });
 
     if (import.meta.client) {
       localStorage.removeItem(stepStorageKey(props.caseData.id));
+      if (replayRes.sessionId) {
+        localStorage.setItem(sessionStorageKey(props.caseData.id), replayRes.sessionId);
+      }
     }
 
     emit("refresh");

@@ -184,7 +184,7 @@ export function getColumns(
         // unique case+classroom pair). For admin/instructor classroom pages:
         // falls back to the global options.classroomId as before.
         const resolvedClassroomId =
-          caseData.classroom_id ?? options?.classroomId;
+          caseData.classroomId ?? caseData.classroom_id ?? options?.classroomId;
 
         return h(
           "div",
