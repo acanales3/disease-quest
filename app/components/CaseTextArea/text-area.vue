@@ -55,6 +55,9 @@
       </div>
     </div>
 
+    <!-- Error message (e.g. No active session, orchestrator error) -->
+    <p v-if="props.errorMsg" class="mt-2 text-sm text-red-600">{{ props.errorMsg }}</p>
+
     <!-- Input Area -->
     <div class="flex gap-2 mt-3 flex-shrink-0">
       <input

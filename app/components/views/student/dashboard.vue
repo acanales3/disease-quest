@@ -95,10 +95,11 @@
           </div>
 
           <div v-if="recentCases.length" class="divide-y divide-gray-100">
-            <div v-for="item in recentCases" :key="item.id" class="px-5 py-3 flex items-center justify-between gap-3">
+            <div v-for="(item, idx) in recentCases" :key="`${item.id}-${item.classroomId ?? idx}`" class="px-5 py-3 flex items-center justify-between gap-3">
               <div class="min-w-0">
                 <p class="text-[13px] font-medium text-gray-900 truncate">{{ item.name }}</p>
-                <p class="text-[12px] text-gray-400 truncate">Classroom: {{ item.classroom || "-" }}</p>
+                <p class="text-[12px] text-gray-400 truncate">{{ item.classroom || "-" }}</p>
+                <p v-if="(item.attempts ?? 0) > 0" class="text-[11px] text-gray-500 mt-0.5">{{ item.attempts }} attempt(s) completed</p>
               </div>
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border shrink-0"
@@ -184,7 +185,9 @@ type StudentCase = {
   id: number
   name: string
   classroom?: string
+  classroomId?: number | null
   status: "not started" | "in progress" | "completed"
+  attempts?: number
 }
 
 const { data, pending, error } = await useFetch<DashboardResponse>(

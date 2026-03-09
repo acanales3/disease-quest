@@ -47,8 +47,6 @@ export default defineEventHandler(async (event) => {
 
   // Guard: if a non-completed session already exists for this user + case +
   // classroom, return it instead of creating a duplicate.
-  // We scope by classroom_id so the same case in two different classrooms
-  // gets independent sessions.
   let guardQuery = client
     .from("case_sessions")
     .select("id, status, phase, attempt_number")
@@ -59,7 +57,6 @@ export default defineEventHandler(async (event) => {
   if (classroomId) {
     guardQuery = guardQuery.eq("classroom_id", classroomId);
   } else {
-    // No classroom context (admin/instructor): match sessions with no classroom
     guardQuery = guardQuery.is("classroom_id", null);
   }
 
@@ -114,20 +111,18 @@ export default defineEventHandler(async (event) => {
     .map((d) => d.id);
   console.log("[session/create] Start disclosures:", startDisclosures);
 
-  // Determine attempt_number: count ALL prior sessions for this user + case +
+  // Determine attempt_number: count prior sessions for this user + case +
   // classroom so attempts are tracked independently per classroom.
   let countQuery = client
     .from("case_sessions")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("case_id", caseId);
-
   if (classroomId) {
     countQuery = countQuery.eq("classroom_id", classroomId);
   } else {
     countQuery = countQuery.is("classroom_id", null);
   }
-
   const { count: priorCount } = await countQuery;
   const attemptNumber = (priorCount ?? 0) + 1;
   console.log("[session/create] attempt_number:", attemptNumber);

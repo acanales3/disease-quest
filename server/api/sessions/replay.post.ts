@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
   // Also fetch classroom_id so we can preserve it after reset.
   const { data: session, error: sessionErr } = await client
     .from("case_sessions")
-    .select("id, user_id, case_id, status, attempt_number, classroom_id")
+    .select("id, user_id, case_id, status, attempt_number, completed_at, classroom_id")
     .eq("id", sessionId)
     .eq("user_id", userId)
     .single();
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: "Session not found" });
   }
 
-  if (session.status !== "completed") {
+  if (session.status !== "completed" && !session.completed_at) {
     throw createError({
       statusCode: 400,
       message: "Only completed sessions can be replayed",

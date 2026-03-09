@@ -16,7 +16,8 @@ export interface Case {
   classrooms: { id: number; name: string }[];
   completionDate: string;
   status: "not started" | "in progress" | "completed";
-  sessionId?: string | null;
+  classroomId?: number;
+  attempts?: number;
 }
 
 interface ColumnOptions {
@@ -122,6 +123,28 @@ export function getColumns(
             ],
           },
         );
+      },
+    },
+    {
+      accessorKey: "completionDate",
+      header: () => h("div", {}, "COMPLETED"),
+      cell: ({ row }) => {
+        const d = row.getValue("completionDate") as string | null | undefined;
+        if (!d || d === "-" || d === "null") return h("div", { class: "text-[13px] text-gray-400" }, "-");
+        try {
+          const date = new Date(d);
+          return h("div", { class: "text-[13px] text-gray-600" }, date.toLocaleDateString());
+        } catch {
+          return h("div", { class: "text-[13px] text-gray-400" }, d);
+        }
+      },
+    },
+    {
+      accessorKey: "attempts",
+      header: () => h("div", {}, "ATTEMPTS"),
+      cell: ({ row }) => {
+        const n = row.getValue("attempts") as number | undefined;
+        return h("div", { class: "text-[13px] text-gray-600 tabular-nums" }, String(n ?? 0));
       },
     },
     {

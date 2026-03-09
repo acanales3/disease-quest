@@ -65,6 +65,16 @@ export default defineEventHandler(async (event) => {
 
     const caseIds = mappedCases.map((c: any) => c.id);
 
+    // Attempts = count of evaluations (completions). Replay does not delete evaluations, so this does not reset.
+    const attemptsByCase: Record<number, number> = {};
+    const { data: allEvaluations } = await client
+      .from("evaluations")
+      .select("case_id")
+      .in("case_id", caseIds);
+    for (const e of allEvaluations ?? []) {
+      attemptsByCase[e.case_id] = (attemptsByCase[e.case_id] ?? 0) + 1;
+    }
+
     // Admins/instructors: progress is per case only (no classroom context)
     const { data: sessions, error: sErr } = await client
       .from("case_sessions")
@@ -105,6 +115,7 @@ export default defineEventHandler(async (event) => {
 
       return {
         ...c,
+        attempts: attemptsByCase[c.id] ?? 0,
         status: uiStatus,
         completionDate: session?.completed_at ?? null,
       };
@@ -137,31 +148,27 @@ export default defineEventHandler(async (event) => {
 
     if (ccErr) throw createError({ statusCode: 500, message: ccErr.message });
 
-    // One entry per (case_id, classroom_id) pair — no deduplication.
-    // This allows separate progress tracking per classroom even for the same case.
+    // One entry per (classroom_id, case_id) — same case in multiple classes = multiple rows
     const entries: {
-      case_id: number;
       classroom_id: number;
+      case_id: number;
       name: string;
       description: string;
       created_at: string;
-      classroom: { id: number; name: string };
+      classroomName: string;
     }[] = [];
 
     for (const r of rows ?? []) {
       const caseData = Array.isArray(r.cases) ? r.cases[0] : r.cases;
       if (!caseData) continue;
-
       entries.push({
-        case_id: r.case_id,
         classroom_id: r.classroom_id,
+        case_id: r.case_id,
         name: caseData.name,
         description: caseData.description,
         created_at: caseData.created_at,
-        classroom: {
-          id: r.classroom_id,
-          name: classroomNames[r.classroom_id] ?? `Classroom ${r.classroom_id}`,
-        },
+        classroomName:
+          classroomNames[r.classroom_id] ?? `Classroom ${r.classroom_id}`,
       });
     }
 
@@ -169,7 +176,6 @@ export default defineEventHandler(async (event) => {
 
     const caseIds = [...new Set(entries.map((e) => e.case_id))];
 
-    // Fetch sessions including classroom_id so we can match per (case, classroom)
     const { data: sessions, error: sErr } = await client
       .from("case_sessions")
       .select("id, case_id, classroom_id, status, attempt_number, started_at, completed_at")
@@ -179,22 +185,38 @@ export default defineEventHandler(async (event) => {
 
     if (sErr) throw createError({ statusCode: 500, message: sErr.message });
 
-    // Key: `${case_id}:${classroom_id}` → most recent session for that pair
-    const latestSessionByPair = new Map<
-      string,
-      {
-        sessionId: string;
-        status: string;
-        started_at: string | null;
-        completed_at: string | null;
-      }
-    >();
+    // Attempts = count of evaluations (completions) per (case, classroom). Replay does not delete evaluations.
+    const sessionToClassroom = new Map<string, number | null>();
+    const { data: sessionsForEvals } = await client
+      .from("case_sessions")
+      .select("id, case_id, classroom_id")
+      .eq("user_id", userId)
+      .in("case_id", caseIds);
+    for (const s of sessionsForEvals ?? []) {
+      sessionToClassroom.set(s.id, s.classroom_id ?? null);
+    }
+    const { data: studentEvals } = await client
+      .from("evaluations")
+      .select("case_id, session_id")
+      .eq("user_id", userId)
+      .in("case_id", caseIds);
+    const completedCountByKey = new Map<string, number>();
+    for (const e of studentEvals ?? []) {
+      const clid = e.session_id ? sessionToClassroom.get(e.session_id) ?? null : null;
+      const k = `${e.case_id}:${clid ?? "null"}`;
+      completedCountByKey.set(k, (completedCountByKey.get(k) ?? 0) + 1);
+    }
 
+    const key = (cid: number, clid: number | null) =>
+      `${cid}:${clid ?? "null"}`;
+    const latestByKey = new Map<
+      string,
+      { status: string; started_at: string | null; completed_at: string | null }
+    >();
     for (const s of sessions ?? []) {
-      const key = `${s.case_id}:${s.classroom_id}`;
-      if (!latestSessionByPair.has(key)) {
-        latestSessionByPair.set(key, {
-          sessionId: s.id,
+      const k = key(s.case_id, s.classroom_id ?? null);
+      if (!latestByKey.has(k)) {
+        latestByKey.set(k, {
           status: s.status,
           started_at: s.started_at,
           completed_at: s.completed_at,
@@ -203,33 +225,28 @@ export default defineEventHandler(async (event) => {
     }
 
     const result = entries.map((e) => {
-      const key = `${e.case_id}:${e.classroom_id}`;
-      const session = latestSessionByPair.get(key);
+      const k = key(e.case_id, e.classroom_id);
+      const session = latestByKey.get(k);
 
       let uiStatus: "not started" | "in progress" | "completed" = "not started";
-
       if (session) {
-        if (session.status === "completed") {
-          uiStatus = "completed";
-        } else if (session.status === "in_progress") {
+        if (session.completed_at) uiStatus = "completed";
+        else if (session.status === "in_progress" || session.started_at)
           uiStatus = "in progress";
-        } else {
-          // 'created' or 'abandoned' → not started
-          uiStatus = "not started";
-        }
       }
 
       return {
-        // Unique key for the UI to distinguish same case in different classrooms
         id: e.case_id,
-        classroom_id: e.classroom_id,
         name: e.name,
         description: e.description,
         created_at: e.created_at,
-        classrooms: [e.classroom],
+        classrooms: [
+          { id: e.classroom_id, name: e.classroomName },
+        ],
+        classroomId: e.classroom_id,
         status: uiStatus,
-        completionDate: session?.completed_at ?? null,
-        sessionId: session?.sessionId ?? null,
+        completionDate: session?.completed_at ?? "-",
+        attempts: completedCountByKey.get(k) ?? 0,
       };
     });
 

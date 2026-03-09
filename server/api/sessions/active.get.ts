@@ -33,29 +33,29 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const statuses = includeCompleted
-    ? ["created", "in_progress", "completed"]
-    : ["created", "in_progress"];
-
   let dbQuery = client
     .from("case_sessions")
     .select("id, status, phase, elapsed_minutes, created_at, attempt_number, classroom_id")
     .eq("user_id", userId)
-    .eq("case_id", parseInt(caseId as string))
-    .in("status", statuses);
+    .eq("case_id", parseInt(caseId as string));
 
   // If classroomId is provided, scope the lookup to that classroom only.
-  // This ensures students in the same case across two classrooms get
-  // separate session tracking.
   if (classroomId) {
     dbQuery = dbQuery.eq("classroom_id", parseInt(classroomId as string));
+  }
+
+  // For replay (includeCompleted): match completed or rows with completed_at (legacy).
+  if (includeCompleted) {
+    dbQuery = dbQuery.or("status.eq.completed,completed_at.not.is.null");
+  } else {
+    dbQuery = dbQuery.in("status", ["created", "in_progress"]);
   }
 
   const { data, error } = (await dbQuery
     .order("attempt_number", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()) as {
+    .maybeSingle()) as {
     data: {
       id: string;
       status: string;
@@ -67,7 +67,10 @@ export default defineEventHandler(async (event) => {
     error: any;
   };
 
-  if (error || !data) {
+  if (error) {
+    return { sessionId: null };
+  }
+  if (!data) {
     return { sessionId: null };
   }
 

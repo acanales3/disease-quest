@@ -13,6 +13,7 @@ type DashboardCase = {
   classroomId: number | null;
   completionDate: string;
   status: "not started" | "in progress" | "completed";
+  attempts: number;
 };
 
 export default defineEventHandler(async (event) => {
@@ -135,7 +136,8 @@ export default defineEventHandler(async (event) => {
         description
       ),
       classrooms:classroom_id (
-        code
+        code,
+        name
       )
     `,
     )
@@ -149,21 +151,51 @@ export default defineEventHandler(async (event) => {
 
   const { data: studentCases, error } = await supabase
     .from("case_sessions")
-    .select("case_id, started_at, completed_at, status")
-    .eq("user_id", studentId);
+    .select("case_id, classroom_id, started_at, completed_at, status")
+    .eq("user_id", studentId)
+    .order("attempt_number", { ascending: false });
 
   if (error)
     throw createError({ statusCode: 500, statusMessage: error.message });
 
-  const progressMap = new Map(
-    (studentCases ?? []).map((sc) => [sc.case_id, sc]),
-  );
+  // Key by (case_id, classroom_id) so progress is per-classroom. Sessions with
+  // classroom_id null (legacy) are not matched to any specific classroom row.
+  // First occurrence per key wins (sessions ordered by attempt_number desc).
+  const progressMap = new Map<
+    string,
+    { started_at: string | null; completed_at: string | null; status: string }
+  >();
+  const completedCountByKey = new Map<string, number>();
+
+  for (const sc of studentCases ?? []) {
+    const key =
+      sc.classroom_id != null
+        ? `${sc.case_id}:${sc.classroom_id}`
+        : `${sc.case_id}:null`;
+    if (sc.status === "completed") {
+      completedCountByKey.set(
+        key,
+        (completedCountByKey.get(key) ?? 0) + 1,
+      );
+    }
+    if (!progressMap.has(key)) {
+      progressMap.set(key, {
+        started_at: sc.started_at,
+        completed_at: sc.completed_at,
+        status: sc.status,
+      });
+    }
+  }
 
   const cases: DashboardCase[] = classroomCases
     .filter((row) => row.cases)
     .map((row) => {
       const c = row.cases!;
-      const progress = progressMap.get(c.id);
+      const key =
+        row.classroom_id != null
+          ? `${c.id}:${row.classroom_id}`
+          : `${c.id}:null`;
+      const progress = progressMap.get(key);
       let status: DashboardCase["status"] = "not started";
       let completionDate: string | null = null;
 
@@ -176,14 +208,17 @@ export default defineEventHandler(async (event) => {
         }
       }
 
+      const attempts = completedCountByKey.get(key) ?? 0;
+
       return {
         id: c.id,
         name: c.name,
         description: c.description ?? "",
-        classroom: row.classrooms?.code ?? "",
+        classroom: (row.classrooms as { name?: string; code?: string } | null)?.name ?? (row.classrooms as { code?: string } | null)?.code ?? "",
         classroomId: row.classroom_id,
         completionDate: completionDate ?? "-",
         status,
+        attempts,
       };
     });
 

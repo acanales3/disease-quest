@@ -140,7 +140,7 @@ watchEffect(() => {
 });
 
 const visibleColumns = computed(() => {
-  const columnsToShow = ["id", "name", "description", "classrooms", "status", "actions"];
+  const columnsToShow = ["id", "name", "description", "classrooms", "attempts", "status", "actions"];
   return getColumns("instructor", {
     onRemoveFromClassrooms: openRemoveDialog,
     onRefresh: () => refreshCases(),
