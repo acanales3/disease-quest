@@ -22,7 +22,9 @@ const props = defineProps<{
 const caseName = ref("");
 const caseDescription = ref("");
 const files = ref<File[]>([]);
+const rubricFile = ref<File | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
+const rubricFileInput = ref<HTMLInputElement | null>(null);
 const isOpen = ref(false);
 
 // ── Pipeline state ─────────────────────────────────────────────────
@@ -36,11 +38,15 @@ function resetForm() {
   caseName.value = "";
   caseDescription.value = "";
   files.value = [];
+  rubricFile.value = null;
   errorMessage.value = "";
   successMessage.value = "";
   statusMessage.value = "";
   if (fileInput.value) {
     fileInput.value.value = "";
+  }
+  if (rubricFileInput.value) {
+    rubricFileInput.value.value = "";
   }
 }
 
@@ -58,22 +64,58 @@ function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement;
   if (!target.files) return;
 
-  // Only accept first PDF file
-  const pdfFiles = Array.from(target.files).filter(
-    (f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")
+  const caseFiles = Array.from(target.files).filter(
+    (f) =>
+      f.type === "application/pdf" ||
+      f.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      f.name.toLowerCase().endsWith(".pdf") ||
+      f.name.toLowerCase().endsWith(".docx")
   );
 
-  if (pdfFiles.length === 0) {
-    errorMessage.value = "Please select a PDF file.";
+  if (caseFiles.length === 0) {
+    errorMessage.value = "Please select a PDF or DOCX file.";
     return;
   }
 
-  files.value = [pdfFiles[0]]; // Only one PDF at a time
+  files.value = [caseFiles[0]];
   errorMessage.value = "";
 }
 
 function triggerFileInput() {
   fileInput.value?.click();
+}
+
+function handleRubricFileChange(event: Event) {
+  const target = event.target as HTMLInputElement;
+  if (!target.files?.length) return;
+
+  const selected = target.files[0];
+  const lowerName = selected.name.toLowerCase();
+  const allowedTypes = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    "text/markdown",
+    "application/json",
+  ];
+  const allowedExtensions = [".pdf", ".docx", ".txt", ".md", ".json"];
+
+  const isAllowed =
+    allowedTypes.includes(selected.type) ||
+    allowedExtensions.some((ext) => lowerName.endsWith(ext));
+
+  if (!isAllowed) {
+    errorMessage.value = "Rubric file must be a PDF, DOCX, TXT, MD, or JSON file.";
+    return;
+  }
+
+  rubricFile.value = selected;
+  errorMessage.value = "";
+}
+
+function triggerRubricFileInput() {
+  rubricFileInput.value?.click();
 }
 
 // ── Submit handler ─────────────────────────────────────────────────
@@ -92,7 +134,7 @@ async function handleSubmit() {
     return;
   }
   if (files.value.length === 0) {
-    errorMessage.value = "Please upload a PDF file.";
+    errorMessage.value = "Please upload a PDF or DOCX file.";
     return;
   }
 
@@ -101,15 +143,19 @@ async function handleSubmit() {
   formData.append("file", files.value[0]);
   formData.append("caseName", caseName.value.trim());
   formData.append("caseDescription", caseDescription.value.trim());
+  if (rubricFile.value) {
+    formData.append("rubricFile", rubricFile.value);
+  }
 
   isLoading.value = true;
-  statusMessage.value = "Uploading PDF and extracting content...";
+  statusMessage.value = "Uploading file and extracting content...";
 
   try {
     // Start a timer to cycle status messages for UX
     const statusInterval = setInterval(() => {
       const messages = [
         "Extracting text from PDF...",
+        "Extracting text from document...",
         "AI is analyzing the clinical case...",
         "Generating case content with OpenAI...",
         "Building disclosures, test results, and scoring...",
@@ -179,7 +225,7 @@ async function handleSubmit() {
       <DialogHeader>
         <DialogTitle>Create Case</DialogTitle>
         <DialogDescription>
-          Upload a clinical case PDF and provide details. AI will generate the full simulation case.
+          Upload a clinical case PDF or DOCX and provide details. AI will generate the full simulation case.
         </DialogDescription>
       </DialogHeader>
 
@@ -214,7 +260,7 @@ async function handleSubmit() {
 
         <!-- File Upload -->
         <div class="grid grid-cols-4 items-center gap-4">
-          <Label class="text-right">PDF File</Label>
+          <Label class="text-right">Case File</Label>
           <div class="col-span-3 flex flex-col items-stretch space-y-2">
             <button
               type="button"
@@ -222,18 +268,46 @@ async function handleSubmit() {
               :disabled="isLoading"
               @click="triggerFileInput"
             >
-              {{ files.length > 0 ? 'Change PDF' : 'Upload PDF' }}
+              {{ files.length > 0 ? 'Change File' : 'Upload PDF or DOCX' }}
             </button>
             <input
               ref="fileInput"
               id="file-input"
               type="file"
-              accept=".pdf,application/pdf"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               class="hidden"
               @change="handleFileChange"
             />
             <div v-if="files.length > 0" class="text-sm text-muted-foreground truncate">
               {{ files[0].name }}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-4 items-center gap-4">
+          <Label class="text-right">Rubric</Label>
+          <div class="col-span-3 flex flex-col items-stretch space-y-2">
+            <button
+              type="button"
+              class="w-full px-3 py-2 border border-input bg-background rounded hover:bg-accent transition-colors disabled:opacity-50"
+              :disabled="isLoading"
+              @click="triggerRubricFileInput"
+            >
+              {{ rubricFile ? 'Change Rubric File' : 'Upload Rubric File (Optional)' }}
+            </button>
+            <input
+              ref="rubricFileInput"
+              id="rubric-file-input"
+              type="file"
+              accept=".pdf,.docx,.txt,.md,.json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown,application/json"
+              class="hidden"
+              @change="handleRubricFileChange"
+            />
+            <div class="text-xs text-muted-foreground leading-relaxed">
+              Optional. Upload a rubric document if this case should keep the same core evaluation areas but use different point distributions, anchors, or grading guidance.
+            </div>
+            <div v-if="rubricFile" class="text-sm text-muted-foreground truncate">
+              {{ rubricFile.name }}
             </div>
           </div>
         </div>

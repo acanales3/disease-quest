@@ -9,7 +9,7 @@
             View and join classrooms.
           </p>
           <div class="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#4d1979]">
-            <Icon name="simple-icons:googleclassroom" size="15" class="text-white" />
+            <ClassroomIcon :size="15" icon-class="text-white" />
             <span class="text-[13px] font-medium text-white">{{ data.length }} classrooms</span>
           </div>
         </div>
@@ -42,6 +42,7 @@ import DataTable from "../../ClassroomDatatable/data-table.vue"
 import JoinClassDialog from "@/components/JoinClassDialog/JoinClassDialog.vue"
 import { Button } from "@/components/ui/button"
 import { Icon } from "#components"
+import ClassroomIcon from "../../icons/ClassroomIcon.vue"
 
 const data = ref<Classroom[]>([])
 const joinOpen = ref(false)

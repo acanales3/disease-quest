@@ -421,7 +421,8 @@ The evaluation_rubrics array must follow these rules precisely:
     - Scale proportionally for other point values.
 16. Performance level descriptions must be CASE-SPECIFIC — reference actual clinical findings, expected diagnoses, and key decision points from the case being generated. Do NOT use generic boilerplate.
 17. The rubric is aligned with AAMC Core Entrustable Professional Activities: EPA 1 (history & physical), EPA 2 (differential diagnosis), EPA 3 (diagnostic tests), EPA 4 (orders/management), EPA 9 (teamwork/collaboration). Ensure the rubric descriptions reflect these competency expectations.
-18. The rubric emphasizes Rigor, Reproducibility, and Transparency (R2T) in clinical reasoning — descriptions should reward systematic approaches and evidence-based justification.`;
+18. The rubric emphasizes Rigor, Reproducibility, and Transparency (R2T) in clinical reasoning — descriptions should reward systematic approaches and evidence-based justification.
+19. Build the case from the uploaded source materials only. Do NOT reuse disease-specific assumptions, timings, treatments, or evaluation language from prior cases unless the uploaded materials support them.`;
 
 // ---------------------------------------------------------------------------
 // Generator function
@@ -445,7 +446,8 @@ export async function generateCaseContent(
   pdfText: string,
   caseName: string,
   description: string,
-  previousError: string | null = null
+  previousError: string | null = null,
+  rubricText: string | null = null,
 ): Promise<GenerationResult> {
   console.log("[CASE-GEN] Starting case content generation via edge function...");
   console.log(`[CASE-GEN] PDF text length: ${pdfText.length} chars`);
@@ -472,6 +474,19 @@ ${pdfText.substring(0, 60000)}
 
 Analyze the clinical case content thoroughly. Create all disclosures, test results, interventions, scoring, and evaluation rubrics. Make sure the case is medically accurate and detailed.
 Include realistic distractor tests/treatments, at least one potentially harmful intervention with adverse-effect consequences, and interactive progression (time- and action-driven changes) to mimic a live case.
+
+${rubricText
+    ? `**Uploaded Rubric Guidance (authoritative grading guidance for this case):**
+---
+${rubricText.substring(0, 20000)}
+---
+
+Use the uploaded rubric to customize the assessment for this case.
+- Keep the SAME 7 core rubric ids/db columns required by DiseaseQuest so DB writes remain compatible.
+- Redistribute max_points and rewrite the performance descriptions to match the uploaded rubric's emphasis.
+- If the uploaded rubric includes extra themes such as SDOH, safety gates, trigger rules, calibration notes, or narrative feedback templates, fold those expectations into the closest of the 7 core domains instead of inventing new DB columns.
+- Treat the uploaded rubric as higher priority than default weighting guidance whenever they conflict.`
+    : ""}
 
 Return ONLY the JSON object.`;
 

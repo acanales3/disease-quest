@@ -18,7 +18,12 @@
         class="rounded-lg bg-[#f5f3ff] flex items-center justify-center shrink-0"
         :class="compact ? 'w-7 h-7' : 'w-8 h-8'"
       >
-        <Icon :name="icon" :size="compact ? 20 : 25" class="text-black" />
+        <ClassroomIcon
+          v-if="iconType === 'classroom'"
+          :size="compact ? 20 : 25"
+          icon-class="text-black"
+        />
+        <Icon v-else :name="icon" :size="compact ? 20 : 25" class="text-black" />
       </div>
     </div>
     <div class="flex items-end justify-between">
@@ -42,6 +47,8 @@
 </template>
 
 <script setup>
+import ClassroomIcon from "@/components/icons/ClassroomIcon.vue";
+
 defineProps({
   count: {
     type: [Number, String],
@@ -55,6 +62,10 @@ defineProps({
   icon: {
     type: String,
     default: "lucide:bar-chart-3",
+  },
+  iconType: {
+    type: String,
+    default: "default",
   },
   showIcon: {
     type: Boolean,
