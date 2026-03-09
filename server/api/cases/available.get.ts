@@ -65,6 +65,7 @@ export default defineEventHandler(async (event) => {
 
     const caseIds = mappedCases.map((c: any) => c.id);
 
+    // Admins/instructors: progress is per case only (no classroom context)
     const { data: sessions, error: sErr } = await client
       .from("case_sessions")
       .select("case_id, status, attempt_number, completed_at")
@@ -136,63 +137,51 @@ export default defineEventHandler(async (event) => {
 
     if (ccErr) throw createError({ statusCode: 500, message: ccErr.message });
 
-    // Deduplicate: one entry per unique case_id, collecting all classrooms
-    const caseMap = new Map<
-      number,
-      {
-        case_id: number;
-        name: string;
-        description: string;
-        created_at: string;
-        classrooms: { id: number; name: string }[];
-      }
-    >();
+    // One entry per (case_id, classroom_id) pair — no deduplication.
+    // This allows separate progress tracking per classroom even for the same case.
+    const entries: {
+      case_id: number;
+      classroom_id: number;
+      name: string;
+      description: string;
+      created_at: string;
+      classroom: { id: number; name: string };
+    }[] = [];
 
     for (const r of rows ?? []) {
       const caseData = Array.isArray(r.cases) ? r.cases[0] : r.cases;
       if (!caseData) continue;
 
-      const existing = caseMap.get(r.case_id);
-      const classroom = {
-        id: r.classroom_id,
-        name: classroomNames[r.classroom_id] ?? `Classroom ${r.classroom_id}`,
-      };
-
-      if (existing) {
-        // Add classroom if not already present
-        if (!existing.classrooms.some((c) => c.id === classroom.id)) {
-          existing.classrooms.push(classroom);
-        }
-      } else {
-        caseMap.set(r.case_id, {
-          case_id: r.case_id,
-          name: caseData.name,
-          description: caseData.description,
-          created_at: caseData.created_at,
-          classrooms: [classroom],
-        });
-      }
+      entries.push({
+        case_id: r.case_id,
+        classroom_id: r.classroom_id,
+        name: caseData.name,
+        description: caseData.description,
+        created_at: caseData.created_at,
+        classroom: {
+          id: r.classroom_id,
+          name: classroomNames[r.classroom_id] ?? `Classroom ${r.classroom_id}`,
+        },
+      });
     }
 
-    if (caseMap.size === 0) return [];
+    if (entries.length === 0) return [];
 
-    const caseIds = [...caseMap.keys()];
+    const caseIds = [...new Set(entries.map((e) => e.case_id))];
 
-    // Fetch ALL sessions for this student across these cases, ordered by
-    // attempt_number desc so the most recent attempt comes first per case.
+    // Fetch sessions including classroom_id so we can match per (case, classroom)
     const { data: sessions, error: sErr } = await client
       .from("case_sessions")
-      .select("id, case_id, status, attempt_number, started_at, completed_at")
+      .select("id, case_id, classroom_id, status, attempt_number, started_at, completed_at")
       .eq("user_id", userId)
       .in("case_id", caseIds)
       .order("attempt_number", { ascending: false });
 
     if (sErr) throw createError({ statusCode: 500, message: sErr.message });
 
-    // For each case, pick the most recent session (highest attempt_number)
-    // and map its status to the UI status.
-    const latestSessionByCase = new Map<
-      number,
+    // Key: `${case_id}:${classroom_id}` → most recent session for that pair
+    const latestSessionByPair = new Map<
+      string,
       {
         sessionId: string;
         status: string;
@@ -202,9 +191,9 @@ export default defineEventHandler(async (event) => {
     >();
 
     for (const s of sessions ?? []) {
-      if (!latestSessionByCase.has(s.case_id)) {
-        // First one we see is the most recent (ordered desc)
-        latestSessionByCase.set(s.case_id, {
+      const key = `${s.case_id}:${s.classroom_id}`;
+      if (!latestSessionByPair.has(key)) {
+        latestSessionByPair.set(key, {
           sessionId: s.id,
           status: s.status,
           started_at: s.started_at,
@@ -213,12 +202,10 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const result = [...caseMap.values()].map((c) => {
-      const session = latestSessionByCase.get(c.case_id);
+    const result = entries.map((e) => {
+      const key = `${e.case_id}:${e.classroom_id}`;
+      const session = latestSessionByPair.get(key);
 
-      // Map DB session status → UI status
-      // DB statuses: 'created' | 'in_progress' | 'completed' | 'abandoned'
-      // UI statuses: 'not started' | 'in progress' | 'completed'
       let uiStatus: "not started" | "in progress" | "completed" = "not started";
 
       if (session) {
@@ -227,19 +214,19 @@ export default defineEventHandler(async (event) => {
         } else if (session.status === "in_progress") {
           uiStatus = "in progress";
         } else {
-          // 'created' or 'abandoned' both map to 'not started'
+          // 'created' or 'abandoned' → not started
           uiStatus = "not started";
         }
       }
 
       return {
-        // Use the real case_id (number) so the dropdown can pass it to
-        // /api/sessions/active?caseId=... correctly
-        id: c.case_id,
-        name: c.name,
-        description: c.description,
-        created_at: c.created_at,
-        classrooms: c.classrooms,
+        // Unique key for the UI to distinguish same case in different classrooms
+        id: e.case_id,
+        classroom_id: e.classroom_id,
+        name: e.name,
+        description: e.description,
+        created_at: e.created_at,
+        classrooms: [e.classroom],
         status: uiStatus,
         completionDate: session?.completed_at ?? null,
         sessionId: session?.sessionId ?? null,
