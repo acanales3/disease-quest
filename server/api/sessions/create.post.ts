@@ -132,44 +132,57 @@ export default defineEventHandler(async (event) => {
   const attemptNumber = (priorCount ?? 0) + 1;
   console.log("[session/create] attempt_number:", attemptNumber);
 
-  // Ensure the student exists in the students table (FK requirement)
-  console.log("[session/create] Checking student record...");
-  const { data: existingStudent, error: studentCheckErr } = await client
-    .from("students")
-    .select("user_id")
-    .eq("user_id", userId)
+  // Only ensure student record for actual students; admins/instructors playing cases must not be added to the student table
+  const { data: userRow } = await client
+    .from("users")
+    .select("role")
+    .eq("id", userId)
     .single();
+  const role = (userRow as { role?: string } | null)?.role?.toUpperCase();
+  const isStaff = role === "ADMIN" || role === "INSTRUCTOR";
 
-  if (studentCheckErr) {
-    console.log(
-      "[session/create] Student check result:",
-      studentCheckErr.code,
-      studentCheckErr.message,
-    );
-  }
+  if (!isStaff) {
+    // Ensure the student exists in the students table (FK requirement)
+    console.log("[session/create] Checking student record...");
+    const { data: existingStudent, error: studentCheckErr } = await client
+      .from("students")
+      .select("user_id")
+      .eq("user_id", userId)
+      .single();
 
-  if (!existingStudent) {
-    console.log("[session/create] Student not found, creating...");
-    const { error: studentErr } = await client.from("students").insert({
-      user_id: userId,
-      nickname: await generateUniqueNickname(client),
-    } as any);
-    if (studentErr) {
-      console.error(
-        "[session/create] Student creation failed:",
-        studentErr.message,
-        studentErr.details,
-        studentErr.hint,
-        studentErr.code,
+    if (studentCheckErr) {
+      console.log(
+        "[session/create] Student check result:",
+        studentCheckErr.code,
+        studentCheckErr.message,
       );
-      throw createError({
-        statusCode: 500,
-        message: `Cannot create session: student record creation failed - ${studentErr.message}`,
-      });
     }
-    console.log("[session/create] Student record created");
+
+    if (!existingStudent) {
+      console.log("[session/create] Student not found, creating...");
+      const { error: studentErr } = await client.from("students").insert({
+        user_id: userId,
+        nickname: await generateUniqueNickname(client),
+      } as any);
+      if (studentErr) {
+        console.error(
+          "[session/create] Student creation failed:",
+          studentErr.message,
+          studentErr.details,
+          studentErr.hint,
+          studentErr.code,
+        );
+        throw createError({
+          statusCode: 500,
+          message: `Cannot create session: student record creation failed - ${studentErr.message}`,
+        });
+      }
+      console.log("[session/create] Student record created");
+    } else {
+      console.log("[session/create] Student already exists");
+    }
   } else {
-    console.log("[session/create] Student already exists");
+    console.log("[session/create] User is admin/instructor, skipping student table");
   }
 
   // Create the session
