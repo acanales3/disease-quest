@@ -99,6 +99,25 @@ export default defineEventHandler(async (event) => {
 
   const result = await response.json();
 
+  // Ensure session is marked completed after end_case, regardless of
+  // whether the orchestrator already did it. Both status and completed_at
+  // must be set so all views (admin, instructor, student) show "completed".
+  if (actionType === "end_case") {
+    try {
+      const svc = serverSupabaseServiceRole(event);
+      await svc
+        .from("case_sessions")
+        .update({
+          status: "completed",
+          phase: "completed",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", sessionId);
+    } catch (err: any) {
+      console.error("[action/end_case] Failed to mark session completed:", err.message);
+    }
+  }
+
   // Save evaluation from Nuxt server side for reliability
   if (actionType === "end_case" && result?.evaluation) {
     console.log(

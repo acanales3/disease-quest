@@ -55,10 +55,27 @@ const nextRoute = computed(() =>
     : (route.query.returnTo as string) || "/student/cases"
 );
 
-function saveProgressAndGoBack() {
+async function saveProgressAndGoBack() {
   if (import.meta.client && caseId.value) {
     localStorage.setItem(stepStorageKey.value, currentStep.value);
   }
+
+  let sessionId = useState<string>("currentSessionId").value;
+  if (!sessionId && import.meta.client) {
+    const storageKey = classroomId.value
+      ? `dq_session_${caseId.value}_cls_${classroomId.value}`
+      : `dq_session_${caseId.value}`;
+    sessionId = localStorage.getItem(storageKey) ?? "";
+  }
+
+  if (sessionId) {
+    try {
+      await $fetch(`/api/sessions/${sessionId}/progress`, { method: "POST" });
+    } catch {
+      // Non-critical — navigate regardless
+    }
+  }
+
   const returnTo = (route.query.returnTo as string) || "/student/cases";
   router.push(returnTo);
 }
