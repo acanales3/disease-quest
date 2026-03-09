@@ -344,6 +344,12 @@ export function useCaseSession() {
       const result = await sendAction("consult_tutor", { content: question });
       if (result?.response) {
         tutorMessages.value.push({ role: "tutor", content: result.response as string });
+      } else if (result && !result.response) {
+        const err = (result as Record<string, unknown>).error as string | undefined;
+        tutorMessages.value.push({
+          role: "tutor",
+          content: err || "The mentor couldn't generate a response. Please try again.",
+        });
       }
       return result;
     } finally {

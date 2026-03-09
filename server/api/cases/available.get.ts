@@ -65,14 +65,14 @@ export default defineEventHandler(async (event) => {
 
     const caseIds = mappedCases.map((c: any) => c.id);
 
+    // Attempts = count of evaluations (completions). Replay does not delete evaluations, so this does not reset.
     const attemptsByCase: Record<number, number> = {};
-    const { data: allSessions } = await client
-      .from("case_sessions")
+    const { data: allEvaluations } = await client
+      .from("evaluations")
       .select("case_id")
-      .in("case_id", caseIds)
-      .or("status.eq.completed,completed_at.not.is.null");
-    for (const s of allSessions ?? []) {
-      attemptsByCase[s.case_id] = (attemptsByCase[s.case_id] ?? 0) + 1;
+      .in("case_id", caseIds);
+    for (const e of allEvaluations ?? []) {
+      attemptsByCase[e.case_id] = (attemptsByCase[e.case_id] ?? 0) + 1;
     }
 
     // Admins/instructors: progress is per case only (no classroom context)
@@ -185,14 +185,34 @@ export default defineEventHandler(async (event) => {
 
     if (sErr) throw createError({ statusCode: 500, message: sErr.message });
 
+    // Attempts = count of evaluations (completions) per (case, classroom). Replay does not delete evaluations.
+    const sessionToClassroom = new Map<string, number | null>();
+    const { data: sessionsForEvals } = await client
+      .from("case_sessions")
+      .select("id, case_id, classroom_id")
+      .eq("user_id", userId)
+      .in("case_id", caseIds);
+    for (const s of sessionsForEvals ?? []) {
+      sessionToClassroom.set(s.id, s.classroom_id ?? null);
+    }
+    const { data: studentEvals } = await client
+      .from("evaluations")
+      .select("case_id, session_id")
+      .eq("user_id", userId)
+      .in("case_id", caseIds);
+    const completedCountByKey = new Map<string, number>();
+    for (const e of studentEvals ?? []) {
+      const clid = e.session_id ? sessionToClassroom.get(e.session_id) ?? null : null;
+      const k = `${e.case_id}:${clid ?? "null"}`;
+      completedCountByKey.set(k, (completedCountByKey.get(k) ?? 0) + 1);
+    }
+
     const key = (cid: number, clid: number | null) =>
       `${cid}:${clid ?? "null"}`;
     const latestByKey = new Map<
       string,
       { status: string; started_at: string | null; completed_at: string | null }
     >();
-    const completedCountByKey = new Map<string, number>();
-
     for (const s of sessions ?? []) {
       const k = key(s.case_id, s.classroom_id ?? null);
       if (!latestByKey.has(k)) {
@@ -201,9 +221,6 @@ export default defineEventHandler(async (event) => {
           started_at: s.started_at,
           completed_at: s.completed_at,
         });
-      }
-      if (s.status === "completed" || !!s.completed_at) {
-        completedCountByKey.set(k, (completedCountByKey.get(k) ?? 0) + 1);
       }
     }
 
