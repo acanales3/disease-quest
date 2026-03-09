@@ -146,10 +146,10 @@ export function getColumns(
         return h(
           "span",
           {
-            class: `inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
+            class: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white shadow-sm ${
               isActive
-                ? "bg-green-50 text-green-700 border border-green-200"
-                : "bg-red-50 text-red-600 border border-red-200"
+                ? "bg-gradient-to-r from-emerald-600 to-teal-700"
+                : "bg-gradient-to-r from-rose-600 to-red-700"
             }`,
           },
           isActive ? "Registered" : "Unregistered",

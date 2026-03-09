@@ -100,6 +100,7 @@ export default defineEventHandler(async (event) => {
       hasSeizure: physiology?.has_seizure ?? false,
       hasRespiratoryFailure: physiology?.has_respiratory_failure ?? false,
     },
+    patientSex: ((session.patient_state ?? {}) as Record<string, unknown>).sex ?? null,
     startedAt: session.started_at,
     completedAt: session.completed_at,
   };

@@ -89,6 +89,7 @@ const props = withDefaults(
     disabled?: boolean
     errorMsg?: string
     placeholder?: string
+    patientSex?: string | null
   }>(),
   {
     agentType: 'patient',
@@ -97,6 +98,7 @@ const props = withDefaults(
     disabled: false,
     errorMsg: '',
     placeholder: 'Responses will appear here...',
+    patientSex: null,
   }
 )
 
@@ -167,8 +169,9 @@ function hashText(input: string): string {
 
 function ttsKey(text: string, role: string): string {
   const voiceType = voiceTypeMap[role] ?? 'system'
+  const sexTag = (role === 'patient' && props.patientSex) ? props.patientSex.toLowerCase().charAt(0) : ''
   const normalized = text.trim()
-  return `${voiceType}:${normalized.length}:${hashText(normalized)}`
+  return `${voiceType}${sexTag}:${normalized.length}:${hashText(normalized)}`
 }
 
 function setTtsCache(key: string, audio: string) {
@@ -201,6 +204,7 @@ async function fetchTtsAudio(text: string, role: string): Promise<string | null>
         body: {
           text: normalized,
           voiceType: voiceTypeMap[role] ?? 'system',
+          patientSex: role === 'patient' ? (props.patientSex ?? null) : null,
         },
       })
       const audio = res.audio ?? null
@@ -288,14 +292,22 @@ async function playBrowserVoice(text: string, role: string, idx: number) {
 
   const utterance = new SpeechSynthesisUtterance(speakableText)
   utterance.rate = role === 'tutor' || role === 'evaluator' ? 0.96 : 1
-  utterance.pitch = role === 'patient' ? 1.05 : 1
+
+  const isMalePatient = role === 'patient' && /^m/i.test(props.patientSex ?? '')
+  const isFemalePatient = role === 'patient' && /^f/i.test(props.patientSex ?? '')
+  utterance.pitch = isFemalePatient ? 1.05 : isMalePatient ? 0.9 : 1
 
   const voices = window.speechSynthesis.getVoices()
-  const preferred = voices.find((v) =>
-    role === 'patient'
-      ? /female|samantha|victoria|zira/i.test(v.name)
-      : /male|daniel|alex|david/i.test(v.name)
-  )
+  let preferred: SpeechSynthesisVoice | undefined
+  if (role === 'patient') {
+    if (isMalePatient) {
+      preferred = voices.find((v) => /male|daniel|alex|david|james/i.test(v.name) && !/female/i.test(v.name))
+    } else {
+      preferred = voices.find((v) => /female|samantha|victoria|zira/i.test(v.name))
+    }
+  } else {
+    preferred = voices.find((v) => /male|daniel|alex|david/i.test(v.name) && !/female/i.test(v.name))
+  }
   if (preferred) utterance.voice = preferred
 
   utterance.onend = () => {

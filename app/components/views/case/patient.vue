@@ -134,10 +134,13 @@
           </button>
         </div>
         <div class="flex items-center gap-2">
-          <button @click="advanceTime(5)" :disabled="loading"
-            class="text-xs px-3 py-1.5 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-white transition disabled:opacity-40">
-            +5 min
-          </button>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] text-neutral-400 hidden sm:inline">Skip ahead to get pending results faster</span>
+            <button @click="advanceTime(5)" :disabled="loading"
+              class="text-xs px-3 py-1.5 rounded-md text-neutral-400 hover:text-neutral-600 hover:bg-white border border-neutral-200 transition disabled:opacity-40">
+              +5 min
+            </button>
+          </div>
           <button @click="showMentor = true"
             class="text-xs px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition">
             Ask Mentor
@@ -194,7 +197,8 @@
             :messages="interviewMessages"
             :loading="patientLoading"
             :error-msg="error ?? ''"
-            placeholder="Ask the patient's family a question..."
+            :patient-sex="session?.patientSex ?? null"
+            placeholder="Ask the patient a question..."
             @send="handlePatientChat"
           />
         </div>
@@ -222,7 +226,7 @@
                   <p class="text-[10px] text-neutral-400 mt-0.5">Emergency Department</p>
                 </div>
                 <div class="text-right text-[10px] text-neutral-400">
-                  <p>Patient: {{ session?.caseName ?? 'Thompson, Amelia' }}</p>
+                  <p>Patient: {{ session?.caseName ?? '—' }}</p>
                   <p>Time: {{ displayElapsed }} min</p>
                 </div>
               </div>
@@ -432,6 +436,33 @@
       </div>
     </div>
 
+    <!-- ═══ DIAGNOSIS SAVED MODAL ═══ -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showDiagnosisSaved" class="fixed inset-0 bg-black/30 z-[60] flex items-center justify-center" @click.self="showDiagnosisSaved = false">
+          <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 text-center space-y-4">
+            <div class="w-12 h-12 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-neutral-900">Diagnosis Saved</h3>
+            <p class="text-sm text-neutral-500">Your final diagnosis and clinical reasoning have been recorded. You can now end the case to proceed to evaluation.</p>
+            <div class="flex gap-3 pt-1">
+              <button @click="showDiagnosisSaved = false"
+                class="flex-1 py-2.5 text-sm font-medium border border-neutral-200 rounded-lg hover:bg-neutral-50 text-neutral-700 transition">
+                Continue Case
+              </button>
+              <button @click="showDiagnosisSaved = false; handleEndCase()"
+                class="flex-1 py-2.5 text-sm font-medium bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition">
+                End Case
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- ═══ MENTOR DRAWER ═══ -->
     <Teleport to="body">
       <Transition name="fade">
@@ -484,6 +515,7 @@ const activeTab = ref<'interview' | 'exam' | 'orders' | 'treatment' | 'different
 const showMentor = ref(false)
 const diagnosisText = ref('')
 const diagnosisReasoning = ref('')
+const showDiagnosisSaved = ref(false)
 const differentialRows = ref<Array<{ diagnosis: string; likelihood: string; reasoning: string }>>([])
 const differentialSubmitted = ref(false)
 const deteriorationAlert = ref<string | null>(null)
@@ -716,7 +748,10 @@ async function handleSubmitDifferential() {
   differentialSubmitted.value = true
 }
 
-async function handleSubmitDiagnosis() { await submitDiagnosis(diagnosisText.value, diagnosisReasoning.value) }
+async function handleSubmitDiagnosis() {
+  await submitDiagnosis(diagnosisText.value, diagnosisReasoning.value)
+  showDiagnosisSaved.value = true
+}
 
 async function handleEndCase() {
   stopSimClock()

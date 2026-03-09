@@ -7,14 +7,15 @@
  * with strict guardrails against infinite loops.
  *
  * Body: multipart/form-data with:
- *   - file: PDF file
+ *   - file: PDF or DOCX file
  *   - caseName: string
  *   - caseDescription: string
+ *   - rubricFile?: optional PDF/DOCX/TXT/MD/JSON rubric file
  */
 
 import { defineEventHandler, createError, readMultipartFormData } from "h3";
 import { serverSupabaseClient, serverSupabaseServiceRole, serverSupabaseUser } from "#supabase/server";
-import { extractPdfText } from "../../utils/pdf-extract";
+import { extractDocumentText, extractPdfText } from "../../utils/pdf-extract";
 import { generateCaseContent } from "../../utils/case-generator";
 import { validateCaseSchema } from "../../utils/case-schema";
 
@@ -24,6 +25,7 @@ import { validateCaseSchema } from "../../utils/case-schema";
 const MAX_AI_RETRIES = 3; // Max attempts to generate valid JSON
 const MAX_DB_RETRIES = 3; // Max attempts to insert into DB (with AI fix)
 const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB
+const MAX_RUBRIC_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 // ---------------------------------------------------------------------------
 // Logger helper
@@ -36,6 +38,66 @@ function log(step: string, message: string, data?: unknown) {
   } else {
     console.log(`${prefix} ${message}`);
   }
+}
+
+async function extractUploadedText(
+  fileBuffer: Buffer,
+  filename: string,
+  contentType?: string,
+): Promise<string> {
+  const normalizedName = filename.toLowerCase();
+  const normalizedType = (contentType ?? "").toLowerCase();
+
+  if (
+    normalizedType === "application/pdf" ||
+    normalizedName.endsWith(".pdf")
+  ) {
+    return extractPdfText(fileBuffer);
+  }
+
+  if (
+    normalizedType ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    normalizedName.endsWith(".docx")
+  ) {
+    return extractDocumentText(fileBuffer, filename, contentType);
+  }
+
+  const isTextLike =
+    normalizedType.startsWith("text/") ||
+    normalizedType === "application/json" ||
+    normalizedName.endsWith(".txt") ||
+    normalizedName.endsWith(".md") ||
+    normalizedName.endsWith(".json");
+
+  if (!isTextLike) {
+    throw new Error(
+      "Unsupported rubric file type. Please upload PDF, DOCX, TXT, MD, or JSON.",
+    );
+  }
+
+  const text = fileBuffer.toString("utf-8").trim();
+  if (!text) {
+    throw new Error("Rubric file appears to be empty.");
+  }
+
+  return text;
+}
+
+function attachRubricSource(
+  caseContent: Record<string, unknown>,
+  rubricText: string | null,
+  rubricFilename: string,
+  rubricContentType: string,
+) {
+  if (!rubricText) return;
+
+  caseContent.rubric_source = {
+    filename: rubricFilename || null,
+    mime_type: rubricContentType || null,
+    uploaded_at: new Date().toISOString(),
+    source_text: rubricText.slice(0, 25000),
+  };
 }
 
 export default defineEventHandler(async (event) => {
@@ -93,33 +155,44 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  let pdfBuffer: Buffer | null = null;
+  let caseFileBuffer: Buffer | null = null;
+  let caseFilename = "";
+  let caseContentType = "";
   let caseName = "";
   let caseDescription = "";
+  let rubricBuffer: Buffer | null = null;
+  let rubricFilename = "";
+  let rubricContentType = "";
 
   for (const part of formData) {
     if (part.name === "file" && part.data) {
-      pdfBuffer = part.data as Buffer;
+      caseFileBuffer = part.data as Buffer;
+      caseFilename = part.filename ?? "";
+      caseContentType = part.type ?? "";
     } else if (part.name === "caseName" && part.data) {
       caseName = part.data.toString("utf-8").trim();
     } else if (part.name === "caseDescription" && part.data) {
       caseDescription = part.data.toString("utf-8").trim();
+    } else if (part.name === "rubricFile" && part.data) {
+      rubricBuffer = part.data as Buffer;
+      rubricFilename = part.filename ?? "";
+      rubricContentType = part.type ?? "";
     }
   }
 
-  log("PARSE", `Form data parsed — caseName: "${caseName}", description length: ${caseDescription.length}, PDF size: ${pdfBuffer?.length ?? 0} bytes`);
+  log("PARSE", `Form data parsed — caseName: "${caseName}", description length: ${caseDescription.length}, file size: ${caseFileBuffer?.length ?? 0} bytes`);
 
   // ── Input validation ─────────────────────────────────────────────
-  if (!pdfBuffer || pdfBuffer.length === 0) {
-    log("VALIDATE", "FAILED — no PDF file");
-    throw createError({ statusCode: 400, message: "PDF file is required." });
+  if (!caseFileBuffer || caseFileBuffer.length === 0) {
+    log("VALIDATE", "FAILED — no case file");
+    throw createError({ statusCode: 400, message: "A PDF or DOCX case file is required." });
   }
 
-  if (pdfBuffer.length > MAX_PDF_SIZE_BYTES) {
-    log("VALIDATE", `FAILED — PDF too large: ${pdfBuffer.length} bytes`);
+  if (caseFileBuffer.length > MAX_PDF_SIZE_BYTES) {
+    log("VALIDATE", `FAILED — case file too large: ${caseFileBuffer.length} bytes`);
     throw createError({
       statusCode: 400,
-      message: `PDF file too large. Maximum size is ${MAX_PDF_SIZE_BYTES / (1024 * 1024)} MB.`,
+      message: `Case file too large. Maximum size is ${MAX_PDF_SIZE_BYTES / (1024 * 1024)} MB.`,
     });
   }
 
@@ -131,32 +204,71 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "Case description is required." });
   }
 
-  log("VALIDATE", "All inputs validated");
-
-  // ── Step 1: Extract PDF text ─────────────────────────────────────
-  log("PDF", "Extracting text from PDF...");
-  const pdfStart = Date.now();
-  let pdfText: string;
-  try {
-    pdfText = await extractPdfText(pdfBuffer);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    log("PDF", `FAILED — ${msg}`);
+  if (rubricBuffer && rubricBuffer.length > MAX_RUBRIC_SIZE_BYTES) {
+    log("VALIDATE", `FAILED — rubric too large: ${rubricBuffer.length} bytes`);
     throw createError({
-      statusCode: 422,
-      message: `Failed to extract text from PDF: ${msg}`,
+      statusCode: 400,
+      message: `Rubric file too large. Maximum size is ${MAX_RUBRIC_SIZE_BYTES / (1024 * 1024)} MB.`,
     });
   }
 
-  log("PDF", `Text extracted in ${Date.now() - pdfStart}ms — ${pdfText.length} characters`);
-  log("PDF", `First 200 chars: ${pdfText.substring(0, 200).replace(/\n/g, " ")}...`);
+  log("VALIDATE", "All inputs validated");
 
-  if (pdfText.length < 100) {
-    log("PDF", "FAILED — too little text extracted");
+  // ── Step 1: Extract case document text ────────────────────────────
+  log("DOC", `Extracting text from "${caseFilename || "uploaded case"}"...`);
+  const docStart = Date.now();
+  let pdfText: string;
+  try {
+    pdfText = await extractDocumentText(
+      caseFileBuffer,
+      caseFilename,
+      caseContentType,
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    log("DOC", `FAILED — ${msg}`);
     throw createError({
       statusCode: 422,
-      message: "PDF contains too little text to generate a clinical case. Please upload a more detailed document.",
+      message: `Failed to extract text from uploaded case file: ${msg}`,
     });
+  }
+
+  log("DOC", `Text extracted in ${Date.now() - docStart}ms — ${pdfText.length} characters`);
+  log("DOC", `First 200 chars: ${pdfText.substring(0, 200).replace(/\n/g, " ")}...`);
+
+  if (pdfText.length < 100) {
+    log("DOC", "FAILED — too little text extracted");
+    throw createError({
+      statusCode: 422,
+      message: "The uploaded case file contains too little text to generate a clinical case. Please upload a more detailed PDF or DOCX document.",
+    });
+  }
+
+  // ── Step 1b: Extract optional rubric text ─────────────────────────
+  let rubricText: string | null = null;
+  if (rubricBuffer && rubricBuffer.length > 0) {
+    log("RUBRIC", `Extracting rubric text from "${rubricFilename || "uploaded rubric"}"...`);
+    try {
+      rubricText = await extractUploadedText(
+        rubricBuffer,
+        rubricFilename,
+        rubricContentType,
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      log("RUBRIC", `FAILED — ${msg}`);
+      throw createError({
+        statusCode: 422,
+        message: `Failed to read rubric file: ${msg}`,
+      });
+    }
+
+    if (rubricText.length < 40) {
+      throw createError({
+        statusCode: 422,
+        message: "Rubric file contains too little text to use for grading guidance.",
+      });
+    }
   }
 
   // ── Step 2: Generate case content via AI (with validation retries) ──
@@ -178,7 +290,8 @@ export default defineEventHandler(async (event) => {
       pdfText,
       caseName,
       caseDescription,
-      lastAiError
+      lastAiError,
+      rubricText
     );
 
     log("AI", `OpenAI responded in ${Date.now() - attemptStart}ms`);
@@ -222,6 +335,8 @@ export default defineEventHandler(async (event) => {
   const contentKeys = Object.keys(caseContent);
   log("AI", `Content has ${contentKeys.length} top-level keys: ${contentKeys.join(", ")}`);
 
+  attachRubricSource(caseContent, rubricText, rubricFilename, rubricContentType);
+
   // ── Step 3: Insert into database (with retry on DB errors) ───────
   log("DB", `Starting database insert (max ${MAX_DB_RETRIES} attempts)...`);
   let insertedCaseId: number | null = null;
@@ -239,7 +354,8 @@ export default defineEventHandler(async (event) => {
         pdfText,
         caseName,
         caseDescription,
-        `Database insertion failed with error: ${lastDbError}. The JSON content may have invalid characters or structure for PostgreSQL JSONB. Please fix and regenerate.`
+        `Database insertion failed with error: ${lastDbError}. The JSON content may have invalid characters or structure for PostgreSQL JSONB. Please fix and regenerate.`,
+        rubricText
       );
 
       if (fixResult.content) {
@@ -247,6 +363,12 @@ export default defineEventHandler(async (event) => {
         if (revalidation.valid) {
           log("DB", "AI-fixed content passed validation, using it");
           caseContent = fixResult.content;
+          attachRubricSource(
+            caseContent,
+            rubricText,
+            rubricFilename,
+            rubricContentType,
+          );
         } else {
           log("DB", "AI-fixed content failed validation, keeping original");
         }

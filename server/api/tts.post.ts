@@ -8,7 +8,7 @@ import { defineEventHandler, createError, readBody } from "h3";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { text, voiceType, emotion } = body ?? {};
+  const { text, voiceType, emotion, patientSex } = body ?? {};
 
   if (!text || !text.trim()) {
     throw createError({ statusCode: 400, message: "text is required" });
@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
         text,
         voiceType,
         emotion,
+        patientSex,
       }),
     });
 

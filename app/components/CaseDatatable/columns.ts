@@ -154,9 +154,9 @@ export function getColumns(
         const status = row.getValue("status") as Case["status"];
 
         const statusClasses = {
-          "not started": "bg-red-50 text-red-600 border border-red-200",
-          "in progress": "bg-blue-50 text-blue-600 border border-blue-200",
-          completed: "bg-green-50 text-green-700 border border-green-200",
+          "not started": "bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-sm",
+          "in progress": "bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-sm",
+          completed: "bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-sm",
         };
 
         const statusText = {
@@ -168,7 +168,7 @@ export function getColumns(
         return h(
           "span",
           {
-            class: `inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${statusClasses[status]}`,
+            class: `inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${statusClasses[status]}`,
           },
           statusText[status],
         );

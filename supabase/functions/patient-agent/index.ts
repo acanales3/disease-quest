@@ -1,7 +1,7 @@
 /**
  * Patient Agent – Supabase Edge Function
  *
- * Simulates the patient's parent/guardian for pediatric cases.
+ * Simulates the patient (or their parent/guardian for pediatric cases).
  * Uses progressive disclosure: only reveals information from unlocked disclosures.
  * Called internally by the orchestrator.
  */
@@ -37,9 +37,39 @@ function buildSystemPrompt(
   const rosPositives = ((ps.ros_positives ?? []) as string[]).join(", ");
   const rosNegatives = ((ps.ros_negatives ?? []) as string[]).join(", ");
 
-  return `You are the parent/guardian of a sick infant in a medical simulation for training medical students.
+  const ageMonths = ps.age_months as number | null | undefined;
+  const ageYears = ps.age_years as number | null | undefined;
+  const patientName = (ps.name ?? "the patient") as string;
+  const sex = (ps.sex ?? "Unknown") as string;
 
-You are speaking on behalf of ${ps.name ?? "the patient"}, a ${ps.age_months ?? "unknown"}-month-old.
+  const isPediatric = ageMonths != null || (ageYears != null && ageYears < 18);
+
+  let ageDescription: string;
+  if (ageMonths != null) {
+    ageDescription = `${ageMonths}-month-old`;
+  } else if (ageYears != null) {
+    ageDescription = `${ageYears}-year-old`;
+  } else {
+    ageDescription = "adult";
+  }
+
+  const roleDescription = isPediatric
+    ? `You are the parent/guardian of a sick child in a medical simulation for training medical students.\n\nYou are speaking on behalf of ${patientName}, a ${ageDescription} ${sex.toLowerCase()}.`
+    : `You are the patient in a medical simulation for training medical students.\n\nYou are ${patientName}, a ${ageDescription} ${sex.toLowerCase()}.`;
+
+  const pmh = ((ps.past_medical_history ?? []) as string[]).join(", ");
+  const meds = ((ps.medications ?? []) as string[]).join(", ");
+  const socialHx = ps.social_history as Record<string, unknown> | undefined;
+  const socialHistoryLines = socialHx
+    ? Object.entries(socialHx)
+        .map(([k, v]) => {
+          const label = k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+          return `- ${label}: ${v}`;
+        })
+        .join("\n")
+    : "";
+
+  return `${roleDescription}
 
 CRITICAL RULES – YOU MUST FOLLOW THESE:
 1. NEVER volunteer diagnostic information or suggest what might be wrong
@@ -50,18 +80,25 @@ CRITICAL RULES – YOU MUST FOLLOW THESE:
 6. If asked something you don't know or wasn't disclosed, say you don't know
 7. Be consistent with all previous answers
 8. React realistically to the student's bedside manner
+${isPediatric ? "9. Speak as the worried parent, not the child" : "9. Speak as yourself, the patient"}
 
 PATIENT INFORMATION:
 - Chief Complaint: ${ps.chief_complaint ?? "Unknown"}
 - Emotional State: ${ps.emotional_state ?? "anxious"}
 - Cooperation Level: ${ps.cooperation_level ?? "cooperative"}
+${pmh ? `- Past Medical History: ${pmh}` : ""}
+${meds ? `- Current Medications: ${meds}` : ""}
 
 SOCIAL CONTEXT:
 ${socialLines || "No specific social context provided."}
+${socialHistoryLines ? `\nSOCIAL HISTORY:\n${socialHistoryLines}` : ""}
 
 SYMPTOMS TO REPORT (only when asked):
 - Positive findings: ${rosPositives || "None"}
 - Negative findings (deny if asked): ${rosNegatives || "None"}
+
+HISTORY OF PRESENT ILLNESS (use to answer questions about how symptoms started):
+${(ps.history_of_present_illness ?? "No additional HPI available.") as string}
 
 CURRENT PHYSICAL STATE:
 - Temperature: ${vitals.temp_f ?? "unknown"}°F
@@ -77,7 +114,7 @@ COMMUNICATION STYLE:
 - If cooperation_level is guarded/hesitant OR tone is abrasive, keep answers brief and cautious.
 - If cooperation_level is open/cooperative OR tone is empathetic, give fuller contextual details when asked.
 
-Remember: You are NOT a medical professional. You don't know what's wrong. You're scared and want help.`;
+Remember: You are NOT a medical professional. You don't know what's wrong. You${isPediatric ? "'re scared for your child" : "'re worried"} and want help.`;
 }
 
 serve(async (req: Request) => {
@@ -118,10 +155,14 @@ serve(async (req: Request) => {
 
     const responseText = await chatCompletion(messages, { temperature: 0.8 });
 
+    const ageM = patientState.age_months as number | null | undefined;
+    const ageY = patientState.age_years as number | null | undefined;
+    const isPed = ageM != null || (ageY != null && (ageY as number) < 18);
+
     return new Response(
       JSON.stringify({
         response: responseText,
-        speaker: "parent",
+        speaker: isPed ? "parent" : "patient",
         emotional_state: patientState.emotional_state ?? "anxious",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

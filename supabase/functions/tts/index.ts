@@ -12,9 +12,11 @@ declare const Deno: {
 };
 
 const VOICES: Record<string, string> = {
-  patient: "l4Coq6695JDX9xtLqXDE", // Female voice (custom)
-  tutor: "ErXwobaYiN019PkySvjV", // Antoni
-  system: "pNInz6obpgDQGcFmaJgB", // Adam
+  patient_female: "l4Coq6695JDX9xtLqXDE", // Female voice (custom)
+  patient_male: "VR6AewLTigWG4xSOukaG",   // Arnold – distinct male patient voice
+  patient: "l4Coq6695JDX9xtLqXDE",        // Default fallback (female)
+  tutor: "ErXwobaYiN019PkySvjV",           // Antoni – mentor
+  system: "pNInz6obpgDQGcFmaJgB",          // Adam – system narration
 };
 
 function json(data: unknown, status = 200) {
@@ -35,7 +37,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
-    const { text, voiceType, emotion } = await req.json();
+    const { text, voiceType, emotion, patientSex } = await req.json();
 
     if (!text || !String(text).trim()) {
       return json({ error: "text is required" }, 400);
@@ -55,7 +57,13 @@ Deno.serve(async (req) => {
     }
 
     const type = (voiceType as string) ?? "patient";
-    const voiceId = VOICES[type] ?? VOICES.patient;
+    let voiceId: string;
+    if (type === "patient" && patientSex) {
+      const sexKey = `patient_${String(patientSex).toLowerCase().startsWith("m") ? "male" : "female"}`;
+      voiceId = VOICES[sexKey] ?? VOICES.patient;
+    } else {
+      voiceId = VOICES[type] ?? VOICES.patient;
+    }
     const emotionNorm = String(emotion ?? "").toLowerCase();
 
     let stability = 0.5;
